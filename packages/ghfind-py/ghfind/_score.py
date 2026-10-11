@@ -10,6 +10,8 @@ Parity notes (why this reproduces the TS output bit-for-bit):
   every TS ``round(...)`` call.
 - TS ``Math.round(...)`` is round-half-UP, NOT banker's. We replicate it with
   ``_math_round`` = ``floor(x + 0.5)`` wherever the TS uses ``Math.round``.
+- Newcomer maturity uses ``_round_half_even`` to match TS/Go's epsilon around
+  binary half boundaries; the existing baseline rounding stays unchanged.
 - ``??`` (nullish) defaults only on null/undefined; ``_nz`` mirrors that (defaults
   only on ``None``), so an explicit 0/False is preserved.
 """
@@ -40,6 +42,18 @@ def _nz(value: Any, default: Any) -> Any:
 def _math_round(x: float) -> int:
     """Mirror JS ``Math.round`` (round half up toward +Inf). Inputs here are >= 0."""
     return math.floor(x + 0.5)
+
+
+def _round_half_even(value: float, digits: int = 0) -> float:
+    """Match TS roundHalfEven and Go roundToEven, including their tie tolerance."""
+    factor = 10 ** digits
+    scaled = value * factor
+    floor = math.floor(scaled)
+    if abs(scaled - floor - 0.5) < 1e-9:
+        rounded = floor if floor % 2 == 0 else floor + 1
+    else:
+        rounded = math.floor(scaled + 0.5)
+    return rounded / factor
 
 
 def log_ratio(value: float, full_at: float) -> float:
@@ -395,7 +409,7 @@ def score(m: Mapping[str, Any]) -> Dict[str, Any]:
     risk_assessment, risk_notes, flags, penalty = assess_risk(m)
     bonus = _super_newcomer_bonus(m, sub, risk_assessment, penalty)
     if bonus > 0:
-        sub["account_maturity"] = round(min(SUBSCORE_MAX["account_maturity"], age_pts + span_pts + bonus), 1)
+        sub["account_maturity"] = _round_half_even(min(SUBSCORE_MAX["account_maturity"], age_pts + span_pts + bonus), 1)
     base = round(sum(sub.values()), 1)
     final = clamp_score(round(base - penalty, 2))
     t = tier_for(final)

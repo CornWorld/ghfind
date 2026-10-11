@@ -916,6 +916,69 @@
         "total_penalty": 3.64,
         "bonus": 0.0
       }
+    },
+    {
+      "name": "maturity-half-even-up",
+      "overrides": {
+        "account_age_years": 1.5,
+        "verified_impact_pr_count": 2
+      },
+      "expected": {
+        "sub_scores": {
+          "account_maturity": 3.2,
+          "original_project_quality": 5.4,
+          "contribution_quality": 25.2,
+          "ecosystem_impact": 18.2,
+          "community_influence": 4.6,
+          "activity_authenticity": 16.3
+        },
+        "base_score": 72.9,
+        "final_score": 72.9,
+        "total_penalty": 0,
+        "bonus": 0.4
+      }
+    },
+    {
+      "name": "maturity-half-even-down",
+      "overrides": {
+        "account_age_years": 1.5,
+        "recent_merged_pr_sample": 2
+      },
+      "expected": {
+        "sub_scores": {
+          "account_maturity": 2.8,
+          "original_project_quality": 5.4,
+          "contribution_quality": 25.2,
+          "ecosystem_impact": 18.2,
+          "community_influence": 4.6,
+          "activity_authenticity": 16.3
+        },
+        "base_score": 72.5,
+        "final_score": 72.5,
+        "total_penalty": 0,
+        "bonus": 0.1
+      }
+    },
+    {
+      "name": "maturity-half-even-up-3.55",
+      "overrides": {
+        "account_age_years": 1.5,
+        "verified_impact_pr_count": 4
+      },
+      "expected": {
+        "sub_scores": {
+          "account_maturity": 3.6,
+          "original_project_quality": 5.4,
+          "contribution_quality": 25.2,
+          "ecosystem_impact": 18.2,
+          "community_influence": 4.6,
+          "activity_authenticity": 16.3
+        },
+        "base_score": 73.3,
+        "final_score": 73.3,
+        "total_penalty": 0,
+        "bonus": 0.8
+      }
     }
   ]
 }
