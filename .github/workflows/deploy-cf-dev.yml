@@ -150,6 +150,8 @@ jobs:
           pnpm --filter @ghfind/coord exec wrangler deploy --env dev --tag "$CF_VERSION_TAG"
           CLOUDFLARE_ENV=dev pnpm --filter @ghfind/web build
           pnpm --filter @ghfind/web exec wrangler deploy --tag "$CF_VERSION_TAG"
+          # Hosts the Talent Match Workflow ghfind-api-dev binds to, so before the API.
+          pnpm --filter @ghfind/talent exec wrangler deploy --env dev --tag "$CF_VERSION_TAG"
           pnpm --filter @ghfind/api exec wrangler deploy --env dev --keep-vars --tag "$CF_VERSION_TAG"
           pnpm --filter @ghfind/router exec wrangler deploy --env dev --tag "$CF_VERSION_TAG"
 

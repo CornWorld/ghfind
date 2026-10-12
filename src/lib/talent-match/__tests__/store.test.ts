@@ -93,6 +93,9 @@ describe("report ledger", () => {
     expect(await quotaCounts(core, 7, later)).toEqual({ doneThisMonth: 0, inFlight: 0 });
     expect(await insertQueuedReport(core, report({ now: later }))).toBe(true);
     expect((await getOwnReport(core, stuck.id, 7))?.status).toBe("failed");
+    // The stale run cannot revive its row afterwards.
+    await updateReport(core, stuck.id, { status: "done", now: later, result: { late: true } });
+    expect(await getOwnReport(core, stuck.id, 7)).toMatchObject({ status: "failed", result: null });
   });
 
   it("counts done free reports this month, accumulates tokens, and finds reusable reports", async () => {

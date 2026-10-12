@@ -500,6 +500,19 @@ export async function checkRoastRequestNetworkRateLimit(ip: string): Promise<Rat
   }
 }
 
+/** Talent Match reports run two LLM calls; one submission a minute per account
+ * (the monthly quota and the one-in-flight rule are enforced in D1). */
+export async function checkTalentReportRateLimit(githubId: number): Promise<RateLimitResult> {
+  const limiter = rateLimiter("rl:talent-report", 1, "60 s");
+  if (!limiter) return unavailableRateLimitResult("talent-report", "missing_redis_config");
+  try {
+    const { success, limit, remaining, reset } = await limiter.limit(String(githubId));
+    return { success, limit, remaining, reset };
+  } catch (error) {
+    return unavailableRateLimitResult("talent-report", error instanceof Error ? error.name : "redis_request_failed");
+  }
+}
+
 /** Project analysis starts a long-running Cattle Agent, so it uses a separate,
  * tighter budget than account scans. Turso still deduplicates identical active
  * analyses; this protects against many distinct repository submissions. */

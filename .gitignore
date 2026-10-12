@@ -66,6 +66,8 @@ scripts/repo-research/out/
 
 # talent-import pipeline checkpoints and generated personas (regenerable)
 scripts/talent-import/out/
+# Talent Match job-requirement backfill SQL (reviewed, then applied with wrangler)
+scripts/talent-match/out/
 
 # OpenNext / Cloudflare
 .open-next/

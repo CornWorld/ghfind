@@ -66,6 +66,10 @@
           { "name": "SCAN_SLOT", "class_name": "ScanSlot", "script_name": "ghfind-coord-dev" }
         ]
       },
+      // Talent Match reports run on ghfind-talent-dev (apps/talent).
+      "workflows": [
+        { "name": "ghfind-talent-report-dev", "binding": "TALENT_REPORT", "class_name": "TalentReportWorkflow", "script_name": "ghfind-talent-dev" }
+      ],
       "vars": {
         "GHFIND_DEPLOY_ENV": "preview",
         // Read-model caches on KV (src/lib/cache-store.ts), same namespace as
@@ -97,6 +101,10 @@
           { "name": "SCAN_SLOT", "class_name": "ScanSlot", "script_name": "ghfind-coord" }
         ]
       },
+      // Talent Match reports run on ghfind-talent (apps/talent).
+      "workflows": [
+        { "name": "ghfind-talent-report", "binding": "TALENT_REPORT", "class_name": "TalentReportWorkflow", "script_name": "ghfind-talent" }
+      ],
       "vars": {
         "GHFIND_DEPLOY_ENV": "production",
         "GHFIND_CACHE_BACKEND": "kv",

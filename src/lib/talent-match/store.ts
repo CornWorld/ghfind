@@ -117,7 +117,10 @@ export interface ReportUpdate {
   error?: string;
 }
 
-/** Advance a report. Token counts accumulate across steps. */
+/**
+ * Advance a report. Token counts accumulate across steps. Finished and failed
+ * reports are final: a run that was failed as stale cannot revive its row.
+ */
 export async function updateReport(db: Client, id: string, update: ReportUpdate): Promise<void> {
   await db.execute({
     sql: `UPDATE talent_reports SET
@@ -127,7 +130,7 @@ export async function updateReport(db: Client, id: string, update: ReportUpdate)
             tokens_out = COALESCE(tokens_out, 0) + ?,
             error = ?,
             updated_at = ?
-          WHERE id = ?`,
+          WHERE id = ? AND status NOT IN ('done', 'failed')`,
     args: [
       update.status,
       update.result === undefined ? null : JSON.stringify(update.result),

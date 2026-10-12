@@ -54,6 +54,10 @@ const API_ROUTES: readonly RegExp[] = [
   /^\/api\/follows\/[^/]+$/,
   /^\/api\/resumes$/,
   /^\/api\/talent\/[^/]+$/,
+  // Talent Match (reports run on the ghfind-talent Worker's Workflow).
+  /^\/api\/talent-match\/reports$/,
+  /^\/api\/talent-match\/reports\/[^/]+$/,
+  /^\/api\/talent-match\/(?:quota|profile)$/,
   // Batch 5: scoring, scans, LLM roasts/verdicts, project analyses, campaign
   // SSE, profile backfill, admin/internal jobs. (Feed stays on legacy: its
   // rollout is switched and verified on the legacy Worker by the release.)

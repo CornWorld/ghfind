@@ -57,6 +57,10 @@ const REVIEWED_NEXT_API_ROUTES = new Set([
   // Talent self-submission (was a Server Action): same-origin POST, writes a
   // pending row that is never listed until an operator reviews it.
   "src/app/api/talent/intake/route.ts",
+  "src/app/api/talent-match/reports/route.ts",
+  "src/app/api/talent-match/reports/[id]/route.ts",
+  "src/app/api/talent-match/quota/route.ts",
+  "src/app/api/talent-match/profile/route.ts",
   "src/app/api/card/[username]/route.tsx",
   "src/app/api/card/mini/[username]/route.ts",
   "src/app/api/card/vs/[a]/[b]/route.tsx",
