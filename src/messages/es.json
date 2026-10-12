@@ -54,10 +54,12 @@
       "talent": "Encuentra desarrolladores que vale la pena conocer",
       "githubBot": "Etiqueta issues y PR según la puntuación del autor",
       "cliApi": "Install the ghfind CLI and Agent Skill, and manage API tokens",
-      "jobs": "Vacantes en empresas de IA y open source"
+      "jobs": "Vacantes en empresas de IA y open source",
+      "talentMatch": "Informe de talento con IA, encaje con puestos y consejos"
     },
     "cliApi": "CLI & API",
-    "jobs": "Empleo"
+    "jobs": "Empleo",
+    "talentMatch": "Talent Match"
   },
   "globalSearch": {
     "open": "Abrir búsqueda global",

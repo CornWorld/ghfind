@@ -54,10 +54,12 @@
       "talent": "Tìm lập trình viên đáng để làm quen",
       "githubBot": "Tự gắn nhãn issue và PR theo điểm của tác giả",
       "cliApi": "Install the ghfind CLI and Agent Skill, and manage API tokens",
-      "jobs": "Vị trí đang tuyển tại công ty AI và mã nguồn mở"
+      "jobs": "Vị trí đang tuyển tại công ty AI và mã nguồn mở",
+      "talentMatch": "Báo cáo nhân tài AI, ghép vị trí và lời khuyên"
     },
     "cliApi": "CLI & API",
-    "jobs": "Việc làm"
+    "jobs": "Việc làm",
+    "talentMatch": "Ghép nối nhân tài"
   },
   "globalSearch": {
     "open": "Mở tìm kiếm toàn trang",

@@ -54,10 +54,12 @@
       "talent": "Find developers worth knowing",
       "githubBot": "Auto-label issues and PRs by author score",
       "cliApi": "Install the ghfind CLI and Agent Skill, and manage API tokens",
-      "jobs": "Open roles at AI and open-source companies"
+      "jobs": "Open roles at AI and open-source companies",
+      "talentMatch": "AI talent report, role matching and growth advice"
     },
     "cliApi": "CLI & API",
-    "jobs": "Jobs"
+    "jobs": "Jobs",
+    "talentMatch": "Talent Match"
   },
   "globalSearch": {
     "open": "Open global search",

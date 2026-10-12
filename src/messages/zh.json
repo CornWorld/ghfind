@@ -54,10 +54,12 @@
       "talent": "发现值得认识的开发者",
       "githubBot": "按作者评分给 issue 和 PR 自动打标签",
       "cliApi": "安装 ghfind CLI、配置 Agent Skill 并管理 API Token",
-      "jobs": "AI 与开源公司的在招职位"
+      "jobs": "AI 与开源公司的在招职位",
+      "talentMatch": "AI 人才画像、岗位匹配与成长建议"
     },
     "cliApi": "CLI & API",
-    "jobs": "招聘"
+    "jobs": "招聘",
+    "talentMatch": "人才匹配"
   },
   "globalSearch": {
     "open": "打开全局搜索",

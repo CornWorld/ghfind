@@ -54,10 +54,12 @@
       "talent": "知り合う価値のある開発者を探す",
       "githubBot": "作成者のスコアで issue と PR に自動ラベル付け",
       "cliApi": "Install the ghfind CLI and Agent Skill, and manage API tokens",
-      "jobs": "AI・オープンソース企業の募集職種"
+      "jobs": "AI・オープンソース企業の募集職種",
+      "talentMatch": "AI 人材レポート・職種マッチ・成長アドバイス"
     },
     "cliApi": "CLI & API",
-    "jobs": "求人"
+    "jobs": "求人",
+    "talentMatch": "タレントマッチ"
   },
   "globalSearch": {
     "open": "グローバル検索を開く",

@@ -54,10 +54,12 @@
       "talent": "Temukan developer yang layak dikenal",
       "githubBot": "Beri label otomatis pada issue dan PR berdasarkan skor penulis",
       "cliApi": "Install the ghfind CLI and Agent Skill, and manage API tokens",
-      "jobs": "Posisi terbuka di perusahaan AI dan open source"
+      "jobs": "Posisi terbuka di perusahaan AI dan open source",
+      "talentMatch": "Laporan talenta AI, pencocokan posisi, dan saran"
     },
     "cliApi": "CLI & API",
-    "jobs": "Lowongan"
+    "jobs": "Lowongan",
+    "talentMatch": "Talent Match"
   },
   "globalSearch": {
     "open": "Buka pencarian global",
