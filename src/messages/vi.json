@@ -552,7 +552,9 @@
     "suggestLanguage": "Bảng xếp hạng dev {value}",
     "suggestOrg": "{value} · thành viên tổ chức",
     "pkHalfHint": "Gõ tên đối thủ, rồi nhấn Enter để chiến",
-    "lockedRemove": "Gỡ bỏ"
+    "lockedRemove": "Gỡ bỏ",
+    "ctaMatch": "Ghép nối",
+    "ctaMatchHint": "Báo cáo nhân tài và vị trí phù hợp"
   },
   "blog": {
     "heading": "Nghiên cứu",

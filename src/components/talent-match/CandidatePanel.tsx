@@ -43,6 +43,7 @@ export type CandidateInputs = { github: string | null; website: string; pdfName:
 export function CandidatePanel({
   copy,
   login,
+  handoff,
   canGenerate,
   onGenerated,
   onSignIn,
@@ -50,6 +51,8 @@ export function CandidatePanel({
   copy: Copy;
   /** Signed-in GitHub login, or null when signed out. */
   login: string | null;
+  /** GitHub handle passed in from the home search box, if any. */
+  handoff: string | null;
   /** False when signed out or out of quota. */
   canGenerate: boolean;
   onGenerated: () => void;
@@ -82,8 +85,9 @@ export function CandidatePanel({
     return () => clearTimeout(timer);
   }, [stage, onGenerated]);
 
-  // Until edited, the GitHub field follows the signed-in account.
-  const github = inputs.github ?? login ?? "";
+  // Until edited, the GitHub field follows the home-search handoff, then the
+  // signed-in account.
+  const github = inputs.github ?? handoff ?? login ?? "";
   const hasSource = Boolean(github.trim() || inputs.website.trim() || inputs.pdfName || (inputs.useResume && localResumes > 0));
 
   if (stage !== null) {

@@ -552,7 +552,9 @@
     "suggestLanguage": "{value} 开发者含金量榜",
     "suggestOrg": "{value} · 组织成员榜",
     "pkHalfHint": "再输一个对手，回车开战",
-    "lockedRemove": "移除"
+    "lockedRemove": "移除",
+    "ctaMatch": "人才匹配",
+    "ctaMatchHint": "生成人才画像并匹配岗位"
   },
   "blog": {
     "heading": "研究",

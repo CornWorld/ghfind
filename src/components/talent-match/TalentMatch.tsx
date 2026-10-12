@@ -23,10 +23,17 @@ export function TalentMatch({ zh }: { zh: boolean }) {
   const [tab, setTab] = useState<Tab>("candidate");
   const [login, setLogin] = useState<string | null>(null);
   const [quota, setQuota] = useState<Quota>(MOCK_QUOTA);
+  // Handle handed over by the home search box's Match button (?github=).
+  const [handoff, setHandoff] = useState<string | null>(null);
 
   useEffect(() => {
     let live = true;
     fetchMe().then((me) => { if (live) setLogin(me.user?.login ?? null); });
+    // Read after hydration so the static shell never depends on the query.
+    Promise.resolve().then(() => {
+      const github = new URLSearchParams(window.location.search).get("github")?.trim();
+      if (live && github) setHandoff(github.slice(0, 39));
+    });
     return () => { live = false; };
   }, []);
 
@@ -84,7 +91,7 @@ export function TalentMatch({ zh }: { zh: boolean }) {
 
       <div role="tabpanel" id={`tm-panel-${tab}`} aria-labelledby={`tm-tab-${tab}`} className="mt-5">
         {tab === "candidate" ? (
-          <CandidatePanel copy={copy} login={login} canGenerate={remaining > 0} onGenerated={onGenerated} onSignIn={onSignIn} />
+          <CandidatePanel copy={copy} login={login} handoff={handoff} canGenerate={remaining > 0} onGenerated={onGenerated} onSignIn={onSignIn} />
         ) : (
           <CompanyPanel copy={copy} login={login} onSignIn={onSignIn} />
         )}

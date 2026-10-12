@@ -552,7 +552,9 @@
     "suggestLanguage": "{value} 開発者ランキング",
     "suggestOrg": "{value} · 組織メンバー",
     "pkHalfHint": "対戦相手を入力してEnterで開戦",
-    "lockedRemove": "外す"
+    "lockedRemove": "外す",
+    "ctaMatch": "マッチ",
+    "ctaMatchHint": "人材レポートと職種マッチ"
   },
   "blog": {
     "heading": "リサーチ",

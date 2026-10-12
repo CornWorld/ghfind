@@ -552,7 +552,9 @@
     "suggestLanguage": "لوحة صدارة مطوري {value}",
     "suggestOrg": "{value} · أعضاء المنظمة",
     "pkHalfHint": "اكتب اسم خصم ثم اضغط Enter للنزال",
-    "lockedRemove": "إزالة"
+    "lockedRemove": "إزالة",
+    "ctaMatch": "مطابقة",
+    "ctaMatchHint": "تقرير المواهب والوظائف المطابقة"
   },
   "blog": {
     "heading": "الأبحاث",

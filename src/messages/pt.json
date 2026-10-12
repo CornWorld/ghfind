@@ -552,7 +552,9 @@
     "suggestLanguage": "Ranking de devs de {value}",
     "suggestOrg": "{value} · membros da org",
     "pkHalfHint": "Digite um oponente e aperte Enter pra lutar",
-    "lockedRemove": "Remover"
+    "lockedRemove": "Remover",
+    "ctaMatch": "Match",
+    "ctaMatchHint": "Relatório de talento e vagas compatíveis"
   },
   "blog": {
     "heading": "Pesquisa",

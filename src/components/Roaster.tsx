@@ -381,6 +381,10 @@ export function Roaster({
           busy={scanning || roasting}
           placeholder={inputPlaceholder}
           stackCtaOnMobile={Boolean(campaign)}
+          onMatch={campaign ? undefined : (u) => {
+            trackEvent("talent_match_cta", { source: analyticsSource });
+            router.push(u ? `/talent-match?github=${encodeURIComponent(u)}` : "/talent-match");
+          }}
         />
         <Turnstile onToken={setToken} />
         {error && <p className="text-sm text-rose-400">{error}</p>}

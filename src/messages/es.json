@@ -552,7 +552,9 @@
     "suggestLanguage": "Ranking de developers de {value}",
     "suggestOrg": "{value} · miembros de la org",
     "pkHalfHint": "Escribe un oponente y presiona Enter para pelear",
-    "lockedRemove": "Quitar"
+    "lockedRemove": "Quitar",
+    "ctaMatch": "Match",
+    "ctaMatchHint": "Informe de talento y puestos afines"
   },
   "blog": {
     "heading": "Research",

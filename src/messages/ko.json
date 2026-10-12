@@ -552,7 +552,9 @@
     "suggestLanguage": "{value} 개발자 랭킹",
     "suggestOrg": "{value} · 조직 멤버",
     "pkHalfHint": "상대를 입력하고 Enter로 파이트",
-    "lockedRemove": "제거"
+    "lockedRemove": "제거",
+    "ctaMatch": "매칭",
+    "ctaMatchHint": "인재 리포트와 직무 매칭"
   },
   "blog": {
     "heading": "리서치",

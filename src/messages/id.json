@@ -552,7 +552,9 @@
     "suggestLanguage": "Peringkat developer {value}",
     "suggestOrg": "{value} · anggota org",
     "pkHalfHint": "Ketik lawan, lalu tekan Enter untuk bertarung",
-    "lockedRemove": "Hapus"
+    "lockedRemove": "Hapus",
+    "ctaMatch": "Cocokkan",
+    "ctaMatchHint": "Laporan talenta dan posisi yang cocok"
   },
   "blog": {
     "heading": "Riset",

@@ -859,6 +859,12 @@ html .omnibox-field input { height: 42px; background: transparent; font-size: 14
 .omnibox-field input:focus-visible { outline: none; }
 .omnibox-submit { min-height: 42px; padding-inline: 22px; border-radius: 999px; background: var(--primary); color: var(--primary-foreground); box-shadow: none; }
 .omnibox-submit:hover { background: color-mix(in srgb, var(--primary) 85%, var(--background)); }
+/* Talent Match CTA beside Judge: the same pill, in the brand orange so it reads
+   as the headline action in both themes. Icon-only on narrow screens. */
+.omnibox-match { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 42px; padding-inline: 18px; border-radius: 999px; font-size: 14px; font-weight: 600; color: #fff; background: linear-gradient(135deg, #f97316, #e11d48); box-shadow: 0 6px 18px -8px rgb(249 115 22 / .7); transition: filter 150ms, box-shadow 150ms; }
+.omnibox-match:hover { filter: brightness(1.08); box-shadow: 0 8px 22px -8px rgb(249 115 22 / .85); }
+.omnibox-match:focus-visible { outline: 2px solid #f97316; outline-offset: 2px; }
+.omnibox-match:disabled { cursor: wait; opacity: .6; }
 .home-content { margin-top: 58px; padding-top: 28px; border-top: 1px solid var(--border); }
 .home-content > aside { top: 122px; }
 .home-content h2 { font-size: 20px; letter-spacing: -.025em; }
@@ -976,6 +982,8 @@ html .omnibox-field { background: var(--input); }
   .home-content { margin-top: 36px; padding-top: 24px; }
   .home-faq { grid-template-columns: 1fr; gap: 24px; }
   .omnibox-submit { padding-inline: 16px; }
+  .omnibox-match { padding-inline: 12px; }
+  .omnibox-match-label { display: none; }
 }
 @media (max-width: 639px) {
   .hiring-note-rule { display: none; }

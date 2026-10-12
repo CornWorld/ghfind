@@ -552,7 +552,9 @@
     "suggestLanguage": "{value} developer leaderboard",
     "suggestOrg": "{value} · org members",
     "pkHalfHint": "Type an opponent, then hit Enter to fight",
-    "lockedRemove": "Remove"
+    "lockedRemove": "Remove",
+    "ctaMatch": "Match",
+    "ctaMatchHint": "Talent report + matching roles"
   },
   "blog": {
     "heading": "Research",
