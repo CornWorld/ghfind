@@ -159,11 +159,21 @@ export interface MatchResult {
 }
 
 /**
- * Step 3: score every open job (the board is small enough that recall would
- * only add misses), then pick Feed projects for the common gaps.
+ * A job is matchable only when its copy states at least one skill: with none,
+ * every coverage term is vacuously 100 and a non-engineering role (or one
+ * listed by title alone) would rank as a perfect match for everyone.
+ */
+export function hasSkillRequirements(requirement: { mustHave: readonly unknown[]; niceToHave: readonly unknown[] }): boolean {
+  return requirement.mustHave.length + requirement.niceToHave.length > 0;
+}
+
+/**
+ * Step 3: score every open job with stated skill requirements (the board is
+ * small enough that recall would only add misses), then pick Feed projects
+ * for the common gaps.
  */
 export async function runMatch(db: Client, feedDb: Client | null, profile: StoredProfile, now: number): Promise<MatchResult> {
-  const jobs = await listMatchableJobs(db, now);
+  const jobs = (await listMatchableJobs(db, now)).filter((job) => hasSkillRequirements(job.requirement));
   const scored = topMatches(jobs.map((job) => ({ job, score: scoreMatch(profile, job.requirement) })), REPORT_MATCH_LIMIT);
   const gaps = commonGaps(scored.slice(0, 5));
   const pool = feedDb ? await listGrowthProjects(feedDb) : [];

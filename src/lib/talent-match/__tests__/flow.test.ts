@@ -139,6 +139,19 @@ describe("candidate pipeline", () => {
     expect(Number(tokens.rows[0].tokens_in)).toBeGreaterThan(0);
   });
 
+  it("does not match jobs that state no skills (non-engineering roles, title-only listings)", async () => {
+    const empty = { ...requirement, mustHave: [], niceToHave: [] };
+    const other = String((await core.execute({ sql: "SELECT id FROM jobs WHERE status = 'open' AND id <> ? ORDER BY id LIMIT 1", args: [jobId] })).rows[0].id);
+    await upsertJobRequirement(core, { jobId: other, requirement: empty, inputHash: "e", vectorId: null, now: 1 });
+    try {
+      const profile = (await runVerify(core, { reportId: "v", githubId: 9, login: "nobody", source: { kind: "profile" }, preferences: { location: "", remote: false, employment: [] }, inputHash: "", createdAt: 0 }, JSON.parse(JSON.stringify(extraction)), "v11", 0)).profile;
+      const match = await runMatch(core, null, profile, Date.now());
+      expect(match.scored.map((s) => s.job.id)).toEqual([jobId]);
+    } finally {
+      await core.execute({ sql: "DELETE FROM job_requirements WHERE id = ?", args: [other] });
+    }
+  });
+
   it("never sends contact details to the model and reports a missing résumé as input error", async () => {
     const text = await loadResumeText(core, 7, { kind: "resume", id: "r1" });
     expect(text).toContain("vLLM scheduler");
