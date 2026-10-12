@@ -407,7 +407,7 @@ describe("getArchivedRoast", () => {
       roast: "## report before score change",
     });
 
-    await db.recordScore({
+    await writeScore({
       ...entry,
       username,
       final_score: 92,
@@ -2117,13 +2117,14 @@ describe("profile snapshots", () => {
     });
   });
 
-  it("reads only v10 profile snapshots and ignores legacy snapshots", async () => {
+  it("reads only v11 profile snapshots and ignores legacy snapshots", async () => {
     const client = createClient({ url: process.env.TURSO_DATABASE_URL! });
     const username = "profile-version-fixture";
     const rows = [
       ["profile-v8", username, 300, JSON.stringify({ followers: 8 }), "v8"],
+      ["profile-v10", username, 350, JSON.stringify({ followers: 10 }), "v10"],
       ["profile-local", username, 400, JSON.stringify({ followers: 99 }), "local-fixture"],
-      ["profile-v10", username, 200, JSON.stringify({ followers: 9 }), "v10"],
+      ["profile-v11", username, 200, JSON.stringify({ followers: 9 }), "v11"],
     ];
     for (const row of rows) {
       await client.execute({
@@ -2139,7 +2140,7 @@ describe("profile snapshots", () => {
     });
     await client.execute({
       sql: `DELETE FROM profile_snapshots WHERE id = ?`,
-      args: ["profile-v10"],
+      args: ["profile-v11"],
     });
     await expect(db.getProfileSnapshot(username)).resolves.toBeNull();
 
