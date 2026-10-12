@@ -16,7 +16,7 @@ export type Degree = (typeof DEGREES)[number];
 
 export const RESEARCH_REQUIREMENTS = ["none", "preferred", "required"] as const;
 
-const DIRECTIONS = TALENT_CATEGORIES.map((c) => c.id) as [
+export const DIRECTION_IDS = TALENT_CATEGORIES.map((c) => c.id) as [
   (typeof TALENT_CATEGORIES)[number]["id"],
   ...(typeof TALENT_CATEGORIES)[number]["id"][],
 ];
@@ -52,7 +52,7 @@ const extractedEducation = z.object({
 export const extractedProfileSchema = z.object({
   name: line(120),
   headline: text,
-  direction: z.enum(DIRECTIONS),
+  direction: z.enum(DIRECTION_IDS),
   years: z.number().min(0).max(60),
   skills: z.array(extractedSkill).max(40),
   experience: z.array(extractedItem).max(20),
@@ -66,7 +66,7 @@ const requirementSkill = z.object({ id: line(80).min(1), level });
 /** LLM #1 output for a job description; the same schema serves pasted JDs. */
 export const extractedRequirementSchema = z.object({
   title: text,
-  direction: z.enum(DIRECTIONS),
+  direction: z.enum(DIRECTION_IDS),
   yearsMin: z.number().min(0).max(30).nullable(),
   location: line(200),
   employment: z.array(z.enum(EMPLOYMENT_TYPES)).max(EMPLOYMENT_TYPES.length),
@@ -92,7 +92,7 @@ export const storedProfileSchema = z.object({
   login: line(39).min(1),
   name: line(120),
   headline: text,
-  direction: z.enum(DIRECTIONS),
+  direction: z.enum(DIRECTION_IDS),
   years: z.number().min(0).max(60),
   skills: z.array(storedSkillSchema).max(60),
   experience: z.array(extractedItem.extend({ source })).max(20),
