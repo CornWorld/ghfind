@@ -1654,6 +1654,11 @@
       "full_time": "정규직",
       "intern": "인턴",
       "part_time": "파트타임"
-    }
+    },
+    "backToJobs": "전체 채용",
+    "apply": "지원하기",
+    "applyByEmail": "이메일로 지원",
+    "emailNote": "이력서 보낼 곳: {email}",
+    "detailNote": "ghfind는 채용 정보만 게시하며, 채용 결정은 기업이 합니다."
   }
 }

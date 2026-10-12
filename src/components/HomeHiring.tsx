@@ -1,4 +1,5 @@
-import { ArrowUpRight, Megaphone, Trophy } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Megaphone, Trophy } from "lucide-react";
+import type { ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
 import type { JobListing } from "@/lib/jobs";
 import type { Translator } from "@/lib/translator";
@@ -56,17 +57,27 @@ export function SponsorNote({ t }: { t: Translator }) {
   );
 }
 
-/** One job card; opens the company's own job post in a new tab. */
+/**
+ * One job card. Jobs with a full JD open their /jobs/<id> page; the rest open
+ * the company's own job post in a new tab.
+ */
 export function HiringCard({ job, t, showSummary = false }: { job: JobListing; t: Translator; showSummary?: boolean }) {
   const details = [job.location, job.category].filter(Boolean).join(" · ");
-  return (
-    <a
-      href={job.applyUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={`${job.title} · ${job.company.name}`}
-      className={`hiring-card${job.pinned ? " hiring-card-sponsored" : ""}`}
-    >
+  const label = `${job.title} · ${job.company.name}`;
+  const className = `hiring-card${job.pinned ? " hiring-card-sponsored" : ""}`;
+  const Arrow = job.hasDetail ? ArrowRight : ArrowUpRight;
+  const wrap = (children: ReactNode) =>
+    job.hasDetail ? (
+      <Link href={`/jobs/${encodeURIComponent(job.id)}`} prefetch={false} aria-label={label} className={className}>
+        {children}
+      </Link>
+    ) : (
+      <a href={job.applyUrl} target="_blank" rel="noopener noreferrer" aria-label={label} className={className}>
+        {children}
+      </a>
+    );
+  return wrap(
+    <>
       <div className="hiring-company">
         <span className="hiring-logo" aria-hidden="true">
           {job.company.logoUrl ? (
@@ -92,8 +103,8 @@ export function HiringCard({ job, t, showSummary = false }: { job: JobListing; t
         {job.employmentTypes.map((type) => (
           <span key={type}>{t(`type.${type}`)}</span>
         ))}
-        <ArrowUpRight className="hiring-arrow" aria-hidden="true" />
+        <Arrow className="hiring-arrow" aria-hidden="true" />
       </div>
-    </a>
+    </>,
   );
 }

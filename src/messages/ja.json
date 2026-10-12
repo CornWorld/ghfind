@@ -1654,6 +1654,11 @@
       "full_time": "正社員",
       "intern": "インターン",
       "part_time": "パートタイム"
-    }
+    },
+    "backToJobs": "すべての求人",
+    "apply": "応募する",
+    "applyByEmail": "メールで応募",
+    "emailNote": "履歴書の送付先：{email}",
+    "detailNote": "ghfind は求人情報を掲載するのみで、採用の判断は企業が行います。"
   }
 }

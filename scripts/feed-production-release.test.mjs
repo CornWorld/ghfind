@@ -115,7 +115,7 @@ test('Web readback rejects malformed, split, replaced or changed deployments inc
 });
 test('production Feed schema approval covers the complete fixed migrations without widening dev application releases',async()=>{
  const m=JSON.parse(readFileSync(new URL('../ops/feed-production-schema-release.json',import.meta.url)));
- const r=await approvedSchemas(m);assert.equal(r.core.length,16);assert.equal(r.feed.length,12);
+ const r=await approvedSchemas(m);assert.equal(r.core.length,17);assert.equal(r.feed.length,12);
  const legacy=JSON.parse(readFileSync(new URL('../ops/feed-application-schema-release.json',import.meta.url)));
  assert.equal(legacy.feed.length,2);
  assert.ok(r.core.some(e=>e.name==='0017_discovery_read_indexes.sql'));
@@ -128,6 +128,7 @@ test('production Feed schema approval covers the complete fixed migrations witho
   assert.ok(core.some(e=>e.name==='0021_sponsorship_translations.sql'),'sponsor i18n schema approved');
   assert.ok(core.some(e=>e.name==='0022_collections.sql'),'collections schema approved');
   assert.ok(core.some(e=>e.name==='0023_megatron_hiring_sponsor.sql'),'Megatron hiring placement approved');
+  assert.ok(core.some(e=>e.name==='0024_job_descriptions.sql'),'job detail descriptions approved');
  }
  assert.ok(!legacy.core.some(e=>e.name==='0005_feed_source_outbox.sql'));
 });

@@ -1654,6 +1654,11 @@
       "full_time": "Penuh waktu",
       "intern": "Magang",
       "part_time": "Paruh waktu"
-    }
+    },
+    "backToJobs": "Semua lowongan",
+    "apply": "Lamar",
+    "applyByEmail": "Lamar lewat email",
+    "emailNote": "Kirim CV ke {email}",
+    "detailNote": "ghfind hanya menampilkan lowongan ini; keputusan rekrutmen sepenuhnya ada di perusahaan."
   }
 }

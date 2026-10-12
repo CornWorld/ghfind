@@ -17,6 +17,7 @@ import { GithubBotView } from "@/components/pages/GithubBotView";
 import { DevelopersIndexView } from "@/components/pages/DevelopersIndexView";
 import { HomeView } from "@/components/pages/HomeView";
 import { JobsView } from "@/components/pages/JobsView";
+import { JobDetailView } from "@/components/pages/JobDetailView";
 import { RouteContext } from "../shims/route-context";
 
 function Route({ locale, path, children }: { locale: Locale; path: string; children: ReactNode }) {
@@ -68,6 +69,10 @@ export function DevelopersIndex({ route, ...props }: Routed<typeof DevelopersInd
 
 export function Jobs({ route, ...props }: Routed<typeof JobsView>) {
   return <Route {...route}><JobsView {...props} /></Route>;
+}
+
+export function JobDetail({ route, ...props }: Routed<typeof JobDetailView>) {
+  return <Route {...route}><JobDetailView {...props} /></Route>;
 }
 
 type HomeSlots = "roaster" | "developerCount" | "sponsorRow" | "collections" | "leaderboardRail";
