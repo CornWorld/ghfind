@@ -39,6 +39,9 @@ CREATE INDEX IF NOT EXISTS idx_talent_reports_quota
   ON talent_reports(github_id, kind, status, created_at);
 CREATE INDEX IF NOT EXISTS idx_talent_reports_hash
   ON talent_reports(github_id, input_hash);
+-- The global monthly token budget sums free-channel usage across all users.
+CREATE INDEX IF NOT EXISTS idx_talent_reports_month
+  ON talent_reports(byo_key, created_at);
 
 -- Structured requirements (JobRequirement JSON), shared by hiring-board jobs
 -- (id = jobs.id) and pasted JDs (id = 'jd-' || input hash, job_id NULL).

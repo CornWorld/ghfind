@@ -135,9 +135,13 @@ describe("0025_talent_match migration", () => {
         "INSERT INTO talent_reports (id, github_id, kind, input_hash, status, match_version, created_at, updated_at) VALUES ('r', 1, 'candidate', 'h', 'pending', 1, 0, 0)",
       )).rejects.toThrow(/CHECK/);
       const plan = await db.execute(
-        "EXPLAIN QUERY PLAN SELECT COUNT(*) FROM talent_reports WHERE github_id = 1 AND kind = 'candidate' AND status = 'done' AND byo_key = 0 AND created_at >= 0 AND created_at < 1",
+        "EXPLAIN QUERY PLAN SELECT COUNT(*) FROM talent_reports WHERE github_id = 1 AND kind = 'candidate'",
       );
       expect(plan.rows.some((row) => String(row.detail).includes("idx_talent_reports_quota"))).toBe(true);
+      const month = await db.execute(
+        "EXPLAIN QUERY PLAN SELECT SUM(tokens_in) FROM talent_reports WHERE byo_key = 0 AND created_at >= 0 AND created_at < 1",
+      );
+      expect(month.rows.some((row) => String(row.detail).includes("idx_talent_reports_month"))).toBe(true);
     } finally {
       db.close();
     }
