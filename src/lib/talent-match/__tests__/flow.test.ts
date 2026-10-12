@@ -30,6 +30,7 @@ import { DELETE as deleteProfile } from "@/app/api/talent-match/profile/route";
 import {
   candidateInputHash,
   failReport,
+  jobsNeedingSync,
   jobsRevision,
   loadResumeText,
   runAdvise,
@@ -37,6 +38,7 @@ import {
   runFinish,
   runMatch,
   runVerify,
+  syncJobRequirement,
   type CandidateParams,
 } from "../pipeline";
 import { getOwnReport, getProfile, upsertJobRequirement, updateReport } from "../store";
@@ -151,6 +153,23 @@ describe("candidate pipeline", () => {
     const base = { login: "Lin", resumeText: "cv", preferences: { location: "", remote: false, employment: [] as never[] }, jobsRevision: await jobsRevision(core) };
     expect(candidateInputHash(base)).toBe(candidateInputHash({ ...base, login: "lin" }));
     expect(candidateInputHash(base)).not.toBe(candidateInputHash({ ...base, jobsRevision: "other" }));
+  });
+});
+
+describe("job requirement sync", () => {
+  it("extracts only jobs whose copy changed, and nothing on a second pass", async () => {
+    const now = Date.now();
+    const pending = await jobsNeedingSync(core, now);
+    // The seeded job's requirement was stored with a placeholder hash, so every open job is pending.
+    const open = Number((await core.execute("SELECT COUNT(*) AS n FROM jobs WHERE status = 'open'")).rows[0].n);
+    expect(pending).toHaveLength(open);
+    const job = pending.find((j) => j.id === jobId)!;
+    const jd = vi.fn(async () => JSON.stringify({ ...requirement, mustHave: [{ id: "vLLM", level: 3 }, { id: "fortran", level: 2 }] }));
+    expect(await syncJobRequirement(core, jd, job, now)).toEqual({ unknownSkills: ["fortran"] });
+    expect((await jobsNeedingSync(core, now)).some((j) => j.id === jobId)).toBe(false);
+    expect((await jobsNeedingSync(core, now, true)).some((j) => j.id === jobId)).toBe(true);
+    // Restore the fixture requirement the other tests score against.
+    await upsertJobRequirement(core, { jobId, requirement, inputHash: "h", vectorId: null, now: 1 });
   });
 });
 

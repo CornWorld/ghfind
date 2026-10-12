@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { defaultLlmConfig, fallbackLlmConfig, type LlmConfig } from "@/lib/llm";
 import { readResumeLibraryFull } from "@/lib/resume";
 import type { SubScoreKey } from "@/lib/types";
-import { ExtractionError, extractCandidate, resumeToText, type Complete, type Usage } from "./extract";
+import { ExtractionError, extractCandidate, extractRequirement, resumeToText, type Complete, type Usage } from "./extract";
 import {
   assembleCandidateReport,
   commonGaps,
@@ -19,6 +19,8 @@ import { MATCH_VERSION, scoreMatch, type MatchGap } from "./score";
 import {
   attachStars,
   listGrowthProjects,
+  listJobSources,
+  upsertJobRequirement,
   listMatchableJobs,
   loadDimensions,
   loadVerifiedEvidence,
@@ -225,4 +227,30 @@ export function isFinalFailure(error: unknown): boolean {
 /** Fail a report with a public error code (see {@link failureCode}). */
 export async function failReport(db: Client, reportId: string, code: string, now: number): Promise<void> {
   await updateReport(db, reportId, { status: "failed", now, error: code });
+}
+
+/** Hash of a job's source copy under the current schema; unchanged hash = no re-extraction. */
+export function jobInputHash(text: string): string {
+  return createHash("sha256").update(`${SCHEMA_VERSION}\n${text}`).digest("hex");
+}
+
+/** Open jobs whose requirement is missing or was extracted from different copy. */
+export async function jobsNeedingSync(db: Client, now: number, all = false): Promise<{ id: string; text: string; inputHash: string }[]> {
+  const sources = await listJobSources(db, now);
+  return sources.flatMap((job) => {
+    const inputHash = jobInputHash(job.text);
+    return all || job.storedHash !== inputHash ? [{ id: job.id, text: job.text, inputHash }] : [];
+  });
+}
+
+/** Extract and store one job's requirement (LLM #1); returns unknown skill names for logging. */
+export async function syncJobRequirement(
+  db: Client,
+  complete: Complete,
+  job: { id: string; text: string; inputHash: string },
+  now: number,
+): Promise<{ unknownSkills: string[] }> {
+  const { requirement, unknownSkills } = await extractRequirement(complete, job.text);
+  await upsertJobRequirement(db, { jobId: job.id, requirement, inputHash: job.inputHash, vectorId: null, now });
+  return { unknownSkills };
 }

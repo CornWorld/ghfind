@@ -6,11 +6,13 @@ import {
   failReport,
   failureCode,
   isFinalFailure,
+  jobsNeedingSync,
   runAdvise,
   runExtract,
   runFinish,
   runMatch,
   runVerify,
+  syncJobRequirement,
   talentLlmConfigs,
   type CandidateParams,
 } from "@/lib/talent-match/pipeline";
@@ -25,6 +27,12 @@ import {
 interface Env {
   GHFIND_D1: D1DatabaseLike;
   GHFIND_FEED_D1?: D1DatabaseLike;
+  JOB_SYNC: Workflow<JobSyncParams>;
+}
+
+interface JobSyncParams {
+  /** Re-extract every open job, not only changed ones. */
+  all?: boolean;
 }
 
 const LLM_STEP: WorkflowStepConfig = { retries: { limit: 2, delay: "30 seconds", backoff: "exponential" }, timeout: "5 minutes" };
@@ -82,8 +90,37 @@ export class TalentReportWorkflow extends WorkflowEntrypoint<Env, CandidateParam
   }
 }
 
+/**
+ * Keep job_requirements in step with the hiring board: extract every open
+ * job whose copy changed (hash differs), one durable step per job so a
+ * failure only skips that job. Started by the production cron, or by hand:
+ * `wrangler workflows trigger ghfind-talent-jobs[-dev] '{"all":false}'`.
+ */
+export class JobSyncWorkflow extends WorkflowEntrypoint<Env, JobSyncParams> {
+  async run(event: Readonly<WorkflowEvent<JobSyncParams>>, step: WorkflowStep) {
+    const db = d1AsLibsqlClient(this.env.GHFIND_D1);
+    const jobs = await step.do("list", DB_STEP, () => jobsNeedingSync(db, Date.now(), event.payload?.all === true));
+    const complete = llmCompleter(talentLlmConfigs());
+    const failed: string[] = [];
+    const unknown: string[] = [];
+    for (const job of jobs) {
+      const result = await step.do(`job:${job.id}`, LLM_STEP, () =>
+        outcome(() => syncJobRequirement(db, complete, job, Date.now())),
+      ).catch(() => ({ ok: false as const, code: "generation_failed" }));
+      if (result.ok) unknown.push(...result.value.unknownSkills);
+      else failed.push(job.id);
+    }
+    const summary = { synced: jobs.length - failed.length, failed, unknownSkills: [...new Set(unknown)] };
+    console.log("talent_job_sync", summary);
+    return summary;
+  }
+}
+
 export default {
   async fetch(): Promise<Response> {
     return new Response("Not found", { status: 404 });
+  },
+  async scheduled(_controller, env) {
+    await env.JOB_SYNC.create({ params: {} });
   },
 } satisfies ExportedHandler<Env>;

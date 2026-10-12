@@ -2,6 +2,10 @@
  * Extract structured requirements (job_requirements) for open hiring-board jobs
  * whose copy changed since their last extraction, for Talent Match.
  *
+ * Normally unnecessary: the ghfind-talent Worker's JobSyncWorkflow does this
+ * daily in production (and on demand with `wrangler workflows trigger`). This
+ * script is the offline fallback, for reviewing the extraction as SQL first.
+ *
  * Reads the job copy from remote D1 (read-only `wrangler d1 execute --json`),
  * runs LLM #1 locally with the operator's keys from .env (LLM_* or
  * TALENT_LLM_*), and — like the other D1 backfills — only emits reviewable
@@ -17,11 +21,10 @@
  */
 import "./_env.mjs";
 import { execFileSync } from "node:child_process";
-import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import type { Client, InStatement } from "@libsql/client";
 import { extractRequirement, llmCompleter } from "../src/lib/talent-match/extract";
-import { talentLlmConfigs } from "../src/lib/talent-match/pipeline";
+import { jobInputHash, talentLlmConfigs } from "../src/lib/talent-match/pipeline";
 import { SCHEMA_VERSION } from "../src/lib/talent-match/schema";
 import { listJobSources } from "../src/lib/talent-match/store";
 
@@ -76,7 +79,7 @@ async function main() {
   let skipped = 0;
   let failed = 0;
   for (const job of sources) {
-    const inputHash = createHash("sha256").update(`${SCHEMA_VERSION}\n${job.text}`).digest("hex");
+    const inputHash = jobInputHash(job.text);
     if (!all && job.storedHash === inputHash) {
       skipped++;
       continue;

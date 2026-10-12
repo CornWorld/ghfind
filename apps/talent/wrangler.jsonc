@@ -1,5 +1,6 @@
 {
-  // ghfind-talent: hosts the Talent Match report Workflow. No routes; the API
+  // ghfind-talent: hosts the Talent Match report Workflow and the job
+  // requirement sync Workflow (JobSyncWorkflow). No routes; the API
   // Worker (ghfind-api) starts instances through a cross-script `workflows`
   // binding (TALENT_REPORT). Reads the core D1 and the Feed D1 (growth
   // projects). LLM credentials are operator-held secrets on this Worker:
@@ -18,7 +19,8 @@
     "@opennextjs/cloudflare": "./src/shims/opennext-cloudflare.ts"
   },
   "workflows": [
-    { "name": "ghfind-talent-report-local", "binding": "TALENT_REPORT", "class_name": "TalentReportWorkflow" }
+    { "name": "ghfind-talent-report-local", "binding": "TALENT_REPORT", "class_name": "TalentReportWorkflow" },
+    { "name": "ghfind-talent-jobs-local", "binding": "JOB_SYNC", "class_name": "JobSyncWorkflow" }
   ],
   "d1_databases": [
     { "binding": "GHFIND_D1", "database_name": "ghfind", "database_id": "60d45096-bfe7-4de1-8b85-c1b66a466b0d" },
@@ -29,8 +31,12 @@
     "dev": {
       "name": "ghfind-talent-dev",
       "workflows": [
-        { "name": "ghfind-talent-report-dev", "binding": "TALENT_REPORT", "class_name": "TalentReportWorkflow" }
+        { "name": "ghfind-talent-report-dev", "binding": "TALENT_REPORT", "class_name": "TalentReportWorkflow" },
+        { "name": "ghfind-talent-jobs-dev", "binding": "JOB_SYNC", "class_name": "JobSyncWorkflow" }
       ],
+      // No cron on dev: dev and production share the core database, so the
+      // production cron keeps job_requirements current for both. Trigger
+      // ghfind-talent-jobs-dev by hand when testing.
       "d1_databases": [
         { "binding": "GHFIND_D1", "database_name": "ghfind", "database_id": "60d45096-bfe7-4de1-8b85-c1b66a466b0d" },
         { "binding": "GHFIND_FEED_D1", "database_name": "ghfind-feed-dev", "database_id": "bd305af9-2cab-4fe8-8c2f-324391cf105e" }
@@ -40,8 +46,11 @@
     "production": {
       "name": "ghfind-talent",
       "workflows": [
-        { "name": "ghfind-talent-report", "binding": "TALENT_REPORT", "class_name": "TalentReportWorkflow" }
+        { "name": "ghfind-talent-report", "binding": "TALENT_REPORT", "class_name": "TalentReportWorkflow" },
+        { "name": "ghfind-talent-jobs", "binding": "JOB_SYNC", "class_name": "JobSyncWorkflow" }
       ],
+      // Daily job-requirement sync; unchanged jobs cost one indexed read each.
+      "triggers": { "crons": ["17 3 * * *"] },
       "d1_databases": [
         { "binding": "GHFIND_D1", "database_name": "ghfind", "database_id": "60d45096-bfe7-4de1-8b85-c1b66a466b0d" },
         { "binding": "GHFIND_FEED_D1", "database_name": "ghfind-feed", "database_id": "9c4ac13a-4c90-40a8-9d56-d7141f864bbf" }
