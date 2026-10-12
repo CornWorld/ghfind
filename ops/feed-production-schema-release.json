@@ -60,6 +60,10 @@
     {
       "name": "0022_collections.sql",
       "sha256": "6dbb2163279d4f4a5f672312b5deb24fd6ba1925c4a4d478db1eb974fdcfe489"
+    },
+    {
+      "name": "0023_megatron_hiring_sponsor.sql",
+      "sha256": "302d3dfa6f8389182de092570edc0dd5e3393dc01d1fad7557daa52c13aef523"
     }
   ],
   "feed": [
