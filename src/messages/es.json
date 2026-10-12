@@ -1657,6 +1657,11 @@
       "full_time": "Jornada completa",
       "intern": "Prácticas",
       "part_time": "Media jornada"
-    }
+    },
+    "backToJobs": "Todas las ofertas",
+    "apply": "Postularme",
+    "applyByEmail": "Postularme por email",
+    "emailNote": "Envía tu CV a {email}",
+    "detailNote": "ghfind solo publica esta oferta; la empresa toma todas las decisiones de contratación."
   }
 }

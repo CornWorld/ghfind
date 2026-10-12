@@ -48,6 +48,10 @@
     {
       "name": "0023_megatron_hiring_sponsor.sql",
       "sha256": "302d3dfa6f8389182de092570edc0dd5e3393dc01d1fad7557daa52c13aef523"
+    },
+    {
+      "name": "0024_job_descriptions.sql",
+      "sha256": "aa27f9d484d51a09a932005a7cec048a8561fe095087554289db06b653d7476f"
     }
   ],
   "feed": [

@@ -1657,6 +1657,11 @@
       "full_time": "Full-time",
       "intern": "Intern",
       "part_time": "Part-time"
-    }
+    },
+    "backToJobs": "All jobs",
+    "apply": "Apply",
+    "applyByEmail": "Apply by email",
+    "emailNote": "Send your résumé to {email}",
+    "detailNote": "ghfind only displays this listing; the company makes all hiring decisions."
   }
 }

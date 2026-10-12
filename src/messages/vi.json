@@ -1657,6 +1657,11 @@
       "full_time": "Toàn thời gian",
       "intern": "Thực tập",
       "part_time": "Bán thời gian"
-    }
+    },
+    "backToJobs": "Tất cả việc làm",
+    "apply": "Ứng tuyển",
+    "applyByEmail": "Ứng tuyển qua email",
+    "emailNote": "Gửi CV đến {email}",
+    "detailNote": "ghfind chỉ đăng tin tuyển dụng này; mọi quyết định tuyển dụng do công ty đưa ra."
   }
 }
