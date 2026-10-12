@@ -27,6 +27,8 @@ import { listJobSources } from "../src/lib/talent-match/store";
 
 const OUT_DIR = new URL("./talent-match/out/", import.meta.url);
 const OUT_SQL = new URL("job-requirements.sql", OUT_DIR);
+// The repo's own wrangler, so the script works without pnpm on PATH.
+const WRANGLER = new URL("../node_modules/.bin/wrangler", import.meta.url).pathname;
 
 const args = process.argv.slice(2);
 const envIndex = args.indexOf("--env");
@@ -52,8 +54,8 @@ function wranglerClient(): Client {
     const inlined = sql.replace(/\?/g, () => sqlLiteral(list[i++]));
     if (!/^\s*SELECT\b/i.test(inlined)) throw new Error("wranglerClient is read-only");
     const out = execFileSync(
-      "pnpm",
-      ["exec", "wrangler", "d1", "execute", "ghfind", "--remote", "--json", "--env", env, "--command", inlined],
+      WRANGLER,
+      ["d1", "execute", "ghfind", "--remote", "--json", "--env", env, "--command", inlined],
       { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
     );
     const [result] = JSON.parse(out) as { results: Record<string, unknown>[] }[];
@@ -90,6 +92,12 @@ ON CONFLICT(id) DO UPDATE SET requirement_json = excluded.requirement_json, inpu
       );
       console.log(`extracted ${job.id}: ${requirement.mustHave.length} must-have, ${requirement.niceToHave.length} nice-to-have`);
     } catch (error) {
+      // A rejected key or exhausted quota fails every job the same way: stop.
+      // (Matched by status: the script and src/lib can load separate copies of llm.ts.)
+      const status = (error as { status?: unknown }).status;
+      if (status === 401 || status === 402 || status === 429) {
+        throw new Error(`LLM provider rejected the request (${status}): check the keys in .env`);
+      }
       failed++;
       console.error(`failed ${job.id}: ${error instanceof Error ? error.message : error}`);
     }
