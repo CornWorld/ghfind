@@ -1,5 +1,6 @@
 import type { EmploymentType } from "@/lib/jobs";
 import { readResumeLibraryFull } from "@/lib/resume";
+import { cleanUploadedText } from "./redact";
 import type { CandidateReport, Quota } from "./types";
 
 /**
@@ -40,7 +41,7 @@ export const getLatestReport = () => call<{ latest: ReportState | null }>("/api/
 export const getReport = (id: string) => call<ReportState>(`/api/talent-match/reports/${encodeURIComponent(id)}`);
 
 export interface CreateReportInput {
-  source: { kind: "resume"; id: string } | { kind: "profile" };
+  source: { kind: "resume"; id: string } | { kind: "profile" } | { kind: "pdf"; text: string };
   preferences: { location: string; remote: boolean; employment: EmploymentType[] };
   turnstileToken: string | null;
 }
@@ -67,5 +68,28 @@ export async function listResumeSources(): Promise<Result<ResumeSourceOption[]>>
     return { ok: true, value: library.profile ? [...resumes, { kind: "profile", label: "" }] : resumes };
   } catch {
     return { ok: false, error: "resumes_unavailable" };
+  }
+}
+
+export const MAX_PDF_BYTES = 10 * 1024 * 1024;
+/** Same floor as the API: less text than this means a scanned or image-only PDF. */
+const MIN_PDF_CHARS = 100;
+
+/**
+ * Read a PDF's text in the browser (the file is never uploaded), with contact
+ * details redacted. pdf.js is loaded only when someone picks a file.
+ */
+export async function readPdfText(file: File): Promise<Result<{ text: string; pages: number }>> {
+  if (file.type && file.type !== "application/pdf") return { ok: false, error: "pdf_type" };
+  if (file.size > MAX_PDF_BYTES) return { ok: false, error: "pdf_too_large" };
+  try {
+    const { extractText, getDocumentProxy } = await import("unpdf");
+    const pdf = await getDocumentProxy(new Uint8Array(await file.arrayBuffer()));
+    const { text, totalPages } = await extractText(pdf, { mergePages: true });
+    const clean = cleanUploadedText(text);
+    if (clean.length < MIN_PDF_CHARS) return { ok: false, error: "pdf_unreadable" };
+    return { ok: true, value: { text: clean, pages: totalPages } };
+  } catch {
+    return { ok: false, error: "pdf_parse_failed" };
   }
 }

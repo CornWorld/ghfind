@@ -41,11 +41,17 @@ import { buildStoredProfile, verifiedSkills } from "./verify";
 /** Which saved résumé to use: a document id, or the library's reusable profile. */
 export type ResumeSource = { kind: "resume"; id: string } | { kind: "profile" };
 
+/**
+ * Facts already extracted during the upload request (PDF résumés): the raw
+ * text never reaches the Workflow, only what LLM #1 pulled out of it.
+ */
+export type ExtractedSource = { kind: "extracted"; profile: ExtractedProfile; unknownSkills: string[] };
+
 export interface CandidateParams {
   reportId: string;
   githubId: number;
   login: string;
-  source: ResumeSource;
+  source: ResumeSource | ExtractedSource;
   preferences: StoredProfile["preferences"];
   /** candidateInputHash of this input; stored with the profile. */
   inputHash: string;
@@ -109,23 +115,40 @@ async function recordUsage(db: Client, reportId: string, usage: Usage, now: numb
   await updateReport(db, reportId, { status: "running", now, tokensIn: usage.tokensIn, tokensOut: usage.tokensOut });
 }
 
-/** Step 1: read the saved résumé and extract facts (LLM #1). Tokens are recorded even on failure. */
+/** LLM #1 over résumé text, charging the tokens to the report even when it fails. */
+export async function extractForReport(
+  db: Client,
+  complete: Complete,
+  reportId: string,
+  text: string,
+  now: number,
+): Promise<{ extracted: ExtractedProfile; unknownSkills: string[] }> {
+  try {
+    const result = await extractCandidate(complete, text);
+    await recordUsage(db, reportId, result.usage, now);
+    return { extracted: result.profile, unknownSkills: result.unknownSkills };
+  } catch (error) {
+    if (error instanceof ExtractionError) await recordUsage(db, reportId, error.usage, now);
+    throw error;
+  }
+}
+
+/**
+ * Step 1: the extracted profile. Saved résumés are read and extracted here;
+ * uploads arrive already extracted (see {@link ExtractedSource}).
+ */
 export async function runExtract(
   db: Client,
   complete: Complete,
   params: CandidateParams,
   now: number,
 ): Promise<{ extracted: ExtractedProfile; unknownSkills: string[] }> {
+  if (params.source.kind === "extracted") {
+    return { extracted: params.source.profile, unknownSkills: params.source.unknownSkills };
+  }
   const text = await loadResumeText(db, params.githubId, params.source);
   if (!text) throw new InputError("resume_missing");
-  try {
-    const result = await extractCandidate(complete, text);
-    await recordUsage(db, params.reportId, result.usage, now);
-    return { extracted: result.profile, unknownSkills: result.unknownSkills };
-  } catch (error) {
-    if (error instanceof ExtractionError) await recordUsage(db, params.reportId, error.usage, now);
-    throw error;
-  }
+  return extractForReport(db, complete, params.reportId, text, now);
 }
 
 /** Step 2: merge verified GitHub evidence and store the profile. */

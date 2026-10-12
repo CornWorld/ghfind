@@ -34,8 +34,18 @@ export function coreDb(): Client | null {
 
 /** The slice of a Workflow binding used to start reports. */
 export interface ReportWorkflow {
-  create(options: { id: string; params: CandidateParams }): Promise<unknown>;
+  create(options: {
+    id: string;
+    params: CandidateParams;
+    retention?: { successRetention?: string; errorRetention?: string };
+  }): Promise<unknown>;
 }
+
+/**
+ * Report instances hold résumé-derived facts in their params and step
+ * outputs; the D1 report is the record, so the engine keeps them briefly.
+ */
+export const REPORT_INSTANCE_RETENTION = { successRetention: "1 day", errorRetention: "1 day" };
 
 /** TALENT_REPORT on the API Worker; absent on the legacy Next Worker and in dev without the talent Worker. */
 export function reportWorkflow(): ReportWorkflow | null {

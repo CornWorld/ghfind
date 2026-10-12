@@ -18,6 +18,11 @@ vi.mock("../http", async (original) => ({
   reportWorkflow: () => mocks.workflow,
 }));
 vi.mock("@/lib/turnstile", () => ({ verifyTurnstile: async (token: string | null) => token !== "bad" }));
+// Uploaded PDFs are extracted inside the POST; route that through the fake model.
+vi.mock("../extract", async (original) => ({
+  ...(await original<typeof import("../extract")>()),
+  llmCompleter: () => (messages: ChatMessage[]) => complete(messages),
+}));
 vi.mock("@/lib/redis", async (original) => ({
   ...(await original<typeof import("@/lib/redis")>()),
   checkTalentReportRateLimit: async () => (mocks.rateLimited ? { success: false, limit: 1, remaining: 0, reset: Date.now() + 1000 } : { success: true }),
@@ -74,8 +79,11 @@ const requirement: ExtractedRequirement = {
 };
 
 /** Fake model: extraction for the résumé prompt, advice for the report prompt. */
+const prompts: string[] = [];
+let extractionReply: () => string = () => JSON.stringify(extraction);
 const complete = vi.fn(async (messages: ChatMessage[]) => {
-  if (messages[0].content.includes("extract a candidate profile")) return JSON.stringify(extraction);
+  prompts.push(messages.map((m) => m.content).join("\n"));
+  if (messages[0].content.includes("extract a candidate profile")) return extractionReply();
   const facts = JSON.parse(messages[1].content);
   return JSON.stringify({
     summary: { zh: "总结", en: "Summary" },
@@ -107,6 +115,8 @@ beforeEach(async () => {
   mocks.workflow.create.mockReset();
   mocks.user = { githubId: 7, login: "lin" };
   mocks.rateLimited = false;
+  prompts.length = 0;
+  extractionReply = () => JSON.stringify(extraction);
 });
 
 const post = (body: unknown) =>
@@ -236,6 +246,50 @@ describe("POST /api/talent-match/reports", () => {
     } finally { error.mockRestore(); }
     const { rows } = await core.execute("SELECT status, error FROM talent_reports");
     expect(rows.map((r) => [r.status, r.error])).toEqual([["failed", "start_failed"]]);
+  });
+});
+
+describe("PDF résumés", () => {
+  const pdfText = [
+    "Lin — Inference engineer", "lin@example.com · +86 138 0013 8000", "UNIQUE_RAW_LINE vLLM scheduler work 2021–2023",
+    "x".repeat(150),
+  ].join("\n");
+  const pdfBody = { ...validBody, source: { kind: "pdf", text: pdfText } };
+
+  it("extracts during the request and hands the Workflow only facts, with short retention", async () => {
+    const res = await post(pdfBody);
+    expect(res.status).toBe(202);
+    const [[{ params, retention }]] = mocks.workflow.create.mock.calls;
+    expect(params.source.kind).toBe("extracted");
+    expect(params.source.profile.name).toBe("Lin");
+    expect(JSON.stringify(params)).not.toContain("UNIQUE_RAW_LINE");
+    expect(retention).toEqual({ successRetention: "1 day", errorRetention: "1 day" });
+    // Contact details never reach the model.
+    expect(prompts.join()).toContain("UNIQUE_RAW_LINE");
+    expect(prompts.join()).not.toMatch(/lin@example\.com|138 0013 8000/);
+    expect(prompts.join()).toContain("2021–2023");
+    const tokens = await core.execute("SELECT tokens_in FROM talent_reports");
+    expect(Number(tokens.rows[0].tokens_in)).toBeGreaterThan(0);
+  });
+
+  it("skips the Workflow's own extraction for uploaded facts", async () => {
+    const extracted = await runExtract(core, async () => { throw new Error("must not call the model"); }, {
+      reportId: "p", githubId: 7, login: "lin", source: { kind: "extracted", profile: JSON.parse(JSON.stringify(extraction)), unknownSkills: ["cobol"] },
+      preferences: { location: "", remote: false, employment: [] }, inputHash: "", createdAt: 0,
+    }, 0);
+    expect(extracted.unknownSkills).toEqual(["cobol"]);
+  });
+
+  it("rejects scans without text, and fails unreadable model output without spending quota", async () => {
+    expect(await (await post({ ...validBody, source: { kind: "pdf", text: "   scanned  " } })).json()).toEqual({ error: "pdf_unreadable" });
+    extractionReply = () => "not json";
+    const res = await post(pdfBody);
+    expect(res.status).toBe(422);
+    expect(await res.json()).toEqual({ error: "model_output_invalid" });
+    expect(mocks.workflow.create).not.toHaveBeenCalled();
+    const { rows } = await core.execute("SELECT status, error FROM talent_reports");
+    expect(rows.map((r) => [r.status, r.error])).toEqual([["failed", "model_output_invalid"]]);
+    expect((await (await getQuota()).json()).used).toBe(0);
   });
 });
 

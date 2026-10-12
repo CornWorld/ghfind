@@ -3,9 +3,21 @@ import { z } from "zod";
 import { commentClientIp } from "@/lib/comments";
 import { EMPLOYMENT_TYPES } from "@/lib/jobs";
 import { checkTalentReportRateLimit, rateLimitHeaders } from "@/lib/redis";
-import { coreDb, jsonNoStore, presentReport, reportWorkflow, sessionUser, signInRequired, unavailable } from "@/lib/talent-match/http";
-import { candidateInputHash, failReport, jobsRevision, loadResumeText } from "@/lib/talent-match/pipeline";
+import { llmCompleter } from "@/lib/talent-match/extract";
+import { REPORT_INSTANCE_RETENTION, coreDb, jsonNoStore, presentReport, reportWorkflow, sessionUser, signInRequired, unavailable } from "@/lib/talent-match/http";
+import {
+  candidateInputHash,
+  extractForReport,
+  failReport,
+  failureCode,
+  isFinalFailure,
+  jobsRevision,
+  loadResumeText,
+  talentLlmConfigs,
+  type CandidateParams,
+} from "@/lib/talent-match/pipeline";
 import { admitReport, parseTokenBudget } from "@/lib/talent-match/quota";
+import { MAX_UPLOAD_CHARS, cleanUploadedText } from "@/lib/talent-match/redact";
 import { MATCH_VERSION } from "@/lib/talent-match/score";
 import { findDoneReport, insertQueuedReport, latestReport, monthFreeTokens, quotaCounts } from "@/lib/talent-match/store";
 import { verifyTurnstile } from "@/lib/turnstile";
@@ -17,6 +29,8 @@ const bodySchema = z.object({
   source: z.discriminatedUnion("kind", [
     z.object({ kind: z.literal("resume"), id: z.string().min(1).max(100) }),
     z.object({ kind: z.literal("profile") }),
+    // Text the browser pulled out of a PDF (the file itself is never uploaded).
+    z.object({ kind: z.literal("pdf"), text: z.string().min(1).max(MAX_UPLOAD_CHARS * 2) }),
   ]),
   preferences: z.object({
     location: z.string().trim().max(200),
@@ -25,6 +39,9 @@ const bodySchema = z.object({
   }),
   turnstileToken: z.string().max(4096).nullable().optional(),
 });
+
+/** Below this, a "PDF" is a scan or an image: there is nothing to extract. */
+const MIN_PDF_CHARS = 100;
 
 const REJECTIONS = {
   in_flight: 409,
@@ -43,10 +60,14 @@ export async function GET() {
 }
 
 /**
- * Start a candidate report from a saved résumé plus the account's GitHub
- * evidence. Identical input under the current rules and job board returns
- * the finished report instead of spending quota. 202 with the report id;
- * the client polls GET /api/talent-match/reports/:id.
+ * Start a candidate report from a saved résumé or uploaded PDF text plus the
+ * account's GitHub evidence. Identical input under the current rules and job
+ * board returns the finished report instead of spending quota. 202 with the
+ * report id; the client polls GET /api/talent-match/reports/:id.
+ *
+ * PDF text is extracted (LLM #1) inside this request, so the raw text is
+ * never stored: only extracted facts reach the Workflow. An unreadable
+ * upload fails here, immediately, and uses no quota.
  */
 export async function POST(request: NextRequest) {
   const user = await sessionUser();
@@ -74,7 +95,11 @@ export async function POST(request: NextRequest) {
   if (!db || !workflow) return unavailable();
 
   const now = Date.now();
-  const resumeText = await loadResumeText(db, user.githubId, body.source);
+  const upload = body.source.kind === "pdf";
+  const resumeText = body.source.kind === "pdf"
+    ? cleanUploadedText(body.source.text)
+    : await loadResumeText(db, user.githubId, body.source);
+  if (upload && (resumeText ?? "").length < MIN_PDF_CHARS) return jsonNoStore({ error: "pdf_unreadable" }, { status: 400 });
   if (!resumeText) return jsonNoStore({ error: "resume_missing" }, { status: 400 });
   const preferences = { ...body.preferences, employment: [...new Set(body.preferences.employment)] };
   const inputHash = candidateInputHash({ login: user.login, resumeText, preferences, jobsRevision: await jobsRevision(db) });
@@ -97,10 +122,27 @@ export async function POST(request: NextRequest) {
   });
   if (!queued) return jsonNoStore({ error: "in_flight" }, { status: 409 });
 
+  let source: CandidateParams["source"];
+  if (body.source.kind === "pdf") {
+    // The queued row already holds the one-in-flight slot during this call.
+    try {
+      const { extracted, unknownSkills } = await extractForReport(db, llmCompleter(talentLlmConfigs()), id, resumeText, Date.now());
+      source = { kind: "extracted", profile: extracted, unknownSkills };
+    } catch (error) {
+      const code = isFinalFailure(error) ? failureCode(error) : "generation_failed";
+      if (code === "generation_failed") console.error("talent_upload_extract_failed", error instanceof Error ? error.message : error);
+      await failReport(db, id, code, Date.now());
+      return jsonNoStore({ error: code }, { status: code === "model_output_invalid" ? 422 : 503 });
+    }
+  } else {
+    source = body.source;
+  }
+
   try {
     await workflow.create({
       id,
-      params: { reportId: id, githubId: user.githubId, login: user.login, source: body.source, preferences, inputHash, createdAt: now },
+      params: { reportId: id, githubId: user.githubId, login: user.login, source, preferences, inputHash, createdAt: now },
+      retention: REPORT_INSTANCE_RETENTION,
     });
   } catch (error) {
     console.error("talent_report_start_failed", error instanceof Error ? error.message : error);

@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowUpRight, BookOpen, Code2, FileText, FlaskConical, GitPullRequest, GraduationCap, Hammer, RefreshCw, Sparkles, Star, Trash2 } from "lucide-react";
+import { ArrowUpRight, BookOpen, Code2, FileText, FlaskConical, GitPullRequest, GraduationCap, Hammer, RefreshCw, Sparkles, Star, Trash2, Upload } from "lucide-react";
 import { Turnstile, turnstileEnabled } from "@/components/Turnstile";
 import { Link } from "@/i18n/navigation";
 import { DIMENSIONS } from "@/lib/dimensions";
 import type { EmploymentType } from "@/lib/jobs";
 import { SUBSCORE_MAX } from "@/lib/score-presentation";
-import { createReport, deleteTalentProfile, getLatestReport, getReport, listResumeSources, type ResumeSourceOption } from "@/lib/talent-match/client";
+import { createReport, deleteTalentProfile, getLatestReport, getReport, listResumeSources, readPdfText, type ResumeSourceOption } from "@/lib/talent-match/client";
 import { MOCK_CANDIDATE_REPORT } from "@/lib/talent-match/mock";
 import { CANDIDATE_STAGES, type CandidateReport, type Cost, type GrowthKind, type JobMatch, type ProfileItem } from "@/lib/talent-match/types";
 import type { SubScoreKey } from "@/lib/types";
@@ -52,6 +52,10 @@ const ERROR_COPY: Record<string, [string, string]> = {
   model_output_invalid: ["AI 没能读懂这份简历，额度未扣除。可以补充内容后重试。", "The AI couldn't read this résumé; no quota was used. Add detail and try again."],
   stale: ["生成中断了，额度未扣除，请重试。", "Generation stopped; no quota was used. Please try again."],
   sign_in_required: ["请先登录。", "Please sign in first."],
+  pdf_unreadable: ["这个 PDF 里读不到文字（可能是扫描件或图片），请换一份可复制文字的 PDF。", "No text could be read from this PDF (it may be a scan or an image). Use a PDF with selectable text."],
+  pdf_too_large: ["PDF 不能超过 10 MB。", "The PDF must be 10 MB or smaller."],
+  pdf_type: ["请选择 PDF 文件。", "Choose a PDF file."],
+  pdf_parse_failed: ["无法打开这个 PDF，文件可能已损坏或加密。", "This PDF couldn't be opened; it may be damaged or password-protected."],
 };
 const GENERIC_ERROR: [string, string] = ["生成失败，额度未扣除，请稍后重试。", "Something went wrong; no quota was used. Please try again later."];
 
@@ -96,6 +100,9 @@ export function CandidatePanel({
   const [token, setToken] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  /** Text read from an uploaded PDF in this browser; the file never leaves it. */
+  const [pdf, setPdf] = useState<{ name: string; text: string; pages: number } | null>(null);
+  const [pdfState, setPdfState] = useState<"idle" | "reading" | string>("idle");
 
   // Signed in: resume a report in flight, or show the latest finished one.
   useEffect(() => {
@@ -115,7 +122,7 @@ export function CandidatePanel({
       if (!live) return;
       const list = result.ok ? result.value : [];
       setSources(list);
-      if (list[0]) setSourceKey(sourceKeyOf(list[0]));
+      setSourceKey(list[0] ? sourceKeyOf(list[0]) : PDF_KEY);
     });
     return () => { live = false; };
   }, [login]);
@@ -139,13 +146,31 @@ export function CandidatePanel({
     return () => { live = false; clearInterval(tick); clearInterval(poll); };
   }, [phase, onQuotaChange]);
 
+  const usingPdf = sourceKey === PDF_KEY;
   const source = sources?.find((s) => sourceKeyOf(s) === sourceKey) ?? null;
+  const hasInput = usingPdf ? pdf !== null : source !== null;
+
+  const pickPdf = async (file: File | undefined) => {
+    setPdf(null);
+    if (!file) {
+      setPdfState("idle");
+      return;
+    }
+    setPdfState("reading");
+    const result = await readPdfText(file);
+    if (result.ok) {
+      setPdf({ name: file.name, ...result.value });
+      setPdfState("idle");
+    } else {
+      setPdfState(result.error);
+    }
+  };
 
   const submit = async () => {
-    if (!source) return;
+    if (!hasInput) return;
     setSubmitting(true);
     const result = await createReport({
-      source: source.kind === "resume" ? { kind: "resume", id: source.id } : { kind: "profile" },
+      source: usingPdf && pdf ? { kind: "pdf", text: pdf.text } : source?.kind === "resume" ? { kind: "resume", id: source.id } : { kind: "profile" },
       preferences: { location: location.trim(), remote, employment },
       turnstileToken: token || null,
     });
@@ -180,6 +205,16 @@ export function CandidatePanel({
     return <Card><p className="text-sm text-zinc-500">{c("加载中…", "Loading…")}</p></Card>;
   }
 
+  // A PDF is extracted inside the submit request; show that as the extract stage.
+  if (submitting && usingPdf) {
+    return (
+      <Card title={c("正在生成报告", "Generating your report")}>
+        <StageProgress stages={CANDIDATE_STAGES.map((s) => c(...STAGE_LABELS[s]))} current={1} />
+        <p className="mt-5 text-xs text-zinc-500">{c("正在读取你的 PDF，通常需要 15–40 秒，请保持页面打开。", "Reading your PDF, usually 15–40 seconds. Keep this page open.")}</p>
+      </Card>
+    );
+  }
+
   if (phase.kind === "running") {
     const stage = Math.min(CANDIDATE_STAGES.length - 1, Math.floor((now - phase.startedAt) / STAGE_ESTIMATE_MS));
     return (
@@ -209,26 +244,61 @@ export function CandidatePanel({
     <div className="grid gap-5 lg:grid-cols-[1fr_18rem]">
       <Card title={c("你的资料", "Your material")}>
         {!login ? (
-          <p className="text-sm text-zinc-400">{c("登录 GitHub 后，用你保存在云端的简历和 GitHub 数据生成报告。", "Sign in with GitHub to generate a report from your cloud-saved résumé and your GitHub evidence.")}</p>
+          <p className="text-sm text-zinc-400">{c("登录 GitHub 后，用你的简历（云端简历或 PDF）和 GitHub 数据生成报告。", "Sign in with GitHub to generate a report from your résumé (cloud-saved or a PDF) and your GitHub evidence.")}</p>
         ) : (
           <div className="space-y-4">
             <div>
               <label htmlFor="tm-source" className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-zinc-200"><FileText className="h-4 w-4" aria-hidden="true" />{c("简历", "Résumé")}</label>
               {sources === null ? (
                 <p className="text-xs text-zinc-500">{c("正在读取云端简历…", "Reading your cloud résumés…")}</p>
-              ) : sources.length === 0 ? (
-                <p className="text-sm text-zinc-400">
-                  {c("还没有保存到云端的简历。报告只读取云端简历。", "No cloud-saved résumé yet; reports only read cloud-saved résumés. ")}
-                  <Link href="/resume" prefetch={false} className="underline underline-offset-2 hover:text-zinc-200">{c("去「我的简历」创建并保存", "Create and save one in My résumé")}</Link>
-                </p>
               ) : (
-                <select id="tm-source" className={fieldClass} value={sourceKey} onChange={(e) => setSourceKey(e.target.value)}>
-                  {sources.map((s) => (
-                    <option key={sourceKeyOf(s)} value={sourceKeyOf(s)}>
-                      {s.kind === "profile" ? c("资料库（可复用的个人资料）", "Profile (reusable details)") : s.label}
-                    </option>
-                  ))}
-                </select>
+                <>
+                  <select id="tm-source" className={fieldClass} value={sourceKey} onChange={(e) => setSourceKey(e.target.value)}>
+                    {sources.map((s) => (
+                      <option key={sourceKeyOf(s)} value={sourceKeyOf(s)}>
+                        {s.kind === "profile" ? c("资料库（可复用的个人资料）", "Profile (reusable details)") : s.label}
+                      </option>
+                    ))}
+                    <option value={PDF_KEY}>{c("上传 PDF 简历", "Upload a PDF résumé")}</option>
+                  </select>
+                  {sources.length === 0 && (
+                    <p className="mt-1.5 text-xs text-zinc-500">
+                      {c("还没有云端简历，可以上传 PDF，或", "No cloud-saved résumé yet. Upload a PDF, or ")}
+                      <Link href="/resume" prefetch={false} className="underline underline-offset-2 hover:text-zinc-300">{c("在「我的简历」创建并保存", "create and save one in My résumé")}</Link>
+                      {c("。", ".")}
+                    </p>
+                  )}
+                  {usingPdf && (
+                    <div className="mt-3">
+                      <div className="flex flex-wrap items-center gap-3">
+                        {/* Styled label instead of ::file-selector-button, which has no light-theme mapping. */}
+                        <label htmlFor="tm-pdf" className={`${secondaryButton} cursor-pointer`}>
+                          <Upload className="h-3.5 w-3.5" aria-hidden="true" />{pdf ? c("换一个文件", "Choose another file") : c("选择 PDF", "Choose a PDF")}
+                        </label>
+                        <span className="min-w-0 truncate text-sm text-zinc-400" aria-live="polite">
+                          {pdfState === "reading"
+                            ? c("正在读取…", "Reading…")
+                            : pdf
+                              ? c(`${pdf.name} · ${pdf.pages} 页 · ${pdf.text.length.toLocaleString()} 字`, `${pdf.name} · ${pdf.pages} page${pdf.pages === 1 ? "" : "s"} · ${pdf.text.length.toLocaleString()} characters`)
+                              : c("未选择文件", "No file chosen")}
+                        </span>
+                        <input
+                          id="tm-pdf"
+                          type="file"
+                          accept="application/pdf"
+                          className="sr-only"
+                          onChange={(e) => void pickPdf(e.target.files?.[0])}
+                        />
+                      </div>
+                      {pdfState !== "idle" && pdfState !== "reading" && (
+                        <p role="alert" className="mt-2 rounded-xl bg-red-500/10 px-3 py-2 text-xs text-rose-400">{c(...(ERROR_COPY[pdfState] ?? GENERIC_ERROR))}</p>
+                      )}
+                      <p className="mt-1.5 text-xs text-zinc-500">
+                        {c("PDF 只在你的浏览器里解析，文件不会上传；只发送文字（已去掉邮箱和电话），且不会保存原文。", "The PDF is read in your browser and never uploaded. Only its text is sent (email and phone removed), and the text itself is never stored.")}
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
@@ -268,7 +338,7 @@ export function CandidatePanel({
                 </div>
               </fieldset>
             </div>
-            <p className="text-xs text-zinc-500">{c("PDF 上传与个人网站即将支持。", "PDF upload and personal websites are coming soon.")}</p>
+            <p className="text-xs text-zinc-500">{c("个人网站即将支持。", "Personal websites are coming soon.")}</p>
           </div>
         )}
       </Card>
@@ -284,8 +354,8 @@ export function CandidatePanel({
           {errorCopy && <p role="alert" className="mb-3 rounded-xl bg-red-500/10 px-3 py-2 text-xs text-rose-400">{c(...errorCopy)}</p>}
           {login ? (
             <>
-              {turnstileEnabled() && source && canGenerate && !token && <Turnstile onToken={setToken} />}
-              <button type="button" className={`${primaryButton} w-full`} disabled={!canGenerate || !source || submitting || needToken} onClick={submit}>
+              {turnstileEnabled() && hasInput && canGenerate && !token && <Turnstile onToken={setToken} />}
+              <button type="button" className={`${primaryButton} w-full`} disabled={!canGenerate || !hasInput || submitting || needToken} onClick={submit}>
                 <Sparkles className="h-4 w-4" aria-hidden="true" />{submitting ? c("提交中…", "Submitting…") : c("生成报告", "Generate report")}
               </button>
               {!canGenerate && <p className="mt-2 text-xs text-zinc-500">{c("本月额度已用完。", "No reports left this month.")}</p>}
@@ -299,6 +369,8 @@ export function CandidatePanel({
     </div>
   );
 }
+
+const PDF_KEY = "pdf";
 
 function sourceKeyOf(source: ResumeSourceOption): string {
   return source.kind === "profile" ? "profile" : `resume:${source.id}`;
