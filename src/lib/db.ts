@@ -47,14 +47,9 @@ import { VS_MIN_SCORE } from "./site";
 import {
   advanceScoreDetailRevision,
   bumpCampaignLeaderboardRevision,
-  clearCachedReactionCounts,
   getCachedLanguageLadder,
-  getCachedSimilarUsernames,
-  getCachedReactionCounts,
   releaseLookupGate,
   setCachedLanguageLadder,
-  setCachedSimilarUsernames,
-  setCachedReactionCounts,
   tryAcquireLookupGate,
 } from "./redis";
 import type { Lang } from "./lang";
@@ -6571,9 +6566,11 @@ const SIMILAR_POOL = 300;
  * Developers most similar to `username`: pre-filter by a score band (uses the
  * final_score index — the cost-safe lever), then rank that pool by 6-dim profile
  * distance and return the closest `limit`. The target's score/profile are passed
- * in (the caller already has them) to avoid a second lookup. Cache ranked
- * membership for one hour, then rehydrate selected users by primary key on
- * hits to respect current visibility. Returns [] on failure/unconfigured DB.
+ * in (the caller already has them) to avoid a second lookup. Not cached across
+ * requests: profile traffic is a crawler long tail, so a shared KV entry was
+ * written on nearly every render (~53k/day) and rarely read back, and a KV
+ * write costs more than the bounded read it saved. Concurrent identical calls
+ * in one isolate share a query. Returns [] on failure/unconfigured DB.
  */
 const similarInflight = new Map<string, Promise<LeaderboardEntry[]>>();
 
@@ -6583,49 +6580,17 @@ export async function getSimilarAccounts(
   subScores: SubScores,
   limit = 6,
 ): Promise<LeaderboardEntry[]> {
-  const db = getClient();
-  if (!db || limit <= 0) return [];
-  // Include every ranking input so re-scoring cannot reuse another profile's
-  // recommendation. Sorting keys makes semantically identical inputs share it.
-  const key = createHash("sha256").update(JSON.stringify([
-    SCORE_CACHE_VERSION, username.toLowerCase(), finalScore, limit,
+  if (!getClient() || limit <= 0) return [];
+  const key = JSON.stringify([
+    username.toLowerCase(), finalScore, limit,
     Object.entries(subScores).sort(([a], [b]) => a.localeCompare(b)),
-  ])).digest("hex");
+  ]);
   const existing = similarInflight.get(key);
   if (existing) return existing;
-  const run = (async () => {
-    try {
-      const usernames = bypassGeneratedCaches() ? null : await getCachedSimilarUsernames(key);
-      if (usernames?.length) {
-        await ensureSchema(db);
-        const res = await db.execute({
-          sql: `WITH selected(username) AS (VALUES ${usernames.map(() => "(?)").join(",")})
-                SELECT s.username, s.display_name, s.avatar_url, s.profile_url,
-                       s.final_score, s.tier, s.tags, s.score_version,
-                       MAX(COALESCE(stats.lookup_count, 0), ${MIN_RECORDED_LOOKUP_COUNT}) AS lookup_count
-                FROM selected
-                CROSS JOIN scores AS s ON s.username = selected.username
-                LEFT JOIN account_stats AS stats ON stats.username = s.username
-                WHERE s.hidden = 0 AND ${canonicalPublicScorePredicate("s")}`,
-          args: usernames,
-        });
-        const entries = new Map(res.rows.map(row => {
-          const entry = toLeaderboardEntry(row as unknown as LeaderboardRow);
-          return [entry.username, entry] as const;
-        }));
-        return usernames.flatMap(name => entries.has(name) ? [entries.get(name)!] : []);
-      }
-      const entries = await getSimilarAccountsUncached(username, finalScore, subScores, limit);
-      // DB failures also return []; never pin a transient failure in the cache.
-      if (entries.length && !bypassGeneratedCaches()) {
-        await setCachedSimilarUsernames(key, entries.map(entry => entry.username));
-      }
-      return entries;
-    } catch (error) {
-      console.error("getSimilarAccounts cache failed:", error);
-      return [];
-    }
-  })();
+  const run = getSimilarAccountsUncached(username, finalScore, subScores, limit).catch((error) => {
+    console.error("getSimilarAccounts failed:", error);
+    return [];
+  });
   similarInflight.set(key, run);
   try { return await run; }
   finally { similarInflight.delete(key); }
@@ -7099,14 +7064,14 @@ function validGithubId(value: number): boolean {
   return Number.isSafeInteger(value) && value > 0;
 }
 
-/** Cache-aside read of a profile's global reaction tallies. A hit skips the
- *  GROUP BY entirely — the hot path for crawlers and logged-out visitors. */
+/** A profile's global reaction tallies. Read live: the GROUP BY is answered
+ *  from idx_profile_reactions_target_reaction (a handful of rows), while a
+ *  60s shared cache missed on nearly every crawler render and turned each one
+ *  into a KV write — far more expensive than the read it saved. */
 async function readReactionCounts(
   db: Client,
   target: string,
 ): Promise<ProfileReactionCounts> {
-  const cached = await getCachedReactionCounts(target);
-  if (cached) return cached;
   const counts = emptyReactionCounts();
   const res = await db.execute({
     sql: `SELECT reaction, COUNT(*) AS count
@@ -7118,7 +7083,6 @@ async function readReactionCounts(
   for (const row of res.rows) {
     if (isProfileReaction(row.reaction)) counts[row.reaction] = Number(row.count) || 0;
   }
-  await setCachedReactionCounts(target, counts);
   return counts;
 }
 
@@ -7184,7 +7148,6 @@ export async function setProfileReaction(
               updated_at = excluded.updated_at`,
       args: [target, input.voterGithubId, voterLogin, input.reaction, now, now],
     });
-    await clearCachedReactionCounts(target);
     return getProfileReactionState(target, input.voterGithubId);
   } catch (e) {
     console.error("setProfileReaction failed:", e);
@@ -7206,7 +7169,6 @@ export async function removeProfileReaction(
             WHERE target_username = ? AND voter_github_id = ?`,
       args: [target, input.voterGithubId],
     });
-    await clearCachedReactionCounts(target);
     return getProfileReactionState(target, input.voterGithubId);
   } catch (e) {
     console.error("removeProfileReaction failed:", e);

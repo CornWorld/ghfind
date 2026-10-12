@@ -28,9 +28,29 @@ function wantsHomeMarkdown(request: Request, url: URL): boolean {
   );
 }
 
+/**
+ * Non-production crawl policy. `noindex` keeps pages out of search results but
+ * not off the crawl list: serving the production robots.txt and sitemap let
+ * meta-webindexer walk ~77k dev pages in a day (SSR, KV writes and prod D1
+ * reads on every hit). Disallow everything and publish no sitemap instead.
+ */
+function nonProductionCrawlResponse(url: URL): Response | null {
+  if (url.pathname === "/robots.txt") {
+    return new Response("User-agent: *\nDisallow: /\n", {
+      headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=3600" },
+    });
+  }
+  if (url.pathname === "/sitemap.xml") return new Response("Not found", { status: 404 });
+  return null;
+}
+
 export default {
   async fetch(request, env): Promise<Response> {
     const url = new URL(request.url);
+    if (env.ROUTER_NOINDEX === "1") {
+      const crawl = nonProductionCrawlResponse(url);
+      if (crawl) return finish(crawl, "router", env);
+    }
     const forceLegacy = env.ROUTER_FORCE_LEGACY === "1";
     if (!forceLegacy && wantsHomeMarkdown(request, url)) {
       // /index.md already answers with `Vary: Accept`.

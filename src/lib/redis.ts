@@ -32,14 +32,12 @@ import { PUBLIC_SCAN_COLLECTION_VERSION } from "./scan-run-types";
 import type {
   AccountDetail,
   FacetCategory,
-  FacetRank,
   LeaderboardEntry,
   LeaderboardWindow,
   ScoreHistogramRow,
 } from "./db";
 import type { FacetType } from "./facets";
 import type { Lang } from "./lang";
-import type { ProfileReactionCounts } from "./reactions";
 import type { RoastJudgeResult, RoastLine, ScanResult } from "./types";
 
 let redis: Redis | null = null;
@@ -1159,24 +1157,6 @@ export async function clearCachedLeaderboards(): Promise<void> {
   }
 }
 
-// Cache recommendation membership; hydrate the few selected users from D1 on
-// every hit so hiding a user immediately removes them from recommendations.
-export async function getCachedSimilarUsernames(key: string): Promise<string[] | null> {
-  const r = cacheStore();
-  if (!r) return null;
-  try {
-    const value = await r.get<string[]>(`similar:v1:${key}`);
-    return Array.isArray(value) && value.every(name => typeof name === "string") ? value : null;
-  } catch { return null; }
-}
-
-export async function setCachedSimilarUsernames(key: string, usernames: string[]): Promise<void> {
-  const r = cacheStore();
-  if (!r) return;
-  try { await r.set(`similar:v1:${key}`, usernames, 3600); }
-  catch { /* best-effort */ }
-}
-
 // /developers directory caches. Both reads (per-bucket dev list, category grid)
 // are slow-moving — a bucket's ranking only shifts when someone in it re-scans —
 // and the category grid runs an expensive GROUP BY, so a longer TTL than the
@@ -1193,40 +1173,6 @@ const FACET_LIST_TTL_SECONDS = 21600; // 6h
 // unfiltered /projects list is a whole-graph aggregation — so discovery reads
 // tolerate hours of staleness. Matches the facet boards' 6h ISR window.
 const PROJECT_DISCOVERY_TTL_SECONDS = 21600; // 6h
-
-// Per-profile language-board position. Rank shifts only when the bucket is
-// rescanned, so an hour of staleness is invisible; uncached it was a join over
-// the whole bucket (~13k rows_read) on every profile render.
-const FACET_RANK_TTL_SECONDS = 3600;
-const facetRankKey = (username: string, score: number) => `facets:rank:${username}:${score}`;
-
-/** Wrapped so a cached "no rank" (null) is distinguishable from a miss. */
-export async function getCachedFacetRank(
-  username: string,
-  score: number,
-): Promise<{ value: FacetRank | null } | null> {
-  const r = cacheStore();
-  if (!r) return null;
-  try {
-    return (await r.get<{ value: FacetRank | null }>(facetRankKey(username, score))) ?? null;
-  } catch {
-    return null;
-  }
-}
-
-export async function setCachedFacetRank(
-  username: string,
-  score: number,
-  value: FacetRank | null,
-): Promise<void> {
-  const r = cacheStore();
-  if (!r) return;
-  try {
-    await r.set(facetRankKey(username, score), { value }, FACET_RANK_TTL_SECONDS);
-  } catch {
-    // best-effort
-  }
-}
 
 // One language bucket's ranked scores (the "score ladder"): every per-profile
 // rank/total/ahead is answered from it in memory, so the bucket is read once
@@ -1358,48 +1304,6 @@ export async function setCachedProjectValue<T>(key: string, value: T): Promise<v
     await r.set(key, value, PROJECT_DISCOVERY_TTL_SECONDS);
   } catch {
     // best-effort cache
-  }
-}
-
-// Reaction *counts* are global to a profile — every visitor sees the same
-// numbers — so they cache well. The per-viewer "which did I pick" is NOT cached
-// (it's user-specific and read live). Short TTL keeps counts near-real-time;
-// writes also bust the key so the actor sees their own vote immediately.
-const reactionCountsKey = (target: string) => `reactions:counts:${target}`;
-const REACTION_COUNTS_TTL_SECONDS = 60;
-
-export async function getCachedReactionCounts(
-  target: string,
-): Promise<ProfileReactionCounts | null> {
-  const r = cacheStore();
-  if (!r) return null;
-  try {
-    return (await r.get<ProfileReactionCounts>(reactionCountsKey(target))) ?? null;
-  } catch {
-    return null;
-  }
-}
-
-export async function setCachedReactionCounts(
-  target: string,
-  counts: ProfileReactionCounts,
-): Promise<void> {
-  const r = cacheStore();
-  if (!r) return;
-  try {
-    await r.set(reactionCountsKey(target), counts, REACTION_COUNTS_TTL_SECONDS);
-  } catch {
-    // best-effort
-  }
-}
-
-export async function clearCachedReactionCounts(target: string): Promise<void> {
-  const r = cacheStore();
-  if (!r) return;
-  try {
-    await r.del(reactionCountsKey(target));
-  } catch {
-    // best-effort
   }
 }
 

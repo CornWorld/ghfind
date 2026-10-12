@@ -30,13 +30,27 @@ export interface Viewer {
   oauth: boolean;
 }
 
+/** Whether the request may carry a session; without one the visitor is anonymous. */
+export function hasSessionCookie(request: Request): boolean {
+  return request.headers.get("cookie")?.includes("ghfind_session=") ?? false;
+}
+
+// `oauth` only changes with the API Worker's deployed secrets, so anonymous
+// visitors (nearly all crawler traffic) reuse the first successful answer
+// instead of costing an API Worker invocation per render. Failures aren't
+// memoized, so a transient error can't hide the login UI for the isolate.
+let anonymousOauth: boolean | null = null;
+
 export async function getViewer(request: Request): Promise<Viewer> {
+  const anonymous = !hasSessionCookie(request);
+  if (anonymous && anonymousOauth !== null) return { login: null, oauth: anonymousOauth };
   const me = await apiJson<{ user: { login: string } | null; oauth: boolean }>(request, "/api/me");
+  if (anonymous && me) anonymousOauth = Boolean(me.oauth);
   return { login: me?.user?.login ?? null, oauth: Boolean(me?.oauth) };
 }
 
 export async function isSignedIn(request: Request): Promise<boolean> {
-  if (!request.headers.get("cookie")?.includes("ghfind_session=")) return false;
+  if (!hasSessionCookie(request)) return false;
   return (await getViewer(request)).login !== null;
 }
 
