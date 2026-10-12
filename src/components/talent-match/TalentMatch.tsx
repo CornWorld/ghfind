@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Building2, FlaskConical, UserRound } from "lucide-react";
 import { fetchMe } from "@/lib/me-client";
 import { signInWithGitHub } from "@/lib/oauth-client";
-import { MOCK_QUOTA } from "@/lib/talent-match/mock";
+import { getQuota } from "@/lib/talent-match/client";
 import type { Quota } from "@/lib/talent-match/types";
 import { CandidatePanel } from "./CandidatePanel";
 import { CompanyPanel } from "./CompanyPanel";
@@ -13,16 +13,17 @@ import { makeCopy } from "./parts";
 type Tab = "candidate" | "company";
 
 /**
- * /talent-match prototype: candidate talent report + company JD matching.
- * Renders fixtures from `@/lib/talent-match/mock`; the backend will serve the
- * same shapes (docs/plans/2026-10-12-talent-match-report.md).
+ * /talent-match: candidate talent reports from /api/talent-match (phase 1)
+ * and the company JD-matching prototype, which still renders fixtures from
+ * `@/lib/talent-match/mock` until phase 3
+ * (docs/plans/2026-10-12-talent-match-report.md).
  */
 export function TalentMatch({ zh }: { zh: boolean }) {
   const copy = makeCopy(zh);
   const { c } = copy;
   const [tab, setTab] = useState<Tab>("candidate");
   const [login, setLogin] = useState<string | null>(null);
-  const [quota, setQuota] = useState<Quota>(MOCK_QUOTA);
+  const [quota, setQuota] = useState<Quota | null>(null);
   // Handle handed over by the home search box's Match button (?github=).
   const [handoff, setHandoff] = useState<string | null>(null);
 
@@ -37,9 +38,15 @@ export function TalentMatch({ zh }: { zh: boolean }) {
     return () => { live = false; };
   }, []);
 
-  const onGenerated = useCallback(() => setQuota((q) => ({ ...q, used: Math.min(q.limit, q.used + 1) })), []);
+  const refreshQuota = useCallback(() => {
+    getQuota().then((result) => { if (result.ok) setQuota(result.value); });
+  }, []);
+  useEffect(() => {
+    if (login) refreshQuota();
+  }, [login, refreshQuota]);
   const onSignIn = useCallback(() => signInWithGitHub(), []);
-  const remaining = quota.limit - quota.used;
+  // Unknown quota (still loading, or the read failed) never blocks: the API enforces it.
+  const remaining = quota ? quota.limit - quota.used : null;
 
   const tabs: [Tab, string, typeof UserRound][] = [
     ["candidate", c("我是求职者", "I'm a candidate"), UserRound],
@@ -58,17 +65,13 @@ export function TalentMatch({ zh }: { zh: boolean }) {
             )}
           </p>
         </div>
-        {tab === "candidate" && login && (
+        {tab === "candidate" && login && quota && remaining !== null && (
           <p className="shrink-0 rounded-full border border-white/10 px-3 py-1 text-xs text-zinc-400">
             {c(`本月剩余 ${remaining} / ${quota.limit} 份报告`, `${remaining} of ${quota.limit} reports left this month`)}
           </p>
         )}
       </header>
 
-      <p className="mt-5 flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-2.5 text-xs text-zinc-400">
-        <FlaskConical className="h-4 w-4 shrink-0 text-amber-300" aria-hidden="true" />
-        {c("原型预览：当前展示的是示例数据，生成流程为模拟。", "Prototype preview: results are sample data and generation is simulated.")}
-      </p>
 
       <div role="tablist" aria-label={c("使用身份", "I am")} className="mt-6 flex gap-2">
         {tabs.map(([id, label, Icon]) => (
@@ -91,9 +94,15 @@ export function TalentMatch({ zh }: { zh: boolean }) {
 
       <div role="tabpanel" id={`tm-panel-${tab}`} aria-labelledby={`tm-tab-${tab}`} className="mt-5">
         {tab === "candidate" ? (
-          <CandidatePanel copy={copy} login={login} handoff={handoff} canGenerate={remaining > 0} onGenerated={onGenerated} onSignIn={onSignIn} />
+          <CandidatePanel copy={copy} login={login} handoff={handoff} canGenerate={remaining === null || remaining > 0} onQuotaChange={refreshQuota} onSignIn={onSignIn} />
         ) : (
-          <CompanyPanel copy={copy} login={login} onSignIn={onSignIn} />
+          <>
+            <p className="mb-5 flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-2.5 text-xs text-zinc-400">
+              <FlaskConical className="h-4 w-4 shrink-0 text-amber-300" aria-hidden="true" />
+              {c("原型预览：企业端展示的是示例数据，生成流程为模拟，即将上线。", "Prototype preview: the company side shows sample data with simulated generation, and is coming soon.")}
+            </p>
+            <CompanyPanel copy={copy} login={login} onSignIn={onSignIn} />
+          </>
         )}
       </div>
     </main>

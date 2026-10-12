@@ -173,6 +173,15 @@ export async function getOwnReport(db: Client, id: string, githubId: number): Pr
   };
 }
 
+/** The owner's most recent candidate report, if any. */
+export async function latestReport(db: Client, githubId: number): Promise<ReportRow | null> {
+  const { rows } = await db.execute({
+    sql: `SELECT id FROM talent_reports WHERE github_id = ? AND kind = 'candidate' ORDER BY created_at DESC LIMIT 1`,
+    args: [githubId],
+  });
+  return rows[0] ? getOwnReport(db, str(rows[0].id), githubId) : null;
+}
+
 export async function upsertProfile(
   db: Client,
   input: { githubId: number; login: string; profile: StoredProfile; inputHash: string; vectorId: string | null; now: number },

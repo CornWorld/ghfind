@@ -23,7 +23,7 @@ vi.mock("@/lib/redis", async (original) => ({
   checkTalentReportRateLimit: async () => (mocks.rateLimited ? { success: false, limit: 1, remaining: 0, reset: Date.now() + 1000 } : { success: true }),
 }));
 
-import { POST } from "@/app/api/talent-match/reports/route";
+import { GET as getLatest, POST } from "@/app/api/talent-match/reports/route";
 import { GET as getReport } from "@/app/api/talent-match/reports/[id]/route";
 import { GET as getQuota } from "@/app/api/talent-match/quota/route";
 import { DELETE as deleteProfile } from "@/app/api/talent-match/profile/route";
@@ -240,6 +240,14 @@ describe("POST /api/talent-match/reports", () => {
 });
 
 describe("report, quota and profile routes", () => {
+  it("returns the caller's latest report so the page can resume it", async () => {
+    expect(await (await getLatest()).json()).toEqual({ latest: null });
+    const { id } = await (await post(validBody)).json();
+    expect(await (await getLatest()).json()).toMatchObject({ latest: { id, status: "queued", report: null } });
+    mocks.user = { githubId: 8, login: "other" };
+    expect(await (await getLatest()).json()).toEqual({ latest: null });
+  });
+
   it("shows reports to their owner only, and deletes all talent data", async () => {
     const { id } = await (await post(validBody)).json();
     const ctx = { params: Promise.resolve({ id }) };

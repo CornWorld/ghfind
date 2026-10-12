@@ -5,6 +5,7 @@ import { auth, authConfigured } from "@/lib/auth";
 import { normalizeGitHubUsername } from "@/lib/comments";
 import { d1AsLibsqlClient, getD1Binding } from "@/lib/d1-client";
 import type { CandidateParams } from "./pipeline";
+import { STALE_REPORT_MS, type ReportRow } from "./store";
 
 /**
  * Shared plumbing for the /api/talent-match routes: the signed-in account,
@@ -48,3 +49,14 @@ export function reportWorkflow(): ReportWorkflow | null {
 
 export const unavailable = () => jsonNoStore({ error: "talent_match_unavailable" }, { status: 503 });
 export const signInRequired = () => jsonNoStore({ error: "sign_in_required" }, { status: 401 });
+
+/** Public view of a report row: a run that stopped moving reads as failed. */
+export function presentReport(report: ReportRow, now: number) {
+  const stale = (report.status === "queued" || report.status === "running") && now - report.updatedAt > STALE_REPORT_MS;
+  return {
+    id: report.id,
+    status: stale ? "failed" : report.status,
+    report: report.status === "done" ? report.result : null,
+    error: stale ? "stale" : report.error,
+  };
+}

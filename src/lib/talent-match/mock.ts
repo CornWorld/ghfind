@@ -1,12 +1,10 @@
-import type { CandidateReport, CompanyReport, Quota } from "./types";
+import type { CandidateReport, CompanyReport } from "./types";
 
 /**
  * Prototype fixtures for /talent-match. Every value is invented sample data
  * (people, scores, matches); repo star counts are rounded placeholders. The
  * backend replaces these with /api/talent-match/* responses of the same shape.
  */
-
-export const MOCK_QUOTA: Quota = { used: 0, limit: 2, resetsAt: "2026-11-01T00:00:00Z" };
 
 export const SAMPLE_JD = `Training & Inference Engineer — LLM infrastructure (Beijing / Hangzhou)
 

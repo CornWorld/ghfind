@@ -3,11 +3,11 @@ import { z } from "zod";
 import { commentClientIp } from "@/lib/comments";
 import { EMPLOYMENT_TYPES } from "@/lib/jobs";
 import { checkTalentReportRateLimit, rateLimitHeaders } from "@/lib/redis";
-import { coreDb, jsonNoStore, reportWorkflow, sessionUser, signInRequired, unavailable } from "@/lib/talent-match/http";
+import { coreDb, jsonNoStore, presentReport, reportWorkflow, sessionUser, signInRequired, unavailable } from "@/lib/talent-match/http";
 import { candidateInputHash, failReport, jobsRevision, loadResumeText } from "@/lib/talent-match/pipeline";
 import { admitReport, parseTokenBudget } from "@/lib/talent-match/quota";
 import { MATCH_VERSION } from "@/lib/talent-match/score";
-import { findDoneReport, insertQueuedReport, monthFreeTokens, quotaCounts } from "@/lib/talent-match/store";
+import { findDoneReport, insertQueuedReport, latestReport, monthFreeTokens, quotaCounts } from "@/lib/talent-match/store";
 import { verifyTurnstile } from "@/lib/turnstile";
 
 export const runtime = "nodejs";
@@ -31,6 +31,16 @@ const REJECTIONS = {
   quota_exhausted: 429,
   budget_exhausted: 503,
 } as const;
+
+/** The caller's latest report (so the page can resume one in progress), or null. */
+export async function GET() {
+  const user = await sessionUser();
+  if (!user) return signInRequired();
+  const db = coreDb();
+  if (!db) return unavailable();
+  const report = await latestReport(db, user.githubId);
+  return jsonNoStore({ latest: report ? presentReport(report, Date.now()) : null });
+}
 
 /**
  * Start a candidate report from a saved résumé plus the account's GitHub
