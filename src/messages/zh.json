@@ -1661,6 +1661,11 @@
       "full_time": "全职",
       "intern": "实习",
       "part_time": "兼职"
-    }
+    },
+    "backToJobs": "全部职位",
+    "apply": "申请职位",
+    "applyByEmail": "邮件投递简历",
+    "emailNote": "简历请发送至 {email}",
+    "detailNote": "ghfind 仅展示该职位信息，招聘决定由企业自行做出。"
   }
 }
