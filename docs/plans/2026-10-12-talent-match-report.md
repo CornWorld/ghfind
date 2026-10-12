@@ -65,7 +65,7 @@
 
 ## 五、数据与绑定
 
-### 1. D1 迁移 `migrations/0023_talent_match.sql`
+### 1. D1 迁移 `migrations/0025_talent_match.sql`（0023/0024 已被招聘板占用）
 
 ```sql
 -- 结构化画像（每用户一份当前版本）
@@ -178,7 +178,7 @@ LLM 是唯一有意义的成本项，按所用提供商单价换算（MiniCPM �
 **阶段 1（约 2 周）：候选人 MVP**
 - 输入只支持：简历编辑器数据 + GitHub 扫描。
 - 岗位只来自 `jobs` 表；先给现有岗位跑一遍 `job_requirements` 抽取 + 嵌入（脚本 `scripts/talent-match-backfill-jobs.mts`）。
-- 迁移 0023、AI / Vectorize / Workflow 绑定、额度、报告页。
+- 迁移 0025、AI / Vectorize / Workflow 绑定、额度、报告页。
 
 **阶段 2：输入扩展 + opt-in**
 - PDF 上传（浏览器端 pdf.js 抽文本）、个人网站抓取（单页 fetch + 正文提取，限制大小与域名）。
@@ -199,8 +199,13 @@ LLM 是唯一有意义的成本项，按所用提供商单价换算（MiniCPM �
 | 成本失控 | 月度额度 + 输入哈希缓存 + 全局 token 熔断 |
 | MiniCPM 抽取质量不稳 | zod 校验 + 重试 + DeepSeek fallback；上线前用 30 份标注简历做抽取准确率基线 |
 
+## 已定（2026-10-12）
+
+- 额度：每月 2 份（UTC 自然月），失败与输入未变不计。
+- Workflow 宿主：新建独立 Worker（承载 Workflow 与 AI / Vectorize 绑定），不放 `apps/coord`，避免长时 LLM 流水线影响扫描与限流，也便于单独看成本。
+- token 用量为估算值：`src/lib/llm.ts` 不返回供应商 usage，全局熔断按保守估算（CJK 每字 1 token，其余每 4 字符 1 token）。
+- 进行中的报告 15 分钟无进展视为失效，不再阻塞新报告。
+
 ## 待决
 
-- 额度是「每月 2 份」还是「终身 2 份」（本方案按每月）。
-- Workflow 宿主：`apps/coord` 还是新 Worker。
 - MiniCPM 的部署位置与端点（是否需要在 Cloudflare 侧加 AI Gateway 做日志 / 缓存）。
