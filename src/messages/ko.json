@@ -497,7 +497,6 @@
     "cancel": "취소",
     "saveContinue": "저장하고 계속"
   },
-  "developerCount": "벌써 <n>{count, number}</n>명의 개발자가 참전했습니다 ⚔️",
   "shareCard": {
     "beatLabel": "제친 개발자",
     "brand": "🔥 ghfind · 내 성적 재보기"

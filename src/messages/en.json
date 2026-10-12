@@ -497,7 +497,6 @@
     "cancel": "Cancel",
     "saveContinue": "Save & continue"
   },
-  "developerCount": "<n>{count, number}</n> developers have entered the arena ⚔️",
   "shareCard": {
     "beatLabel": "developers beaten",
     "brand": "🔥 ghfind · see how you stack up"

@@ -497,7 +497,6 @@
     "cancel": "キャンセル",
     "saveContinue": "保存して続行"
   },
-  "developerCount": "すでに <n>{count, number}</n> 人の開発者が参戦 ⚔️",
   "shareCard": {
     "beatLabel": "打ち負かした開発者",
     "brand": "🔥 ghfind · 自分の実力を測ってみよう"

@@ -1,5 +1,4 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { DeveloperCount } from "@/components/DeveloperCount";
 import { HomeCollections } from "@/components/HomeCollections";
 import { loadHomeCollectionCards } from "@/lib/pages/home";
 import { faqItems } from "@/components/HomeFaq";
@@ -11,7 +10,7 @@ import { HomeView } from "@/components/pages/HomeView";
 import { listJobs } from "@/lib/jobs";
 import { asTranslator } from "@/lib/translator";
 // ISR: the homepage shell is fully static (the scan form, tier pills and copy are
-// locale-only; DeveloperCount and the leaderboard rail fetch client-side from
+// locale-only; the leaderboard rail fetches client-side from
 // the API; the projects preview reads build-embedded content files). Serving it
 // from the CDN instead of rendering a function on every visit is what frees
 // the serverless pool for the LLM scan/roast traffic.
@@ -50,7 +49,6 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
       faq={faqItems(asTranslator(tFaq))}
       projectEntries={projectEntries}
       roaster={<Roaster />}
-      developerCount={<DeveloperCount />}
       sponsorRow={<HomeSponsorRow />}
       collections={<HomeCollections locale={locale} cards={cards} t={asTranslator(tCollections)} tBlog={asTranslator(tBlog)} />}
       leaderboardRail={<LeaderboardRail />}

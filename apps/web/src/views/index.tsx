@@ -70,7 +70,7 @@ export function Jobs({ route, ...props }: Routed<typeof JobsView>) {
   return <Route {...route}><JobsView {...props} /></Route>;
 }
 
-type HomeSlots = "roaster" | "developerCount" | "sponsorRow" | "collections" | "leaderboardRail";
+type HomeSlots = "roaster" | "sponsorRow" | "collections" | "leaderboardRail";
 
 /**
  * The homepage with its interactive pieces as Astro named slots: Astro hands
@@ -83,7 +83,6 @@ export function Home({ route, ...props }: Omit<Routed<typeof HomeView>, HomeSlot
       <HomeView
         {...props}
         roaster={props.roaster}
-        developerCount={props.developerCount}
         sponsorRow={props.sponsorRow}
         collections={props.collections}
         leaderboardRail={props.leaderboardRail}

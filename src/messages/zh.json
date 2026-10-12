@@ -497,7 +497,6 @@
     "cancel": "取消",
     "saveContinue": "保存并继续"
   },
-  "developerCount": "已经有 <n>{count, number}</n> 名开发者惨遭锐评。",
   "shareCard": {
     "beatLabel": "超越的开发者",
     "brand": "🔥 ghfind · 来测测你的含金量"
