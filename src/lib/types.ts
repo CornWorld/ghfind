@@ -167,6 +167,11 @@ export interface RawMetrics {
   empty_original_repo_count: number;
   total_stars: number;
   max_stars: number;
+  /** Stars discounted per repo for staleness (no push in 12–36 months) and
+   * dataset/content kind; Original Project Quality uses these when present.
+   * Optional so older snapshots fall back to the raw totals. */
+  weighted_total_stars?: number;
+  weighted_max_stars?: number;
   /** (watchers + issues ever + PRs ever) / stars for the top-starred original
    * repo. Only measured at ≥500★; undefined = not measured or fetch failed
    * (scored as "no penalty"). Viral-but-hollow repos run <1%, genuinely used
@@ -180,6 +185,12 @@ export interface RawMetrics {
   top_starred_original_repo_quality_score?: number;
   top_starred_original_repo_quality_repo?: string | null;
   merged_pr_count: number;
+  /** Merged PRs into repos the user does not own (`-user:` search count).
+   * Contribution Quality splits volume into external and own PRs when present;
+   * older snapshots without it keep the single-pool formula. */
+  external_merged_pr_count?: number;
+  /** Share of the sampled external merged PRs that target ≥200★ repos. */
+  external_high_star_pr_share?: number;
   /** Closed PRs that a repository-owned merge bot explicitly marked as landed.
    * This is intentionally separate from GitHub-native `merged_pr_count`. */
   workflow_landed_pr_count?: number;
@@ -207,6 +218,8 @@ export interface RawMetrics {
    * GitHub's native merged state. */
   workflow_landed_impact_pr_count?: number;
   impact_depth_raw: number;
+  /** Legacy: the global doc-heavy impact cap. No longer produced or scored —
+   * per-repo code share replaced it — but kept for older snapshots. */
   impact_quality_cap?: number;
   verified_impact_pr_count?: number;
   core_impact_pr_count?: number;

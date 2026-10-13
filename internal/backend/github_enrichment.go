@@ -57,33 +57,47 @@ func (c *GitHubClient) fetchRepoLanguages(ctx context.Context, owner, repo strin
 	return languages, nil
 }
 
+// repoEngagementFields are the GraphQL repository fields behind the
+// community-engagement ratio.
+type repoEngagementFields struct {
+	StargazerCount   float64 `json:"stargazerCount"`
+	HasIssuesEnabled bool    `json:"hasIssuesEnabled"`
+	IsMirror         bool    `json:"isMirror"`
+	Watchers         *struct {
+		TotalCount float64 `json:"totalCount"`
+	} `json:"watchers"`
+	Issues *struct {
+		TotalCount float64 `json:"totalCount"`
+	} `json:"issues"`
+	PullRequests *struct {
+		TotalCount float64 `json:"totalCount"`
+	} `json:"pullRequests"`
+}
+
+// ratio is (watchers + issues + PRs) / stars rounded to 4 decimals, or nil
+// when not measurable: mirrors and issues-disabled repos suppress engagement
+// by policy, not by lack of community.
+func (repo repoEngagementFields) ratio() *float64 {
+	if repo.StargazerCount == 0 || repo.IsMirror || !repo.HasIssuesEnabled {
+		return nil
+	}
+	ratio := roundJS((valueOrZeroStruct(repo.Watchers)+valueOrZeroStruct(repo.Issues)+valueOrZeroStruct(repo.PullRequests))/repo.StargazerCount*10000) / 10000
+	return &ratio
+}
+
 func (c *GitHubClient) fetchRepoEngagementRatio(ctx context.Context, owner, name string) *float64 {
 	var result struct {
-		Repository *struct {
-			StargazerCount   float64 `json:"stargazerCount"`
-			HasIssuesEnabled bool    `json:"hasIssuesEnabled"`
-			IsMirror         bool    `json:"isMirror"`
-			Watchers         *struct {
-				TotalCount float64 `json:"totalCount"`
-			} `json:"watchers"`
-			Issues *struct {
-				TotalCount float64 `json:"totalCount"`
-			} `json:"issues"`
-			PullRequests *struct {
-				TotalCount float64 `json:"totalCount"`
-			} `json:"pullRequests"`
-		} `json:"repository"`
+		Repository *repoEngagementFields `json:"repository"`
 	}
 	query := `query($owner: String!, $name: String!) {
  repository(owner: $owner, name: $name) {
   stargazerCount hasIssuesEnabled isMirror watchers { totalCount } issues { totalCount } pullRequests { totalCount }
  }
 }`
-	if c.graphql(ctx, query, map[string]any{"owner": owner, "name": name}, &result) != nil || result.Repository == nil || result.Repository.StargazerCount == 0 || result.Repository.IsMirror || !result.Repository.HasIssuesEnabled {
+	if c.graphql(ctx, query, map[string]any{"owner": owner, "name": name}, &result) != nil || result.Repository == nil {
 		return nil
 	}
-	ratio := roundJS((valueOrZeroStruct(result.Repository.Watchers)+valueOrZeroStruct(result.Repository.Issues)+valueOrZeroStruct(result.Repository.PullRequests))/result.Repository.StargazerCount*10000) / 10000
-	return &ratio
+	return result.Repository.ratio()
 }
 
 func valueOrZeroStruct(value *struct {
