@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { transitionActors } from './feed-production-transition.mjs';
+import { readTransitionResponse, transitionActors } from './feed-production-transition.mjs';
 const identity = {sourceSha:'a'.repeat(40),imageBuildId:'b'.repeat(64),mode:'baseline',writerEpoch:1};
 const anchor = {status:'passed',mode:'paused',sourceSha:identity.sourceSha,backend:'go',store:'cf_d1_r2',workerVersionId:'12345678-1234-4234-8234-123456789abc'};
 test('fixed actor transitions are sequential and recheck paused Web through final readback',async()=>{
@@ -84,4 +84,81 @@ test('a rejected transition names only the runtime error code', async () => {
   assert.equal(await rejectionCode(reply('{"error":"Bearer secret value"}')), 'unrecognized_error_body');
   assert.equal(await rejectionCode(reply('<html>bad gateway</html>')), 'unreadable_error_body');
   assert.equal(await rejectionCode(reply('x'.repeat(4096))), 'unreadable_error_body');
+});
+
+test('HTTP 200 restart receipts are read once and reach every release identity check', async () => {
+  const responses = [], calls = [];
+  const result = await transitionActors(identity, {
+    paused: async () => anchor,
+    send: async (target, body) => {
+      calls.push(target);
+      const response = Response.json({ restarted: true, target, ...body });
+      responses.push(response);
+      return readTransitionResponse(response, target, offVersion);
+    },
+  });
+  assert.equal(result.status, 'passed');
+  assert.deepEqual(calls, ['api-0', 'api-1', 'executor-0']);
+  assert.ok(responses.every(response => response.bodyUsed));
+});
+
+test('HTTP success does not bypass exact receipt identity or permit replay after malformed replies', async () => {
+  for (const body of [
+    { restarted: true, target: 'api-0', ...identity, sourceSha: 'c'.repeat(40) },
+    { restarted: true, target: 'api-0', ...identity, extra: true },
+    { kind: 'http-error', code: 'invalid_transition', status: 400 },
+    'invalid JSON', 'x'.repeat(4096),
+  ]) {
+    let calls = 0;
+    await assert.rejects(transitionActors(identity, {
+      paused: async () => anchor,
+      preflight: async () => {},
+      send: async target => {
+        calls++;
+        const response = typeof body === 'string' ? new Response(body) : Response.json(body);
+        return readTransitionResponse(response, target, offVersion);
+      },
+    }));
+    assert.equal(calls, 1);
+  }
+});
+
+test('HTTP failures expose only bounded error codes and never retry an unknown mutation outcome', async () => {
+  for (const [status, body, message] of [
+    [400, { error: 'invalid_transition' }, /400; api-0; invalid_transition/],
+    [503, { error: 'transition_timeout' }, /503; api-0; transition_timeout/],
+    [503, { error: 'private provider message' }, /503; api-0; unrecognized_error_body/],
+    [409, { error: 'transition_in_progress' }, /unproven transition rejection/],
+    [409, { error: 'transition_environment_not_ready', workerVersionId: baselineVersion }, /unproven transition rejection/],
+    [409, { error: 'transition_environment_not_ready', workerVersionId: offVersion, extra: true }, /unproven transition rejection/],
+  ]) {
+    let calls = 0;
+    await assert.rejects(transitionActors(identity, {
+      paused: async () => anchor,
+      preflight: async () => {},
+      send: async target => {
+        calls++;
+        return readTransitionResponse(Response.json(body, { status }), target, offVersion);
+      },
+    }), message);
+    assert.equal(calls, 1);
+  }
+});
+
+test('only a proven HTTP 409 from the known off edge can repeat preflight', async () => {
+  let calls = 0, preflights = 0;
+  const result = await transitionActors(identity, {
+    paused: async () => anchor,
+    preflight: async () => { preflights++; },
+    send: async (target, body) => {
+      const response = ++calls === 1
+        ? Response.json({ error: 'transition_environment_not_ready', workerVersionId: offVersion }, { status: 409 })
+        : Response.json({ restarted: true, target, ...body });
+      return readTransitionResponse(response, target, offVersion);
+    },
+  });
+  assert.equal(result.status, 'passed');
+  assert.equal(result.targets[0].rejectedWithoutMutation, 1);
+  assert.equal(calls, 4);
+  assert.equal(preflights, 4);
 });

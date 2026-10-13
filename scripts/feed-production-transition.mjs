@@ -25,6 +25,19 @@ export async function rejectionCode(response) {
     return 'unreadable_error_body';
   }
 }
+export async function readTransitionResponse(response, target, offVersion) {
+  if (response.status === 409) {
+    const rejection = await boundedJSON(response, 2048);
+    validatePreDispatchRejection(rejection, offVersion);
+    return { rejectedWithoutMutation: true };
+  }
+  // Error-message arguments are evaluated even when an assertion succeeds.
+  // Read only the selected branch so a 200 receipt remains available for the
+  // release caller's exact identity validation, without retrying the mutation.
+  if (response.status !== 200)
+    throw new Error(`mode transition rejected (${response.status}; ${target}; ${await rejectionCode(response)})`);
+  return boundedJSON(response, 2048);
+}
 export function edgePreflight(identity, off, { read, now = Date.now, sleep = ms => new Promise(resolve => setTimeout(resolve, ms)) }) {
   requireThat(/^[a-f0-9-]{36}$/.test(off?.runtime?.versionId ?? '') && typeof off.image === 'string', 'off edge identity required');
   let remainingMs = 45000;
@@ -127,13 +140,7 @@ async function main() {
     record: evidence => { writeFileSync(output, JSON.stringify(evidence,null,2)+'\n', { mode: 0o600, flag: first ? 'wx' : 'w' }); first = false; },
     send: async (target, body) => {
       const response = await fetch(`${production.runtimeOrigin}/internal/runtime/${target}/restart`, { method: 'POST', redirect: 'error', signal: AbortSignal.timeout(35000), headers: { authorization: `Bearer ${process.env.FEED_RUNTIME_ADMIN_SECRET}`, 'content-type':'application/json' }, body: JSON.stringify(body) });
-      if (response.status === 409) {
-        const rejection = await boundedJSON(response, 2048);
-        validatePreDispatchRejection(rejection, off.runtime.versionId);
-        return { rejectedWithoutMutation: true };
-      }
-      requireThat(response.status === 200, `mode transition rejected (${response.status}; ${target}; ${await rejectionCode(response)})`);
-      return boundedJSON(response, 2048);
+      return readTransitionResponse(response, target, off.runtime.versionId);
     },
   });
 }
