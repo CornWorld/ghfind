@@ -94,11 +94,15 @@ const REQUIRED_NUMBER_METRICS = [
 ] as const satisfies readonly (keyof RawMetrics)[];
 
 const OPTIONAL_NUMBER_METRICS = [
+  "weighted_total_stars",
+  "weighted_max_stars",
   "top_repo_engagement_ratio",
   "attributed_original_repo_count",
   "attributed_original_repo_stars",
   "best_original_repo_quality_score",
   "top_starred_original_repo_quality_score",
+  "external_merged_pr_count",
+  "external_high_star_pr_share",
   "workflow_landed_pr_count",
   "recent_doc_like_pr_count",
   "recent_doc_like_pr_ratio",
