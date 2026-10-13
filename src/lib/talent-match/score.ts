@@ -7,7 +7,8 @@ import type { Degree, RequirementSkill, StoredProfile, ExtractedRequirement } fr
  * never enters the score. Changing any weight or rule below must bump
  * {@link MATCH_VERSION} so stored reports stay labelled with their rules.
  */
-export const MATCH_VERSION = 1;
+// v2 narrows the candidate pool to DeepSeek and focuses advice on the top role.
+export const MATCH_VERSION = 2;
 
 /** Résumé-only (claimed) evidence counts for less than GitHub-verified. */
 export const SOURCE_WEIGHT = { verified: 1, claimed: 0.7 } as const;

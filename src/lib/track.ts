@@ -40,7 +40,11 @@ export type TrackEvent =
   // Homepage editor's-picks band: promo card → collection page.
   | "home_collections_click"
   // Home search box → /talent-match (with the typed handle when there is one).
-  | "talent_match_cta";
+  | "talent_match_cta"
+  | "talent_report_complete"
+  | "talent_card_view"
+  | "talent_card_export"
+  | "talent_card_role_select";
 
 type GaWindow = Window & {
   gtag?: (...params: unknown[]) => void;
