@@ -5,7 +5,7 @@ import { auth, authConfigured } from "@/lib/auth";
 import { normalizeGitHubUsername } from "@/lib/comments";
 import { d1AsLibsqlClient, getD1Binding } from "@/lib/d1-client";
 import type { CandidateParams } from "./pipeline";
-import { STALE_REPORT_MS, type ReportRow } from "./store";
+import { STALE_REPORT_MS, type ReportRow, type ReportSummaryRow } from "./store";
 
 /**
  * Shared plumbing for the /api/talent-match routes: the signed-in account,
@@ -60,13 +60,30 @@ export function reportWorkflow(): ReportWorkflow | null {
 export const unavailable = () => jsonNoStore({ error: "talent_match_unavailable" }, { status: 503 });
 export const signInRequired = () => jsonNoStore({ error: "sign_in_required" }, { status: 401 });
 
+const isStale = (report: { status: ReportRow["status"]; updatedAt: number }, now: number) =>
+  (report.status === "queued" || report.status === "running") && now - report.updatedAt > STALE_REPORT_MS;
+
 /** Public view of a report row: a run that stopped moving reads as failed. */
 export function presentReport(report: ReportRow, now: number) {
-  const stale = (report.status === "queued" || report.status === "running") && now - report.updatedAt > STALE_REPORT_MS;
+  const stale = isStale(report, now);
   return {
     id: report.id,
     status: stale ? "failed" : report.status,
     report: report.status === "done" ? report.result : null,
     error: stale ? "stale" : report.error,
+  };
+}
+
+/** Public view of a history entry, with the same stale rule as presentReport. */
+export function presentSummary(summary: ReportSummaryRow, now: number) {
+  const stale = isStale(summary, now);
+  return {
+    id: summary.id,
+    status: stale ? "failed" : summary.status,
+    error: stale ? "stale" : summary.error,
+    createdAt: new Date(summary.createdAt).toISOString(),
+    headline: summary.headline,
+    matchCount: summary.matchCount,
+    topFit: summary.topFit,
   };
 }

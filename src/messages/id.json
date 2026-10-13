@@ -1663,5 +1663,68 @@
     "applyByEmail": "Lamar lewat email",
     "emailNote": "Kirim CV ke {email}",
     "detailNote": "ghfind hanya menampilkan lowongan ini; keputusan rekrutmen sepenuhnya ada di perusahaan."
+  },
+  "talentMatch": {
+    "source": {
+      "legend": "Bagaimana kamu ingin membagikan CV?",
+      "existingTitle": "Pakai CV di ghfind",
+      "existingHint": "Pilih CV yang kamu simpan di CV saya",
+      "uploadTitle": "Unggah CV sendiri",
+      "uploadHint": "PDF, maks. {max} MB",
+      "loading": "Memuat CV kamu…",
+      "loadFailed": "Gagal memuat CV yang tersimpan. Coba lagi nanti, atau unggah PDF.",
+      "listLabel": "CV kamu",
+      "profileOption": "Profil (data yang bisa dipakai ulang)",
+      "profileHint": "Data yang kamu simpan untuk dipakai ulang di berbagai CV",
+      "updated": "Diperbarui {date}",
+      "manage": "Kelola CV",
+      "emptyTitle": "Kamu belum punya CV di ghfind",
+      "emptyBody": "Buat satu dalam beberapa menit dengan pembuat CV, simpan ke cloud, lalu kembali ke sini untuk menganalisisnya.",
+      "emptyCta": "Buat CV",
+      "emptyUpload": "Unggah PDF saja"
+    },
+    "drop": {
+      "label": "Unggah CV PDF",
+      "title": "Seret dan lepas PDF kamu di sini",
+      "or": "atau",
+      "browse": "Pilih file",
+      "rules": "Hanya PDF · maks. {max} MB",
+      "dragging": "Lepaskan untuk membaca CV",
+      "reading": "Membaca {name}…",
+      "readingHint": "Diproses di browser kamu dan hanya butuh beberapa detik.",
+      "readyTitle": "CV siap",
+      "readyMeta": "{pages, plural, other {# halaman}} · {chars} karakter",
+      "replace": "Ganti",
+      "remove": "Hapus",
+      "errorTitle": "File itu tidak bisa dipakai",
+      "retry": "Pilih file lain",
+      "privacy": "PDF dibaca di browser kamu dan tidak pernah diunggah. Hanya teksnya yang dikirim (email dan nomor telepon dihapus), dan teks itu sendiri tidak pernah disimpan.",
+      "errors": {
+        "type": "Itu bukan PDF. Pilih file .pdf.",
+        "size": "Ukuran file {size} MB. Batasnya {max} MB.",
+        "empty": "File itu kosong.",
+        "multiple": "Lepaskan satu file saja.",
+        "unreadable": "Tidak ada teks yang bisa dibaca dari PDF ini (mungkin hasil pindai atau gambar). Gunakan PDF dengan teks yang bisa dipilih.",
+        "parse": "PDF ini tidak bisa dibuka; mungkin rusak atau dilindungi kata sandi."
+      }
+    },
+    "history": {
+      "title": "Analisis sebelumnya",
+      "empty": "Analisis kamu akan muncul di sini setelah kamu membuatnya.",
+      "untitled": "Laporan talenta",
+      "viewing": "Sedang dilihat",
+      "opening": "Membuka…",
+      "running": "Sedang diproses",
+      "failed": "Gagal",
+      "matches": "{count, plural, other {# posisi cocok}}",
+      "topFit": "Kecocokan tertinggi {fit}",
+      "openFailed": "Analisis itu tidak bisa dibuka. Coba lagi."
+    },
+    "company": {
+      "badge": "Segera hadir",
+      "title": "Fitur rekrutmen segera hadir",
+      "body": "Sebentar lagi kamu bisa menempelkan deskripsi pekerjaan dan melihat developer yang terbuka untuk peluang, diurutkan berdasarkan keahlian yang terverifikasi di GitHub.",
+      "cta": "Pasang lowongan"
+    }
   }
 }

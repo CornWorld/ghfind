@@ -182,6 +182,55 @@ export async function latestReport(db: Client, githubId: number): Promise<Report
   return rows[0] ? getOwnReport(db, str(rows[0].id), githubId) : null;
 }
 
+/** How many past reports the history list shows. */
+const HISTORY_LIMIT = 20;
+
+/** One history entry: enough to label a report without loading its full result. */
+export interface ReportSummaryRow {
+  id: string;
+  status: ReportRow["status"];
+  error: string | null;
+  createdAt: number;
+  updatedAt: number;
+  /** Profile headline of a finished report. */
+  headline: { zh: string; en: string } | null;
+  matchCount: number;
+  /** Best fit across the report's matches, or null when it has none. */
+  topFit: number | null;
+}
+
+/**
+ * The owner's candidate reports, newest first. The summary fields are read
+ * with json_extract so the list never ships whole reports.
+ */
+export async function listOwnReports(db: Client, githubId: number, limit = HISTORY_LIMIT): Promise<ReportSummaryRow[]> {
+  const { rows } = await db.execute({
+    sql: `SELECT id, status, error, created_at, updated_at,
+                 CASE WHEN status = 'done' THEN json_extract(result_json, '$.profile.headline.zh') END AS headline_zh,
+                 CASE WHEN status = 'done' THEN json_extract(result_json, '$.profile.headline.en') END AS headline_en,
+                 CASE WHEN status = 'done' THEN json_array_length(result_json, '$.matches') END AS match_count,
+                 CASE WHEN status = 'done' THEN (SELECT MAX(json_extract(m.value, '$.fit')) FROM json_each(result_json, '$.matches') m) END AS top_fit
+          FROM talent_reports
+          WHERE github_id = ? AND kind = 'candidate'
+          ORDER BY created_at DESC LIMIT ?`,
+    args: [githubId, limit],
+  });
+  return rows.map((row) => {
+    const zh = str(row.headline_zh);
+    const en = str(row.headline_en);
+    return {
+      id: str(row.id),
+      status: row.status as ReportRow["status"],
+      error: typeof row.error === "string" ? row.error : null,
+      createdAt: num(row.created_at),
+      updatedAt: num(row.updated_at),
+      headline: zh || en ? { zh: zh || en, en: en || zh } : null,
+      matchCount: num(row.match_count),
+      topFit: row.top_fit === null || row.top_fit === undefined ? null : num(row.top_fit),
+    };
+  });
+}
+
 export async function upsertProfile(
   db: Client,
   input: { githubId: number; login: string; profile: StoredProfile; inputHash: string; vectorId: string | null; now: number },

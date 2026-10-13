@@ -4,7 +4,7 @@ import { commentClientIp } from "@/lib/comments";
 import { EMPLOYMENT_TYPES } from "@/lib/jobs";
 import { checkTalentReportRateLimit, rateLimitHeaders } from "@/lib/redis";
 import { llmCompleter } from "@/lib/talent-match/extract";
-import { REPORT_INSTANCE_RETENTION, coreDb, jsonNoStore, presentReport, reportWorkflow, sessionUser, signInRequired, unavailable } from "@/lib/talent-match/http";
+import { REPORT_INSTANCE_RETENTION, coreDb, jsonNoStore, presentReport, presentSummary, reportWorkflow, sessionUser, signInRequired, unavailable } from "@/lib/talent-match/http";
 import {
   candidateInputHash,
   extractForReport,
@@ -19,7 +19,7 @@ import {
 import { admitReport, parseTokenBudget } from "@/lib/talent-match/quota";
 import { MAX_UPLOAD_CHARS, cleanUploadedText } from "@/lib/talent-match/redact";
 import { MATCH_VERSION } from "@/lib/talent-match/score";
-import { findDoneReport, insertQueuedReport, latestReport, monthFreeTokens, quotaCounts } from "@/lib/talent-match/store";
+import { findDoneReport, insertQueuedReport, latestReport, listOwnReports, monthFreeTokens, quotaCounts } from "@/lib/talent-match/store";
 import { verifyTurnstile } from "@/lib/turnstile";
 
 export const runtime = "nodejs";
@@ -49,14 +49,21 @@ const REJECTIONS = {
   budget_exhausted: 503,
 } as const;
 
-/** The caller's latest report (so the page can resume one in progress), or null. */
+/**
+ * The caller's latest report (so the page can resume one in progress), or
+ * null, plus their report history (newest first) as summaries.
+ */
 export async function GET() {
   const user = await sessionUser();
   if (!user) return signInRequired();
   const db = coreDb();
   if (!db) return unavailable();
-  const report = await latestReport(db, user.githubId);
-  return jsonNoStore({ latest: report ? presentReport(report, Date.now()) : null });
+  const [report, history] = await Promise.all([latestReport(db, user.githubId), listOwnReports(db, user.githubId)]);
+  const now = Date.now();
+  return jsonNoStore({
+    latest: report ? presentReport(report, now) : null,
+    history: history.map((summary) => presentSummary(summary, now)),
+  });
 }
 
 /**

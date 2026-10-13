@@ -1663,5 +1663,68 @@
     "applyByEmail": "Apply by email",
     "emailNote": "Send your résumé to {email}",
     "detailNote": "ghfind only displays this listing; the company makes all hiring decisions."
+  },
+  "talentMatch": {
+    "source": {
+      "legend": "How should we read your résumé?",
+      "existingTitle": "Use a résumé on ghfind",
+      "existingHint": "Pick one you saved in My résumé",
+      "uploadTitle": "Upload your own",
+      "uploadHint": "PDF, up to {max} MB",
+      "loading": "Loading your résumés…",
+      "loadFailed": "Couldn't load your saved résumés. Try again later, or upload a PDF.",
+      "listLabel": "Your résumés",
+      "profileOption": "Profile (reusable details)",
+      "profileHint": "Details you saved for reuse across résumés",
+      "updated": "Updated {date}",
+      "manage": "Manage résumés",
+      "emptyTitle": "You don't have a résumé on ghfind yet",
+      "emptyBody": "Build one in a few minutes with the résumé builder and save it to the cloud, then come back to analyze it.",
+      "emptyCta": "Create a résumé",
+      "emptyUpload": "Upload a PDF instead"
+    },
+    "drop": {
+      "label": "Upload a PDF résumé",
+      "title": "Drag and drop your PDF here",
+      "or": "or",
+      "browse": "Browse files",
+      "rules": "PDF only · up to {max} MB",
+      "dragging": "Drop it to read your résumé",
+      "reading": "Reading {name}…",
+      "readingHint": "This happens in your browser and takes a few seconds.",
+      "readyTitle": "Résumé ready",
+      "readyMeta": "{pages, plural, one {# page} other {# pages}} · {chars} characters",
+      "replace": "Replace",
+      "remove": "Remove",
+      "errorTitle": "That file didn't work",
+      "retry": "Choose another file",
+      "privacy": "The PDF is read in your browser and never uploaded. Only its text is sent (email and phone removed), and the text itself is never stored.",
+      "errors": {
+        "type": "That's not a PDF. Choose a .pdf file.",
+        "size": "That file is {size} MB. The limit is {max} MB.",
+        "empty": "That file is empty.",
+        "multiple": "Drop one file at a time.",
+        "unreadable": "No text could be read from this PDF (it may be a scan or an image). Use a PDF with selectable text.",
+        "parse": "This PDF couldn't be opened; it may be damaged or password-protected."
+      }
+    },
+    "history": {
+      "title": "Past analyses",
+      "empty": "Your analyses will show up here after you generate one.",
+      "untitled": "Talent report",
+      "viewing": "Viewing",
+      "opening": "Opening…",
+      "running": "In progress",
+      "failed": "Failed",
+      "matches": "{count, plural, one {# matching role} other {# matching roles}}",
+      "topFit": "Best fit {fit}",
+      "openFailed": "Couldn't open that analysis. Please try again."
+    },
+    "company": {
+      "badge": "Coming soon",
+      "title": "Hiring tools are coming soon",
+      "body": "Soon you'll be able to paste a job description and see developers who are open to opportunities, ranked by GitHub-verified skills.",
+      "cta": "Post a job"
+    }
   }
 }

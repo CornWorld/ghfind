@@ -1663,5 +1663,68 @@
     "applyByEmail": "Ứng tuyển qua email",
     "emailNote": "Gửi CV đến {email}",
     "detailNote": "ghfind chỉ đăng tin tuyển dụng này; mọi quyết định tuyển dụng do công ty đưa ra."
+  },
+  "talentMatch": {
+    "source": {
+      "legend": "Bạn muốn dùng CV nào?",
+      "existingTitle": "Dùng CV trên ghfind",
+      "existingHint": "Chọn một CV đã lưu trong CV của tôi",
+      "uploadTitle": "Tải CV của bạn lên",
+      "uploadHint": "PDF, tối đa {max} MB",
+      "loading": "Đang tải CV của bạn…",
+      "loadFailed": "Không tải được CV đã lưu. Hãy thử lại sau hoặc tải lên một tệp PDF.",
+      "listLabel": "CV của bạn",
+      "profileOption": "Hồ sơ (thông tin dùng lại)",
+      "profileHint": "Thông tin bạn lưu để dùng lại cho nhiều CV",
+      "updated": "Cập nhật {date}",
+      "manage": "Quản lý CV",
+      "emptyTitle": "Bạn chưa có CV nào trên ghfind",
+      "emptyBody": "Tạo một CV trong vài phút với trình tạo CV, lưu lên đám mây rồi quay lại đây để phân tích.",
+      "emptyCta": "Tạo CV",
+      "emptyUpload": "Tải PDF lên thay thế"
+    },
+    "drop": {
+      "label": "Tải lên CV dạng PDF",
+      "title": "Kéo và thả tệp PDF vào đây",
+      "or": "hoặc",
+      "browse": "Chọn tệp",
+      "rules": "Chỉ PDF · tối đa {max} MB",
+      "dragging": "Thả ra để đọc CV",
+      "reading": "Đang đọc {name}…",
+      "readingHint": "Việc này diễn ra trong trình duyệt và chỉ mất vài giây.",
+      "readyTitle": "CV đã sẵn sàng",
+      "readyMeta": "{pages, plural, other {# trang}} · {chars} ký tự",
+      "replace": "Thay tệp",
+      "remove": "Gỡ bỏ",
+      "errorTitle": "Không dùng được tệp này",
+      "retry": "Chọn tệp khác",
+      "privacy": "Tệp PDF được đọc trong trình duyệt và không bao giờ được tải lên. Chỉ phần chữ được gửi đi (đã bỏ email và số điện thoại), và bản chữ đó cũng không được lưu lại.",
+      "errors": {
+        "type": "Đây không phải tệp PDF. Hãy chọn tệp .pdf.",
+        "size": "Tệp có dung lượng {size} MB. Giới hạn là {max} MB.",
+        "empty": "Tệp này trống.",
+        "multiple": "Mỗi lần chỉ thả một tệp.",
+        "unreadable": "Không đọc được chữ trong tệp PDF này (có thể là bản quét hoặc hình ảnh). Hãy dùng PDF có chữ có thể chọn được.",
+        "parse": "Không mở được tệp PDF này; tệp có thể bị hỏng hoặc được bảo vệ bằng mật khẩu."
+      }
+    },
+    "history": {
+      "title": "Phân tích trước đây",
+      "empty": "Các phân tích của bạn sẽ xuất hiện ở đây sau khi bạn tạo.",
+      "untitled": "Báo cáo nhân tài",
+      "viewing": "Đang xem",
+      "opening": "Đang mở…",
+      "running": "Đang tạo",
+      "failed": "Thất bại",
+      "matches": "{count, plural, other {# vị trí phù hợp}}",
+      "topFit": "Phù hợp nhất {fit}",
+      "openFailed": "Không mở được phân tích này. Vui lòng thử lại."
+    },
+    "company": {
+      "badge": "Sắp ra mắt",
+      "title": "Công cụ tuyển dụng sắp ra mắt",
+      "body": "Sắp tới bạn có thể dán mô tả công việc và xem các lập trình viên đang tìm cơ hội, xếp hạng theo kỹ năng đã được xác minh trên GitHub.",
+      "cta": "Đăng tin tuyển dụng"
+    }
   }
 }

@@ -1,7 +1,7 @@
 import type { EmploymentType } from "@/lib/jobs";
 import { readResumeLibraryFull } from "@/lib/resume";
 import { cleanUploadedText } from "./redact";
-import type { CandidateReport, Quota } from "./types";
+import type { CandidateReport, Quota, Text } from "./types";
 
 /**
  * Browser calls for the /talent-match page. Every function resolves (never
@@ -36,7 +36,20 @@ async function call<T>(path: string, init?: RequestInit): Promise<Result<T>> {
 
 export const getQuota = () => call<Quota & { inFlight: boolean }>("/api/talent-match/quota");
 
-export const getLatestReport = () => call<{ latest: ReportState | null }>("/api/talent-match/reports");
+/** A past report in the history list; open it with getReport. */
+export interface ReportSummary {
+  id: string;
+  status: ReportStatus;
+  error: string | null;
+  /** ISO timestamp. */
+  createdAt: string;
+  headline: Text | null;
+  matchCount: number;
+  topFit: number | null;
+}
+
+/** The latest report (to resume one in flight) and the owner's report history, newest first. */
+export const getReports = () => call<{ latest: ReportState | null; history: ReportSummary[] }>("/api/talent-match/reports");
 
 export const getReport = (id: string) => call<ReportState>(`/api/talent-match/reports/${encodeURIComponent(id)}`);
 
@@ -75,13 +88,26 @@ export const MAX_PDF_BYTES = 10 * 1024 * 1024;
 /** Same floor as the API: less text than this means a scanned or image-only PDF. */
 const MIN_PDF_CHARS = 100;
 
+const PDF_TYPES = new Set(["application/pdf", "application/x-pdf"]);
+
+/**
+ * Checks a picked file before reading it. Some systems report no MIME type
+ * for PDFs, so an empty type falls back to the .pdf extension.
+ */
+export function checkPdfFile(file: { name: string; type: string; size: number }): "pdf_type" | "pdf_too_large" | "pdf_empty" | null {
+  if (file.type ? !PDF_TYPES.has(file.type) : !/\.pdf$/i.test(file.name)) return "pdf_type";
+  if (file.size === 0) return "pdf_empty";
+  if (file.size > MAX_PDF_BYTES) return "pdf_too_large";
+  return null;
+}
+
 /**
  * Read a PDF's text in the browser (the file is never uploaded), with contact
  * details redacted. pdf.js is loaded only when someone picks a file.
  */
 export async function readPdfText(file: File): Promise<Result<{ text: string; pages: number }>> {
-  if (file.type && file.type !== "application/pdf") return { ok: false, error: "pdf_type" };
-  if (file.size > MAX_PDF_BYTES) return { ok: false, error: "pdf_too_large" };
+  const invalid = checkPdfFile(file);
+  if (invalid) return { ok: false, error: invalid };
   try {
     const { extractText, getDocumentProxy } = await import("unpdf");
     const pdf = await getDocumentProxy(new Uint8Array(await file.arrayBuffer()));
