@@ -442,6 +442,21 @@ export async function checkScanNetworkRateLimit(ip: string): Promise<RateLimitRe
   }
 }
 
+/** Bound Google token exchanges while leaving room for a shared office network. */
+export async function checkOAuthCallbackRateLimit(ip: string): Promise<RateLimitResult> {
+  const oauthLimiter = rateLimiter("rl:oauth-google", 30, "60 s");
+  if (!oauthLimiter) return unavailableRateLimitResult("oauth_google", "missing_redis_config");
+  try {
+    const { success, limit, remaining, reset } = await oauthLimiter.limit(ip);
+    return { success, limit, remaining, reset };
+  } catch (error) {
+    return unavailableRateLimitResult(
+      "oauth_google",
+      error instanceof Error ? error.name : "limiter_request_failed",
+    );
+  }
+}
+
 /**
  * Public event leaderboard refreshes fan out from many browsers that may share
  * one venue NAT. Keep them off the scan budget while still bounding origin reads.

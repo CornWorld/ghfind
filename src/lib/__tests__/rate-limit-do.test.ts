@@ -103,14 +103,32 @@ describe("Durable Object rate limiting", () => {
     expect(calls.sort()).toEqual(["rl:roast:d:principal-1", "rl:roast:m:principal-1"]);
   });
 
+  it("allows 30 Google exchanges per minute per network and caches further denials", async () => {
+    vi.useFakeTimers({ now: 1_000 * 60_000 + 1_000 });
+    const { ns, calls } = fakeNamespace();
+    productionWithDurableObjects(ns);
+    const { checkOAuthCallbackRateLimit } = await loadRedis();
+
+    for (let i = 0; i < 30; i++) {
+      expect((await checkOAuthCallbackRateLimit("203.0.113.9")).success).toBe(true);
+    }
+    expect(await checkOAuthCallbackRateLimit("203.0.113.9")).toMatchObject({ success: false, limit: 30, remaining: 0 });
+    expect(calls).toHaveLength(31);
+    expect(calls.every(key => key === "rl:oauth-google:203.0.113.9")).toBe(true);
+    expect((await checkOAuthCallbackRateLimit("203.0.113.9")).success).toBe(false);
+    expect(calls).toHaveLength(31);
+    expect((await checkOAuthCallbackRateLimit("203.0.113.10")).success).toBe(true);
+  });
+
   it("fails closed in production when the Durable Object errors", async () => {
     const { ns } = fakeNamespace({ fail: true });
     productionWithDurableObjects(ns);
     vi.spyOn(console, "error").mockImplementation(() => {});
-    const { checkRateLimit, checkVerdictRateLimit } = await loadRedis();
+    const { checkRateLimit, checkVerdictRateLimit, checkOAuthCallbackRateLimit } = await loadRedis();
 
     await expect(checkRateLimit("198.51.100.10")).resolves.toMatchObject({ success: false, unavailable: true });
     await expect(checkVerdictRateLimit("198.51.100.10")).resolves.toMatchObject({ success: false, unavailable: true });
+    await expect(checkOAuthCallbackRateLimit("198.51.100.10")).resolves.toMatchObject({ success: false, unavailable: true });
   });
 
   it("stays on Upstash semantics when the flag is off even if bound", async () => {
