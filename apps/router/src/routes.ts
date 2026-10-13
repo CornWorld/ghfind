@@ -40,6 +40,8 @@ const API_ROUTES: readonly RegExp[] = [
   // Batch 3: GitHub OAuth session cookies and account API tokens.
   /^\/api\/auth\/github$/,
   /^\/api\/auth\/callback\/github$/,
+  /^\/api\/auth\/google$/,
+  /^\/api\/auth\/callback\/google$/,
   /^\/api\/auth\/signout$/,
   /^\/api\/me$/,
   /^\/api\/account\/tokens$/,

@@ -24,6 +24,8 @@ import * as adminBackfillRepos from "@/app/api/admin/backfill-repos/route";
 import * as adminBackfillScores from "@/app/api/admin/backfill-scores/route";
 import * as authCallbackGithub from "@/app/api/auth/callback/github/route";
 import * as authGithub from "@/app/api/auth/github/route";
+import * as authGoogle from "@/app/api/auth/google/route";
+import * as authCallbackGoogle from "@/app/api/auth/callback/google/route";
 import * as authSignout from "@/app/api/auth/signout/route";
 import * as badge from "@/app/api/badge/[username]/route";
 import * as blogComments from "@/app/api/blog-comments/[slug]/route";
@@ -102,6 +104,8 @@ export const API_ROUTES: ApiRoute[] = [
   // Batch 3: GitHub OAuth session and account API tokens.
   { path: "/api/auth/github", module: authGithub },
   { path: "/api/auth/callback/github", module: authCallbackGithub },
+  { path: "/api/auth/google", module: authGoogle },
+  { path: "/api/auth/callback/google", module: authCallbackGoogle },
   { path: "/api/auth/signout", module: authSignout },
   { path: "/api/me", module: me },
   { path: "/api/account/tokens", module: accountTokens },
