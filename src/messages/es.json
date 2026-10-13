@@ -2,16 +2,27 @@
   "loginDialog": {
     "entry": "Iniciar sesión",
     "title": "Inicia sesión en ghfind",
-    "description": "Guarda tus cuentas seguidas y currículums para seguir en otros dispositivos.",
+    "description": "Elige una cuenta para continuar.",
     "close": "Cerrar",
     "google": "Continuar con Google",
     "github": "Continuar con GitHub",
-    "emailDivider": "O usar correo",
-    "emailLabel": "Correo electrónico",
-    "emailPlaceholder": "Introduce tu correo",
-    "sendCode": "Enviar código de verificación",
-    "githubUnavailable": "El inicio de sesión con GitHub no está disponible aquí.",
-    "comingSoon": "El inicio de sesión con Google y correo estará disponible pronto."
+    "apple": "Continuar con Apple",
+    "redirecting": "Abriendo {provider}…",
+    "loading": "Comprobando opciones de acceso…",
+    "retry": "Reintentar",
+    "loadFailed": "No se pudieron cargar las opciones de acceso. Revisa tu conexión y vuelve a intentarlo.",
+    "unavailable": "El inicio de sesión no está disponible temporalmente. Puedes seguir explorando e intentarlo más tarde.",
+    "githubFeatures": "Los seguimientos, currículums en la nube y tokens de API requieren actualmente una cuenta de GitHub.",
+    "providerAccount": "Cuenta de {provider}",
+    "switchToGitHub": "Cambiar al acceso con GitHub",
+    "errors": {
+      "denied": "Se canceló el inicio de sesión. Elige una cuenta para volver a intentarlo.",
+      "expired": "Esta solicitud de acceso ha caducado. Vuelve a empezar.",
+      "failed": "No se completó el inicio de sesión. Vuelve a intentarlo.",
+      "unavailable": "Este método no está disponible. Elige otra opción o inténtalo más tarde."
+    },
+    "signingOut": "Cerrando sesión…",
+    "signOutFailed": "No se pudo cerrar sesión. Revisa tu conexión y vuelve a intentarlo."
   },
   "meta": {
     "title": "ghfind | Score brutal de GitHub, autoevalúate y descubre a los mejores devs",
@@ -794,6 +805,10 @@
       {
         "h": "Qué almacenamos",
         "p": "Para las cuentas evaluadas, cacheamos el score calculado, el nivel y las métricas derivadas para que los reportes compartidos carguen rápido y el ranking se mantenga ágil. Solo las cuentas con score de 60 o más se indexan y listan públicamente; las páginas con score más bajo son accesibles por enlace directo pero se mantienen fuera de los motores de búsqueda. Usamos analítica agregada y respetuosa de la privacidad para entender el tráfico, y no vendemos datos personales."
+      },
+      {
+        "h": "Acceso con Google y cookies de cuenta",
+        "p": "Si eliges acceder con Google, recibimos tu identificador de cuenta de Google (subject), nombre e imagen de perfil para establecer tu sesión de ghfind. Google también puede devolver tu correo electrónico durante el acceso; no lo guardamos de forma persistente. Una cookie de sesión firmada y HttpOnly almacena tu identidad básica durante un máximo de 30 días. No conservamos tokens de acceso a las API de Google ni tokens de actualización. Al cerrar sesión se elimina la cookie de sesión. Acceder con Google no concede permisos de GitHub y no vinculamos cuentas automáticamente por correo electrónico."
       },
       {
         "h": "Roasts con tu propia key",

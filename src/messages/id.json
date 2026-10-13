@@ -2,16 +2,27 @@
   "loginDialog": {
     "entry": "Masuk",
     "title": "Masuk ke ghfind",
-    "description": "Simpan akun yang diikuti dan resume untuk melanjutkan di perangkat lain.",
+    "description": "Pilih akun untuk melanjutkan.",
     "close": "Tutup",
     "google": "Lanjutkan dengan Google",
     "github": "Lanjutkan dengan GitHub",
-    "emailDivider": "Atau gunakan email",
-    "emailLabel": "Alamat email",
-    "emailPlaceholder": "Masukkan email",
-    "sendCode": "Kirim kode verifikasi",
-    "githubUnavailable": "Login GitHub tidak tersedia di sini.",
-    "comingSoon": "Login Google dan email akan segera hadir."
+    "apple": "Lanjutkan dengan Apple",
+    "redirecting": "Membuka {provider}…",
+    "loading": "Memeriksa opsi masuk…",
+    "retry": "Coba lagi",
+    "loadFailed": "Opsi masuk tidak dapat dimuat. Periksa koneksi Anda dan coba lagi.",
+    "unavailable": "Login sementara tidak tersedia. Anda dapat terus menjelajah dan mencoba lagi nanti.",
+    "githubFeatures": "Mengikuti pengguna, resume cloud, dan token API saat ini memerlukan akun GitHub.",
+    "providerAccount": "Akun {provider}",
+    "switchToGitHub": "Beralih ke login GitHub",
+    "errors": {
+      "denied": "Login dibatalkan. Pilih akun untuk mencoba lagi.",
+      "expired": "Permintaan login ini telah kedaluwarsa. Silakan mulai lagi.",
+      "failed": "Login tidak selesai. Silakan coba lagi.",
+      "unavailable": "Metode login ini tidak tersedia. Pilih opsi lain atau coba lagi nanti."
+    },
+    "signingOut": "Sedang keluar…",
+    "signOutFailed": "Tidak dapat keluar. Periksa koneksi dan coba lagi."
   },
   "meta": {
     "title": "ghfind | Skor GitHub Pedas, Uji Diri & Temukan Dev Terbaik",
@@ -794,6 +805,10 @@
       {
         "h": "Apa yang kami simpan",
         "p": "Untuk akun yang dinilai, kami menyimpan cache skor, tier, dan metrik turunannya agar laporan yang dibagikan cepat dimuat dan papan peringkat tetap kencang. Hanya akun berskor 60 ke atas yang diindeks dan ditampilkan secara publik; halaman berskor lebih rendah tetap bisa diakses lewat tautan langsung tapi dijauhkan dari mesin pencari. Kami memakai analitik agregat yang menghormati privasi untuk memahami trafik dan tidak menjual data pribadi."
+      },
+      {
+        "h": "Login Google dan cookie akun",
+        "p": "Jika Anda memilih login Google, kami menerima pengenal akun Google (subject), nama, dan gambar profil untuk membuat sesi ghfind. Google juga dapat mengirimkan alamat email saat login; kami tidak menyimpannya secara permanen. Cookie sesi bertanda tangan dan HttpOnly menyimpan identitas dasar Anda hingga 30 hari. Kami tidak menyimpan token akses API Google atau token penyegaran. Keluar akan menghapus cookie sesi. Login Google tidak memberikan izin GitHub, dan kami tidak otomatis menghubungkan akun berdasarkan alamat email."
       },
       {
         "h": "Roast dengan key milik sendiri",

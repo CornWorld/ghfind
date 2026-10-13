@@ -2,16 +2,27 @@
   "loginDialog": {
     "entry": "Sign in",
     "title": "Sign in to ghfind",
-    "description": "Keep your follows and résumés across devices.",
+    "description": "Choose an account to continue.",
     "close": "Close",
     "google": "Continue with Google",
     "github": "Continue with GitHub",
-    "emailDivider": "Or use email",
-    "emailLabel": "Email address",
-    "emailPlaceholder": "Enter your email",
-    "sendCode": "Send verification code",
-    "githubUnavailable": "GitHub sign-in is unavailable here.",
-    "comingSoon": "Google and email sign-in are coming soon."
+    "apple": "Continue with Apple",
+    "redirecting": "Opening {provider}…",
+    "loading": "Checking sign-in options…",
+    "retry": "Try again",
+    "loadFailed": "Could not load sign-in options. Check your connection and try again.",
+    "unavailable": "Sign-in is temporarily unavailable. You can continue browsing and try again later.",
+    "githubFeatures": "Following, cloud résumés and API tokens currently require a GitHub account.",
+    "providerAccount": "{provider} account",
+    "switchToGitHub": "Switch to GitHub sign-in",
+    "errors": {
+      "denied": "Sign-in was cancelled. Choose an account to try again.",
+      "expired": "This sign-in request has expired. Please start again.",
+      "failed": "Sign-in did not finish. Please try again.",
+      "unavailable": "This sign-in method is unavailable. Choose another option or try again later."
+    },
+    "signingOut": "Signing out…",
+    "signOutFailed": "Could not sign out. Check your connection and try again."
   },
   "meta": {
     "title": "ghfind | Savage GitHub Score, Self-Test & Discover Top Devs",
@@ -794,6 +805,10 @@
       {
         "h": "What we store",
         "p": "For accounts that are scored, we cache the computed score, tier, and derived metrics so shared reports load quickly and the leaderboard stays fast. Only accounts scoring 60 or above are indexed and listed publicly; lower-scoring pages are reachable by direct link but kept out of search engines. We use privacy-respecting, aggregate analytics to understand traffic and do not sell personal data."
+      },
+      {
+        "h": "Google sign-in and account cookies",
+        "p": "If you choose Google sign-in, we receive your Google account identifier (subject), name and profile image to establish your ghfind session. Google may also return your email address during sign-in; we do not persist it. A signed, HttpOnly session cookie stores your basic identity for up to 30 days. We do not retain Google API access tokens or refresh tokens. Signing out clears the session cookie. Google sign-in does not grant GitHub permissions, and we do not automatically link accounts by email address."
       },
       {
         "h": "Bring-your-own-key roasts",
