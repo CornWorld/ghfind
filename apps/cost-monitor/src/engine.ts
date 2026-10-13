@@ -31,7 +31,16 @@ export interface Point {
   relative?: boolean;
   diagnostic?: boolean; // Per-SQL breakdown: never double count database cost.
 }
-export interface Frame { at: number; points: Point[]; healthy: Product[]; errors: string[]; completeQueries?: boolean }
+export interface Frame {
+  at: number;
+  points: Point[];
+  healthy: Product[];
+  errors: string[];
+  completeQueries?: boolean;
+  // Optional SQL diagnostics do not determine whether consumption was collected.
+  diagnostics?: string[];
+  costComplete?: boolean;
+}
 export interface MetricState {
   baseline: number;
   samples: number;
@@ -45,8 +54,13 @@ export interface MetricState {
   incident: number;
   gauge?: boolean;
   diagnostic?: boolean;
+  // Account-only closed 5-minute cost buckets. Never fill missing windows with zero.
+  burnWindows?: [at: number, usd: number][];
+  // Keep the last evidence that actually confirmed the incident's latched level.
+  trigger?: { at: number; severity: number; basis: "absolute" | "relative" | "burn" | "billing"; condition: string; observed: string };
 }
-export interface Notice { id: string; key: string; kind: "open" | "reminder" | "escalation" | "recovery"; severity: number; text: string; delivered: string[]; attempts: number; expiresAt: number }
+export interface NoticeEvidence { resource: string; metric: string; value: string; threshold?: string; window: string; action: string; impact?: string; cost?: string }
+export interface Notice { id: string; key: string; kind: "open" | "reminder" | "escalation" | "recovery"; severity: number; text: string; evidence?: NoticeEvidence; delivered: string[]; attempts: number; expiresAt: number }
 export interface State {
   lastFrame: number;
   lastSuccess: number;
@@ -60,6 +74,11 @@ export interface State {
   lastError: string | null;
   nextDigest?: number;
   digestRecipients?: string[];
+  collection?: import("./collection-health").CollectionHealthState;
+  lastDeliveryError?: string | null;
+  lastBillingAttempt?: number;
+  lastBillingError?: string | null;
+  lastCompletedAt?: number;
 }
 export function emptyState(): State {
   return { lastFrame: 0, lastSuccess: 0, lastAttempt: 0, lastBilling: 0, metrics: {}, outbox: [], recentDelivery: [], mailReceipts: [], mailBudget: {hour:0,hourly:0,day:0,daily:0}, lastError: null };
