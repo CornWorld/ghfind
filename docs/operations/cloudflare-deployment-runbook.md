@@ -129,6 +129,11 @@ when those features are enabled. Repeat the required set for `--env dev` only if
 the dev Worker is intended to be used; do not copy production OAuth or write-path
 credentials into dev without an explicit data-safety decision.
 
+For Google login, configure `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET` on both
+`ghfind-api` and the legacy `ghfind` Worker. Follow
+[Google sign-in setup and cost boundaries](google-signin.md); this direct OAuth
+flow does not require a billing account or paid Identity Platform service.
+
 `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `PUBLIC_SITE_URL`, and
 `NEXT_PUBLIC_SITE_URL` are non-secret build/runtime variables. The first is set in
 the deployment environment; the latter two are already defined per environment in
