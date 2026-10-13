@@ -11,7 +11,7 @@ const fresh=(at,now)=>typeof at==="number"&&Number.isFinite(at)&&at>0&&at<=now+6
 const emptyState=()=>({version:1,incident:null});
 
 // Only the scheduler and delivery path need an independent watchdog. The
-// running monitor owns upstream analytics/billing gaps and their notification policy.
+// running monitor exposes upstream analytics/billing gaps in internal health only.
 export function healthFailure(health,now){
   if(!health||typeof health!=="object")return "heartbeat";
   const attempted=Object.hasOwn(health,"lastAttempt")?health.lastAttempt:health.lastSuccess;
@@ -73,12 +73,18 @@ function message(reason,startedAt,now,e2e){
 }
 
 export async function watchdog(env,fetcher=fetch,now=Date.now(),options={}){
-  const required=["COST_MONITOR_URL","MONITOR_ADMIN_TOKEN","CF_MONITOR_API_TOKEN","CF_ACCOUNT_ID","ALERT_RECIPIENTS"];
+  const required=["COST_MONITOR_URL","MONITOR_ADMIN_TOKEN"];
   if(required.some(k=>!env[k]))throw new Error("Watchdog configuration incomplete");
-  const input=JSON.parse(env.ALERT_RECIPIENTS);
+  // Operator routing is explicit and independent of customer notifications.
+  // Missing/blank/[] means report via CLI and Actions only; never fall back to
+  // ALERT_RECIPIENTS, and do not require email credentials in that mode.
+  let input=[];
+  try{if(env.MONITOR_OPS_RECIPIENTS?.trim())input=JSON.parse(env.MONITOR_OPS_RECIPIENTS);}catch{throw new Error("Invalid watchdog recipients");}
   if(!Array.isArray(input)||input.some(x=>typeof x!=="string"))throw new Error("Invalid watchdog recipients");
   const targets=[...new Set(input.map(x=>x.trim().toLowerCase()).filter(Boolean))];
-  if(!targets.length||targets.length>20||targets.some(x=>!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(x)))throw new Error("Invalid watchdog recipients");
+  if(targets.length>20||targets.some(x=>!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(x)))throw new Error("Invalid watchdog recipients");
+  if(targets.length&&(!env.CF_MONITOR_API_TOKEN||!env.CF_ACCOUNT_ID))throw new Error("Watchdog email configuration incomplete");
+  const notificationMode=targets.length?"operations":"actions-only";
   const state=normalizedState(options.state,env,targets,now);
   const persist=async()=>{if(options.persist)await options.persist(state);};
   let reason="heartbeat";
@@ -87,7 +93,7 @@ export async function watchdog(env,fetcher=fetch,now=Date.now(),options={}){
     if(response.ok)reason=healthFailure(await boundedJson(response),now);
     else await response.body?.cancel();
   }catch{}
-  if(!reason){state.incident=null;await persist();return {healthy:true,notified:false,failed:0,state};}
+  if(!reason){state.incident=null;await persist();return {healthy:true,notified:false,failed:0,notificationMode,state};}
   if(state.incident?.reason!==reason)state.incident={scope:keyedHash(env,`monitor:${env.COST_MONITOR_URL}`),reason,startedAt:now,notified:{}};
   await persist();
   const notice=message(reason,state.incident.startedAt,now,env.WATCHDOG_E2E==="1");
@@ -110,7 +116,7 @@ export async function watchdog(env,fetcher=fetch,now=Date.now(),options={}){
     }
     await persist();
   }
-  return {healthy:false,notified:notified>0,failed,reason,state};
+  return {healthy:false,notified:notified>0,failed,reason,notificationMode,state};
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
   try{
@@ -118,7 +124,7 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
     if(!path)throw new Error("Watchdog state path not configured");
     const state=await readWatchdogState(path);
     const result=await watchdog(process.env,fetch,Date.now(),{state,persist:state=>saveWatchdogState(path,state)});
-    console.log(JSON.stringify({healthy:result.healthy,notified:result.notified,failed:result.failed,reason:result.reason??null}));
+    console.log(JSON.stringify({healthy:result.healthy,notified:result.notified,failed:result.failed,reason:result.reason??null,notificationMode:result.notificationMode}));
     if(!result.healthy)process.exitCode=1;
   }catch{console.error("Cost-monitor watchdog failed; check private configuration and provider availability");process.exitCode=1;}
 }

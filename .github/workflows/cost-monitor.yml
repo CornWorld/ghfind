@@ -91,7 +91,7 @@ jobs:
       MONITOR_ADMIN_TOKEN: ${{ secrets.COST_MONITOR_ADMIN_TOKEN }}
       CF_MONITOR_API_TOKEN: ${{ secrets.CF_MONITOR_API_TOKEN }}
       CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-      ALERT_RECIPIENTS: ${{ secrets.COST_MONITOR_RECIPIENTS }}
+      MONITOR_OPS_RECIPIENTS: ${{ secrets.COST_MONITOR_OPS_RECIPIENTS }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -108,7 +108,7 @@ jobs:
           path: ${{ runner.temp }}/cost-monitor-watchdog/state.json
           key: cost-monitor-watchdog-v1-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: cost-monitor-watchdog-v1-
-      - name: Check freshness and email on missing heartbeat
+      - name: Check monitor heartbeat and notify configured operators
         id: watchdog
         env:
           WATCHDOG_STATE_FILE: ${{ runner.temp }}/cost-monitor-watchdog/state.json

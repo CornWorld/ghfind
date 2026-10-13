@@ -1,11 +1,14 @@
 import {test} from "node:test";
+import {execFile} from "node:child_process";
+import {createServer} from "node:http";
+import {promisify} from "node:util";
 import assert from "node:assert/strict";
 import {mkdtemp,readFile,rm,stat,writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
 import {healthFailure,readWatchdogState,REPEAT_MS,saveWatchdogState,watchdog} from "./cost-monitor-watchdog.mjs";
 
-const env={COST_MONITOR_URL:"https://monitor.example",MONITOR_ADMIN_TOKEN:"admin-private",CF_MONITOR_API_TOKEN:"send-private",CF_ACCOUNT_ID:"account",ALERT_RECIPIENTS:'["one@example.org","two@example.org",""]'};
+const env={COST_MONITOR_URL:"https://monitor.example",MONITOR_ADMIN_TOKEN:"admin-private",CF_MONITOR_API_TOKEN:"send-private",CF_ACCOUNT_ID:"account",MONITOR_OPS_RECIPIENTS:'["one@example.org","two@example.org",""]'};
 const now=10_000_000;
 const good={version:2,lastAttempt:now-60_000,lastSuccess:0,heartbeatHealthy:true,collectionHealthy:false,deliveryHealthy:true,healthy:false};
 const accepted=to=>Response.json({success:true,result:{delivered:[],queued:[to],permanent_bounces:[]}});
@@ -91,7 +94,7 @@ test("a changed failure type opens an actionable incident and unknown state cann
 test("new recipients are notified without repeating recipients already notified",async()=>{
   const first=await watchdog(env,scenario({lastAttempt:0}),now);
   const sends=[];
-  await watchdog({...env,ALERT_RECIPIENTS:'[" one@example.org ","ONE@example.org","three@example.org"]'},scenario({lastAttempt:0},sends),now+3600_000,{state:first.state});
+  await watchdog({...env,MONITOR_OPS_RECIPIENTS:'[" one@example.org ","ONE@example.org","three@example.org"]'},scenario({lastAttempt:0},sends),now+3600_000,{state:first.state});
   assert.deepEqual(sends.map(s=>s.to[0]),["three@example.org"]);
 });
 
@@ -106,8 +109,8 @@ test("refuses unpersistable state before sending and invalid recipients before a
   const sends=[];
   await assert.rejects(watchdog(env,scenario({lastAttempt:0},sends),now,{persist:()=>{throw new Error("storage unavailable");}}),/storage unavailable/);
   assert.equal(sends.length,0);
-  for(const addresses of ['null','[42]','[]','["bad"]']){
-    await assert.rejects(watchdog({...env,ALERT_RECIPIENTS:addresses},()=>{throw new Error("must not fetch");},now),/Invalid watchdog recipients/);
+  for(const addresses of ['null','[42]','invalid-json','["bad"]']){
+    await assert.rejects(watchdog({...env,MONITOR_OPS_RECIPIENTS:addresses},()=>{throw new Error("must not fetch");},now),/Invalid watchdog recipients/);
   }
 });
 
@@ -136,4 +139,47 @@ test("state file is bounded, atomic, private, and safely migrates corrupt or unk
 test("health parser does not treat future or invalid attempt times as liveness",()=>{
   for(const lastAttempt of [NaN,Infinity,"1000",now+60_001,0,null])assert.equal(healthFailure({lastAttempt,lastSuccess:now},now),"heartbeat");
   assert.equal(healthFailure({...good,lastAttempt:now+60_000},now),null);
+});
+
+
+test("absent or empty operator routing reports health without customer fallback or mail credentials", async()=>{
+  for(const routing of [undefined,"","  ","[]",'["", " "]'])for(const health of [good,{lastAttempt:0},null]){
+    const sends=[];let persisted;
+    const isolated={COST_MONITOR_URL:env.COST_MONITOR_URL,MONITOR_ADMIN_TOKEN:env.MONITOR_ADMIN_TOKEN,MONITOR_OPS_RECIPIENTS:routing,ALERT_RECIPIENTS:'["customer@example.org"]'};
+    const result=await watchdog(isolated,scenario(health,sends),now,{persist:state=>{persisted=state;}});
+    assert.equal(result.healthy,health===good);
+    assert.equal(result.notified,false);
+    assert.equal(result.failed,0);
+    assert.equal(result.notificationMode,"actions-only");
+    assert.equal(sends.length,0);
+    assert.equal(result.reason,health===good?undefined:"heartbeat");
+    assert.ok(persisted);
+    assert.equal(JSON.stringify(persisted).includes("customer@example.org"),false);
+  }
+});
+
+test("explicit operator recipients are the only mail audience even when customers are configured", async()=>{
+  const sends=[];
+  const result=await watchdog({...env,MONITOR_OPS_RECIPIENTS:'["ops@example.org"]',ALERT_RECIPIENTS:'["customer@example.org"]'},scenario({lastAttempt:0},sends),now);
+  assert.equal(result.notified,true);
+  assert.equal(result.notificationMode,"operations");
+  assert.deepEqual(sends.map(s=>s.to[0]),["ops@example.org"]);
+  for(const absent of ["CF_MONITOR_API_TOKEN","CF_ACCOUNT_ID"]){
+    await assert.rejects(watchdog({...env,[absent]:undefined},()=>{throw new Error("must not fetch");},now),/Watchdog email configuration incomplete/);
+  }
+});
+
+test("CLI still fails an unhealthy monitor when operator email is disabled", async()=>{
+  const dir=await mkdtemp(join(tmpdir(),"cost-watchdog-cli-"));
+  const server=createServer((_request,response)=>{response.writeHead(200,{"content-type":"application/json"});response.end(JSON.stringify({lastAttempt:0}));});
+  await new Promise(resolve=>server.listen(0,"127.0.0.1",resolve));
+  try{
+    const {port}=server.address();
+    await assert.rejects(promisify(execFile)(process.execPath,[new URL("./cost-monitor-watchdog.mjs",import.meta.url).pathname],{env:{...process.env,COST_MONITOR_URL:`http://127.0.0.1:${port}`,MONITOR_ADMIN_TOKEN:"local-only",MONITOR_OPS_RECIPIENTS:"",CF_MONITOR_API_TOKEN:"",CF_ACCOUNT_ID:"",ALERT_RECIPIENTS:'["customer@example.org"]',WATCHDOG_STATE_FILE:join(dir,"state.json")},timeout:10_000}),error=>{
+      assert.equal(error.code,1);
+      assert.deepEqual(JSON.parse(error.stdout),{healthy:false,notified:false,failed:0,reason:"heartbeat",notificationMode:"actions-only"});
+      return true;
+    });
+    assert.equal((await readWatchdogState(join(dir,"state.json"))).incident.reason,"heartbeat");
+  }finally{await new Promise(resolve=>server.close(resolve));await rm(dir,{recursive:true,force:true});}
 });
