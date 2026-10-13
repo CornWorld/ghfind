@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({
   getAccountDetail: vi.fn(),
   getCachedScan: vi.fn(),
   getCurrentCanonicalQuickScan: vi.fn(),
-  getDeveloperCommonProjectsCached: vi.fn(),
+  getProfileCommonProjectsCached: vi.fn(),
   getFacetRank: vi.fn(),
   getMatchup: vi.fn(),
   getPercentileCached: vi.fn(),
@@ -34,7 +34,7 @@ vi.mock("@/lib/db", () => ({
 }));
 vi.mock("@/lib/developers", () => ({ getFacetRankCached: mocks.getFacetRank }));
 vi.mock("@/lib/project-discovery", () => ({
-  getDeveloperCommonProjectsCached: mocks.getDeveloperCommonProjectsCached,
+  getProfileCommonProjectsCached: mocks.getProfileCommonProjectsCached,
 }));
 vi.mock("@/lib/rank", () => ({
   getPercentileCached: mocks.getPercentileCached,
@@ -149,7 +149,7 @@ beforeEach(() => {
   mocks.getRankCached.mockResolvedValue({ rank: 12, total: 100, below: 80 });
   mocks.getPercentileCached.mockResolvedValue({ below: 90, total: 120 });
   mocks.getSimilarAccounts.mockResolvedValue(["s1", "s2", "s3", "s4"].map(similarEntry));
-  mocks.getDeveloperCommonProjectsCached.mockResolvedValue([]);
+  mocks.getProfileCommonProjectsCached.mockResolvedValue([[], [], []]);
   mocks.getUserMatchups.mockResolvedValue([matchup]);
   mocks.getFacetRank.mockResolvedValue({
     facetType: "language",
@@ -169,10 +169,11 @@ beforeEach(() => {
 
 describe("getGoProfilePresentation", () => {
   it("assembles the full presentation with the Go handler's limits and shapes", async () => {
-    mocks.getDeveloperCommonProjectsCached
-      .mockResolvedValueOnce([commonItem("a/low", 70), commonItem("a/high", 90)])
-      .mockResolvedValueOnce([commonItem("a/high", 90), commonItem("b/mid", 80)])
-      .mockResolvedValueOnce([]);
+    mocks.getProfileCommonProjectsCached.mockResolvedValueOnce([
+      [commonItem("a/low", 70), commonItem("a/high", 90)],
+      [commonItem("a/high", 90), commonItem("b/mid", 80)],
+      [],
+    ]);
 
     const presentation = await getGoProfilePresentation("octocat");
 
@@ -196,9 +197,13 @@ describe("getGoProfilePresentation", () => {
     expect(mocks.getSimilarAccounts).toHaveBeenCalledWith("octocat", 77.7, subScores, 6);
     expect(mocks.getUserMatchups).toHaveBeenCalledWith("octocat", 8);
     expect(mocks.getFacetRank).toHaveBeenCalledWith("octocat", 77.7);
-    // Common projects consider only the first 3 similar developers.
-    expect(mocks.getDeveloperCommonProjectsCached).toHaveBeenCalledTimes(3);
-    expect(mocks.getDeveloperCommonProjectsCached).toHaveBeenNthCalledWith(1, "octocat", "s1", 6);
+    // Common projects consider only the first 3 similar developers, read in
+    // one per-profile call (one cache entry, one database round trip).
+    expect(mocks.getProfileCommonProjectsCached).toHaveBeenCalledExactlyOnceWith(
+      "octocat",
+      ["s1", "s2", "s3"],
+      6,
+    );
     expect(mocks.filterExistingRepoKeys).toHaveBeenCalledWith([
       "octocat/hello",
       "octocat/world",
@@ -277,7 +282,7 @@ describe("getGoProfilePresentation", () => {
   });
 
   it("returns null when the common-projects cache loader unexpectedly rejects", async () => {
-    mocks.getDeveloperCommonProjectsCached.mockRejectedValue(new Error("turso down"));
+    mocks.getProfileCommonProjectsCached.mockRejectedValue(new Error("turso down"));
     await expect(getGoProfilePresentation("octocat")).resolves.toBeNull();
   });
 });

@@ -2877,6 +2877,26 @@ describe("project discovery queries", () => {
       "discover/related",
     ]);
   });
+
+  it("answers every candidate of a profile in one batch, matching the pairwise lookup", async () => {
+    const candidates = ["Discover-Bob", "discover-alice", "discover-hidden", "discover-nobody", "discover-hot"];
+    const batch = await db.getProfileCommonProjects("discover-alice", candidates, 5);
+    expect(batch).toHaveLength(candidates.length);
+    expect(batch[0]!.map((project) => project.repo.repo_key)).toEqual([
+      "discover/quality",
+      "discover/related",
+    ]);
+    expect(batch[1]).toEqual([]);
+    expect(batch[3]).toEqual([]);
+    for (const [index, candidate] of candidates.entries()) {
+      if (candidate.toLowerCase() === "discover-alice") continue;
+      const pair = await db.getDeveloperCommonProjects("discover-alice", candidate, 5);
+      expect(batch[index]!.map((project) => project.repo.repo_key)).toEqual(
+        pair.map((project) => project.repo.repo_key),
+      );
+    }
+    await expect(db.getProfileCommonProjects("discover-alice", [], 5)).resolves.toEqual([]);
+  });
 });
 
 describe("résumé snapshot compare-and-swap", () => {
