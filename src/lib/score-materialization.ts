@@ -103,6 +103,7 @@ const OPTIONAL_NUMBER_METRICS = [
   "top_starred_original_repo_quality_score",
   "external_merged_pr_count",
   "external_high_star_pr_share",
+  "own_pr_community",
   "workflow_landed_pr_count",
   "recent_doc_like_pr_count",
   "recent_doc_like_pr_ratio",

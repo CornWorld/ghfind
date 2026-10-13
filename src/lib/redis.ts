@@ -28,6 +28,7 @@ import {
   VERDICT_CACHE_VERSION,
 } from "./cache-version";
 import { score } from "./score";
+import type { CollectCache } from "./github";
 import { PUBLIC_SCAN_COLLECTION_VERSION } from "./scan-run-types";
 import type {
   AccountDetail,
@@ -1338,6 +1339,17 @@ export async function setCachedProjectValue<T>(
     // best-effort cache
   }
 }
+
+/**
+ * Collector cache for slow-moving GitHub facts (own-project community: account
+ * profiles 30 days, per-repo facts 7 days, outside-PR counts 1 day). Best-effort
+ * on the public read-model store: a miss or failure only costs API calls.
+ */
+export const collectorCache: CollectCache = {
+  get: <T>(key: string) => getCachedProjectValue<T>(`collect:${key}`),
+  set: (key: string, value: unknown, ttlSeconds: number) =>
+    setCachedProjectValue(`collect:${key}`, value, ttlSeconds),
+};
 
 // The rendered sitemap.xml (~9 MB, built from a full scan of public profiles
 // and judged matchups). Served by the API Worker; an hour matches the Next

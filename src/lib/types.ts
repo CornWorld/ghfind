@@ -191,6 +191,9 @@ export interface RawMetrics {
   external_merged_pr_count?: number;
   /** Share of the sampled external merged PRs that target ≥200★ repos. */
   external_high_star_pr_share?: number;
+  /** 0..1 community-weighted share of own-repo merged PRs that landed in own
+   * repos with an outside community; lifts the own-PR volume cap from 4 to 10. */
+  own_pr_community?: number;
   /** Closed PRs that a repository-owned merge bot explicitly marked as landed.
    * This is intentionally separate from GitHub-native `merged_pr_count`. */
   workflow_landed_pr_count?: number;

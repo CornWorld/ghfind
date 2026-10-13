@@ -14,10 +14,13 @@ import (
 type GitHubCollector struct {
 	github *GitHubClient
 	clock  func() time.Time
+	// cache keeps slow-moving community facts (profiles 30 days, per-repo
+	// facts 7 days, outside-PR counts 1 day) across scans in this process.
+	cache CollectCache
 }
 
 func NewGitHubCollector(client *GitHubClient) *GitHubCollector {
-	return &GitHubCollector{github: client, clock: time.Now}
+	return &GitHubCollector{github: client, clock: time.Now, cache: NewMemoryCollectCache()}
 }
 
 func (c *GitHubCollector) Collect(ctx context.Context, username string) (ScanResult, error) {
@@ -129,15 +132,10 @@ func (c *GitHubCollector) Collect(ctx context.Context, username string) (ScanRes
 		}
 		ownedContributions = append(ownedContributions, repo)
 	}
-	codeSamples, err := c.github.collectImpactCodeSamples(ctx, ownedContributions, login, recentWindow)
-	if err != nil {
-		return ScanResult{}, err
-	}
-	contributions = ApplyImpactCodeSamples(ownedContributions, codeSamples)
 	// Keep verified organization-maintenance work out of the score-bearing
 	// TopRepos set. It enriches representative work and language presentation
 	// only; adding it to allOriginal would alter legacy score inputs.
-	organizationMaintained := c.github.collectOrganizationMaintainedRepos(ctx, contributions, loginLower, user.HTMLURL)
+	organizationMaintained := c.github.collectOrganizationMaintainedRepos(ctx, ownedContributions, loginLower, user.HTMLURL)
 	allOriginal := dedupeTopRepos(append(personalOriginal, attributed...))
 	nonemptyOriginal := 0.0
 	for _, repo := range allOriginal {
@@ -181,6 +179,38 @@ func (c *GitHubCollector) Collect(ctx context.Context, username string) (ScanRes
 	bestQuality, bestRepo := BestOriginalRepoQuality(topRepos, loginLower, now)
 	topStarredQuality, topStarredRepo := TopStarredOriginalRepoQuality(starTopRepos, loginLower, now)
 	weightedTotalStars, weightedMaxStars := WeightedOriginalStars(starRepos, now)
+	starInflation := false
+	if len(starTopRepos) > 0 && starTopRepos[0].Stars >= 100 && starTopRepos[0].Forks/(starTopRepos[0].Stars/100) < 1 && starTopRepos[0].OpenIssues <= 1 {
+		starInflation = true
+	}
+
+	// Own-project community: outside people building in the user's own repos.
+	// Star-inflation suspects get none. Own repos that now qualify through
+	// their community (200-999★) get the merge/topic signals the first pass
+	// skipped.
+	communityFacts, err := c.github.collectOwnRepoCommunities(ctx, ownedContributions, login, organizations, now, c.cache)
+	if err != nil {
+		return ScanResult{}, err
+	}
+	communityRepos := ApplyOwnRepoCommunities(ownedContributions, communityFacts, starInflation)
+	unsignaled := []ContribRepoAgg{}
+	for _, repo := range communityRepos {
+		if valueOrZero(repo.Community) > 0 && repo.Topics == nil {
+			unsignaled = append(unsignaled, repo)
+		}
+	}
+	if len(unsignaled) > 0 {
+		communitySignals, err := c.github.fetchImpactRepoSignals(ctx, unsignaled, loginLower, user.NodeID)
+		if err != nil {
+			return ScanResult{}, err
+		}
+		communityRepos = ApplyImpactRepoSignals(communityRepos, communitySignals)
+	}
+	codeSamples, err := c.github.collectImpactCodeSamples(ctx, communityRepos, login, recentWindow)
+	if err != nil {
+		return ScanResult{}, err
+	}
+	contributions = ApplyImpactCodeSamples(communityRepos, codeSamples)
 
 	recentPRs := append(make([]RecentPR, 0, len(recentWindow)), recentWindow...)
 	if len(recentPRs) > 50 {
@@ -245,10 +275,6 @@ func (c *GitHubCollector) Collect(ctx context.Context, username string) (ScanRes
 	if decided > 0 {
 		rejectionRate = roundJS(closed.MaintainerClosedUnmergedPRCount/decided*100) / 100
 	}
-	starInflation := false
-	if len(starTopRepos) > 0 && starTopRepos[0].Stars >= 100 && starTopRepos[0].Forks/(starTopRepos[0].Stars/100) < 1 && starTopRepos[0].OpenIssues <= 1 {
-		starInflation = true
-	}
 	attributedStars := 0.0
 	attributedNames := []string{}
 	for _, repo := range attributed {
@@ -262,10 +288,11 @@ func (c *GitHubCollector) Collect(ctx context.Context, username string) (ScanRes
 	if external != nil {
 		metrics.ExternalMergedPRCount = floatPointer(min(external.Total, overview.MergedPRCount))
 		metrics.ExternalHighStarPRShare = floatPointer(highStarPRShare(external.Nodes))
+		metrics.OwnPRCommunity = floatPointer(OwnPRCommunityShare(contributions, loginLower, overview.MergedPRCount-min(external.Total, overview.MergedPRCount)))
 	}
 	metrics.Pronouns = overview.Pronouns
 	scoring := Score(metrics)
-	estimatedContributionLanguages := c.github.collectEstimatedContributionLanguages(ctx, contributions)
+	estimatedContributionLanguages := c.github.collectEstimatedContributionLanguages(ctx, ownedContributions)
 	signatureWork := BuildRecentSignatureWork(impact.ImpactRepos, recentPRs)
 	signatureWork.OrganizationMaintainedRepos = organizationMaintained
 	signatureWork.EstimatedContributionLanguages = estimatedContributionLanguages
