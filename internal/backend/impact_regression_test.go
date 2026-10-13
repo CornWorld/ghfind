@@ -3,6 +3,8 @@ package backend
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -11,13 +13,16 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 )
 
 type impactRegressionFixture struct {
 	ExpectedFinalRange [2]float64       `json:"expected_final_range"`
+	RecordedAt         string           `json:"recorded_at"`
 	Metrics            RawMetrics       `json:"metrics"`
 	ContribRepos       []ContribRepoAgg `json:"contrib_repos"`
 	RecentPRs          []RecentPR       `json:"recent_prs"`
+	StarRepos          []TopRepo        `json:"star_repos"`
 	Expected           struct {
 		ImpactPrestigeScore float64   `json:"impact_prestige_score"`
 		ImpactDepthRaw      float64   `json:"impact_depth_raw"`
@@ -27,8 +32,10 @@ type impactRegressionFixture struct {
 	} `json:"expected"`
 }
 
-// TestImpactRegressionFixturesMatchNode runs the shared Node fixtures through
-// the Go impact pipeline: the same impact and score must come out.
+// TestImpactRegressionFixturesMatchNode runs the shared real-account
+// snapshots (recorded by scripts/record-score-fixtures.mts) through the Go
+// pipeline at the recorded clock: the collected metrics, impact, weighted
+// stars and score must all match the Node results.
 func TestImpactRegressionFixturesMatchNode(t *testing.T) {
 	_, thisFile, _, ok := runtime.Caller(0)
 	if !ok {
@@ -43,23 +50,53 @@ func TestImpactRegressionFixturesMatchNode(t *testing.T) {
 	if err := json.Unmarshal(contents, &fixtures); err != nil {
 		t.Fatalf("decode impact regression fixtures: %v", err)
 	}
+	if len(fixtures) < 5 {
+		t.Fatalf("expected the five recorded accounts, got %d", len(fixtures))
+	}
 	for name, fixture := range fixtures {
 		t.Run(name, func(t *testing.T) {
-			m := fixture.Metrics
+			recorded := fixture.Metrics
+			m := recorded
 			login := strings.ToLower(m.Username)
+			now, err := time.Parse(time.RFC3339, fixture.RecordedAt)
+			if err != nil {
+				t.Fatalf("recorded_at: %v", err)
+			}
 			impact := ComputeImpactFromContribMap(fixture.ContribRepos, login)
 			quality := ComputeImpactQualitySignals(fixture.RecentPRs, impact.ImpactPRCount, login, valueOrZero(m.WorkflowLandedImpactPRCount))
+			weightedTotal, weightedMax := WeightedOriginalStars(fixture.StarRepos, now)
 			m.MaxImpactRepoStars = impact.MaxImpactRepoStars
 			m.ImpactPrestigeScore = &impact.ImpactPrestigeScore
 			m.ImpactDepthRaw = impact.ImpactDepthRaw
 			m.ImpactRepoCount = &impact.ImpactRepoCount
 			m.ImpactCommitCount = &impact.ImpactCommitCount
 			m.ImpactPRCount = impact.ImpactPRCount
-			m.ImpactQualityCap = quality.ImpactQualityCap
 			m.VerifiedImpactPRCount = &quality.VerifiedImpactPRCount
 			m.CoreImpactPRCount = &quality.CoreImpactPRCount
 			m.DocLikeImpactPRCount = &quality.DocLikeImpactPRCount
 			m.UnverifiedImpactPRCount = &quality.UnverifiedImpactPRCount
+			m.WeightedTotalStars = &weightedTotal
+			m.WeightedMaxStars = &weightedMax
+
+			// The Go pure pipeline reproduces what the Node collector recorded.
+			for field, pair := range map[string][2]float64{
+				"max_impact_repo_stars":      {m.MaxImpactRepoStars, recorded.MaxImpactRepoStars},
+				"impact_prestige_score":      {*m.ImpactPrestigeScore, valueOrZero(recorded.ImpactPrestigeScore)},
+				"impact_depth_raw":           {m.ImpactDepthRaw, recorded.ImpactDepthRaw},
+				"impact_repo_count":          {*m.ImpactRepoCount, valueOrZero(recorded.ImpactRepoCount)},
+				"impact_commit_count":        {*m.ImpactCommitCount, valueOrZero(recorded.ImpactCommitCount)},
+				"impact_pr_count":            {m.ImpactPRCount, recorded.ImpactPRCount},
+				"verified_impact_pr_count":   {*m.VerifiedImpactPRCount, valueOrZero(recorded.VerifiedImpactPRCount)},
+				"core_impact_pr_count":       {*m.CoreImpactPRCount, valueOrZero(recorded.CoreImpactPRCount)},
+				"doc_like_impact_pr_count":   {*m.DocLikeImpactPRCount, valueOrZero(recorded.DocLikeImpactPRCount)},
+				"unverified_impact_pr_count": {*m.UnverifiedImpactPRCount, valueOrZero(recorded.UnverifiedImpactPRCount)},
+				"weighted_total_stars":       {weightedTotal, valueOrZero(recorded.WeightedTotalStars)},
+				"weighted_max_stars":         {weightedMax, valueOrZero(recorded.WeightedMaxStars)},
+			} {
+				if pair[0] != pair[1] {
+					t.Errorf("%s = %v, Node recorded %v", field, pair[0], pair[1])
+				}
+			}
 			got := Score(m)
 
 			want := fixture.Expected
@@ -123,9 +160,10 @@ func TestImpactExcludesMergesDocsAndOwnPrestige(t *testing.T) {
 		t.Fatalf("popular resource repo not halved: %#v vs %#v", half, full)
 	}
 
+	// 0.3 own weight x 0.79 code-share prior, no prestige.
 	own := ComputeImpactFromContribMap([]ContribRepoAgg{agg("me/tool", "me", 30000, 200, 0, 0)}, "me")
-	if own.ImpactRepoCount != 1 || own.ImpactPrestigeScore != 0 || own.ImpactDepthRaw != 0.75 {
-		t.Fatalf("own repo impact = %#v, want depth 0.75 and no prestige", own)
+	if own.ImpactRepoCount != 1 || own.ImpactPrestigeScore != 0 || own.ImpactDepthRaw != 0.59 {
+		t.Fatalf("own repo impact = %#v, want depth 0.59 and no prestige", own)
 	}
 }
 
@@ -139,27 +177,114 @@ func TestApplyImpactRepoSignalsEstimatesMergeShare(t *testing.T) {
 	}
 }
 
-func TestImpactCapAllowsFiveVerifiedPRsWithScaledConfidence(t *testing.T) {
-	docs, code := "docs: update guide", "fix scheduler"
-	// Four doc-like PRs per core PR, one repository each.
-	makePRs := func(n int) []RecentPR {
-		prs := make([]RecentPR, n)
-		for i := range prs {
-			repo := "org/project-" + string(rune('a'+i))
-			prs[i] = RecentPR{Title: &docs, Repo: &repo, RepoStars: 2000, Files: []string{"README.md"}}
-			if i%5 == 0 {
-				prs[i] = RecentPR{Title: &code, Repo: &repo, RepoStars: 2000, Files: []string{"internal/worker.go"}}
-			}
+func TestImpactWeightsCodeShareTenureAndOwnEngagement(t *testing.T) {
+	repo := ContribRepoAgg{Repo: "org/engine", OwnerLogin: "org", Stars: 20000, PRs: 10}
+	code, docs := repo, repo
+	code.PRSample, code.CodePRSample = 10, 10
+	docs.PRSample = 10
+	codeImpact := ComputeImpactFromContribMap([]ContribRepoAgg{code}, "me")
+	docsImpact := ComputeImpactFromContribMap([]ContribRepoAgg{docs}, "me")
+	if math.Abs(docsImpact.ImpactPrestigeScore-codeImpact.ImpactPrestigeScore*0.3) > 1e-3 {
+		t.Fatalf("doc-only repo prestige %v, want 0.3 x %v", docsImpact.ImpactPrestigeScore, codeImpact.ImpactPrestigeScore)
+	}
+	if got := impactRepoCodeWeight(repo); math.Abs(got-0.79) > 1e-12 {
+		t.Fatalf("prior code weight = %v", got)
+	}
+	// A sample speaks only for the work it covers: 1 PR out of 70 authored
+	// commits stays near the prior; 1 PR + its squash commit is fully covered.
+	thin := ContribRepoAgg{PRs: 1, Commits: 70, PRSample: 1, CodePRSample: 1}
+	if got := impactRepoCodeWeight(thin); math.Abs(got-(0.3+0.7*(0.1+0.9*0.7))) > 1e-12 {
+		t.Fatalf("thin-coverage code weight = %v", got)
+	}
+	if got := impactRepoCodeWeight(ContribRepoAgg{PRs: 1, Commits: 1, PRSample: 1}); math.Abs(got-0.3) > 1e-12 {
+		t.Fatalf("fully covered doc PR weight = %v", got)
+	}
+	for months, want := range map[int]float64{0: 1, 1: 0.75, 3: 0.85, 6: 1, 9: 1} {
+		tenure := repo
+		for i := 0; i < months; i++ {
+			tenure.Months = append(tenure.Months, fmt.Sprintf("2026-%02d", i+1))
 		}
-		return prs
+		if got := impactRepoTenureWeight(tenure); math.Abs(got-want) > 1e-12 {
+			t.Errorf("tenure(%d) = %v, want %v", months, got, want)
+		}
 	}
-	if got := ComputeImpactQualitySignals(makePRs(4), 4, "alice", 0); got.ImpactQualityCap != nil {
-		t.Fatalf("four PRs capped: %#v", got)
+	engaged, viral := 0.2, 0.005
+	own := ContribRepoAgg{Repo: "me/skill", OwnerLogin: "me", Stars: 30000, Commits: 100, Engagement: &engaged}
+	ownViral := own
+	ownViral.Engagement = &viral
+	if a, b := ComputeImpactFromContribMap([]ContribRepoAgg{own}, "me"), ComputeImpactFromContribMap([]ContribRepoAgg{ownViral}, "me"); math.Abs(b.ImpactDepthRaw-a.ImpactDepthRaw*0.5) > 0.01 || b.ImpactPrestigeScore != 0 {
+		t.Fatalf("viral own repo depth %v vs %v", b.ImpactDepthRaw, a.ImpactDepthRaw)
 	}
-	five := ComputeImpactQualitySignals(makePRs(5), 5, "alice", 0)
-	twenty := ComputeImpactQualitySignals(makePRs(20), 20, "alice", 0)
-	if five.ImpactQualityCap == nil || *five.ImpactQualityCap != 5.7 || twenty.ImpactQualityCap == nil || *five.ImpactQualityCap <= *twenty.ImpactQualityCap {
-		t.Fatalf("five = %#v, twenty = %#v", five, twenty)
+	attributed := ContribRepoAgg{Repo: "my-org/tool", OwnerLogin: "my-org", Stars: 600, Commits: 100, AttributedOriginal: true}
+	if got := ComputeImpactFromContribMap([]ContribRepoAgg{attributed}, "me"); got.ImpactRepoCount != 0 {
+		t.Fatalf("attributed original below 1000 stars counted: %#v", got)
+	}
+}
+
+func TestStylesheetsAreCodeInUILibraries(t *testing.T) {
+	ant, engine := "ant-design/x", "org/inference-engine"
+	if IsDocLikeImpactPR(RecentPR{Repo: &ant, Files: []string{"components/bubble/index.less"}}) {
+		t.Error("UI library stylesheet classified as presentation")
+	}
+	if !IsDocLikeImpactPR(RecentPR{Repo: &engine, Files: []string{"web/index.css"}}) {
+		t.Error("app stylesheet must stay presentation")
+	}
+}
+
+func TestOriginalStarWeightsAndProfileReadme(t *testing.T) {
+	now := time.Date(2026, 10, 13, 0, 0, 0, 0, time.UTC)
+	repo := func(name, pushed string, topics ...string) TopRepo {
+		return TopRepo{Name: name, Stars: 1000, PushedAt: stringPointer(pushed), Topics: topics}
+	}
+	for _, tc := range []struct {
+		repo TopRepo
+		want float64
+	}{
+		{repo("engine", "2026-09-01T00:00:00Z"), 1},
+		{repo("engine", "2020-01-01T00:00:00Z"), 0.5},
+		{repo("chat-dataset-baseline", "2026-09-01T00:00:00Z"), 0.6},
+		{repo("engine", "2026-09-01T00:00:00Z", "dataset"), 0.6},
+		{TopRepo{Name: "slides", Stars: 1, PushedAt: stringPointer("2026-09-01T00:00:00Z"), Languages: []RepoLanguage{{Name: "HTML", Size: 900}, {Name: "Python", Size: 100}}}, 0.6},
+	} {
+		if got := OriginalRepoStarWeight(tc.repo, now); got != tc.want {
+			t.Errorf("%s weight = %v, want %v", tc.repo.Name, got, tc.want)
+		}
+	}
+	if !isProfileReadmeRepo(TopRepo{Name: "Me"}, "me") || isProfileReadmeRepo(TopRepo{Name: "me", OwnerLogin: stringPointer("my-org"), AttributedOriginal: true}, "me") {
+		t.Error("profile README detection")
+	}
+}
+
+func TestAggregateMergedPRNodesDedupesWindowAndExternalSearch(t *testing.T) {
+	node := func(id, repo string, stars float64, merged string) mergedPRNode {
+		owner := strings.SplitN(repo, "/", 2)[0]
+		return mergedPRNode{ID: &id, MergedAt: &merged, Repository: &graphContributionRepo{NameWithOwner: repo, StargazerCount: stars, Owner: &struct {
+			Login *string `json:"login"`
+		}{Login: &owner}}}
+	}
+	got := AggregateMergedPRNodes([]mergedPRNode{
+		node("a", "org/engine", 5000, "2025-01-10T00:00:00Z"),
+		node("b", "org/engine", 5000, "2025-03-10T00:00:00Z"),
+		node("a", "org/engine", 5000, "2025-01-10T00:00:00Z"),
+	})
+	if len(got) != 1 || got[0].PRs != 2 || got[0].ActiveYears != 1 || !reflect.DeepEqual(got[0].Months, []string{"2025-01", "2025-03"}) {
+		t.Fatalf("aggregate = %#v", got)
+	}
+	if share := highStarPRShare([]mergedPRNode{node("a", "org/engine", 5000, "2025-01-10T00:00:00Z"), node("c", "bob/tiny", 3, "2025-01-10T00:00:00Z")}); share != 0.5 {
+		t.Fatalf("high-star share = %v", share)
+	}
+}
+
+func TestContributionVolumeSplitsExternalAndOwnPRs(t *testing.T) {
+	external, share, closed := 37.0, 1.0, 11.0
+	m := RawMetrics{MergedPRCount: 420, ExternalMergedPRCount: &external, ExternalHighStarPRShare: &share, MaintainerClosedUnmergedPRCount: &closed}
+	volume, acceptance := contributionVolumeAndAcceptance(m)
+	if math.Abs(volume-(12*LogRatio(37, 150)+4)) > 1e-9 || math.Abs(acceptance-37.0/48*6) > 1e-9 {
+		t.Fatalf("volume %v acceptance %v", volume, acceptance)
+	}
+	m.ExternalMergedPRCount = nil
+	if legacy, _ := contributionVolumeAndAcceptance(m); legacy != 16 {
+		t.Fatalf("legacy volume = %v", legacy)
 	}
 }
 
@@ -194,5 +319,62 @@ func TestFetchImpactRepoSignalsQueriesEligibleReposAndCountsMerges(t *testing.T)
 	want := map[string]ImpactRepoSignal{"org/engine": {Topics: []string{"awesome"}, SampledCommits: 4, MergeCommits: 1}}
 	if !reflect.DeepEqual(signals, want) {
 		t.Fatalf("signals = %#v, want %#v", signals, want)
+	}
+}
+
+func TestFetchExternalMergedPRsSearchesOutsideOwnRepos(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		var body struct {
+			Variables map[string]any `json:"variables"`
+		}
+		_ = json.NewDecoder(request.Body).Decode(&body)
+		if body.Variables["q"] != "is:pr is:merged is:public author:alice -user:alice sort:created-desc" {
+			writer.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		writer.Header().Set("Content-Type", "application/json")
+		_, _ = writer.Write([]byte(`{"data":{"search":{"issueCount":2,"nodes":[
+			{"id":"PR_1","mergedAt":"2026-01-02T00:00:00Z","repository":{"nameWithOwner":"org/engine","stargazerCount":900,"owner":{"login":"org"}}},
+			{"id":"PR_2","mergedAt":"2026-02-02T00:00:00Z","repository":{"nameWithOwner":"bob/tiny","stargazerCount":3,"owner":{"login":"bob"}}},
+			{}],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}`))
+	}))
+	defer server.Close()
+	client := NewGitHubClient("test-token").withBaseURL(server.URL).withHTTPClient(server.Client())
+	got, err := client.fetchExternalMergedPRs(context.Background(), "alice", externalMergedPRCap)
+	if err != nil || got == nil || got.Total != 2 || len(got.Nodes) != 2 || highStarPRShare(got.Nodes) != 0.5 {
+		t.Fatalf("external = %#v, err %v", got, err)
+	}
+}
+
+func TestCollectImpactCodeSamplesFetchesOnlyUnderCoveredRepos(t *testing.T) {
+	calls := 0
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		calls++
+		var body struct {
+			Variables map[string]any `json:"variables"`
+		}
+		_ = json.NewDecoder(request.Body).Decode(&body)
+		if !reflect.DeepEqual(body.Variables, map[string]any{"q0": "repo:org/docsy is:pr is:merged author:alice sort:created-desc"}) {
+			writer.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		writer.Header().Set("Content-Type", "application/json")
+		_, _ = writer.Write([]byte(`{"data":{"s0":{"nodes":[{"title":"docs: update guide","additions":10,"deletions":0,"changedFiles":1,
+			"repository":{"nameWithOwner":"org/docsy","stargazerCount":5000,"isPrivate":false},"files":{"nodes":[{"path":"docs/guide.md"}]}}]}}}`))
+	}))
+	defer server.Close()
+	client := NewGitHubClient("test-token").withBaseURL(server.URL).withHTTPClient(server.Client())
+	title, repo, files := "fix scheduler", "org/engine", []string{"src/scheduler.ts"}
+	samples, err := client.collectImpactCodeSamples(context.Background(), []ContribRepoAgg{
+		{Repo: "org/engine", OwnerLogin: "org", Stars: 9000, PRs: 1},
+		{Repo: "org/docsy", OwnerLogin: "org", Stars: 5000, PRs: 3},
+		{Repo: "org/tiny", OwnerLogin: "org", Stars: 50, PRs: 9},
+	}, "alice", []RecentPR{{Title: &title, Repo: &repo, RepoStars: 9000, Churn: 40, Files: files}})
+	if err != nil || calls != 1 {
+		t.Fatalf("err %v calls %d", err, calls)
+	}
+	want := map[string]ImpactCodeSample{"org/engine": {PRSample: 1, CodePRSample: 1}, "org/docsy": {PRSample: 1, CodePRSample: 0}}
+	if !reflect.DeepEqual(samples, want) {
+		t.Fatalf("samples = %#v, want %#v", samples, want)
 	}
 }

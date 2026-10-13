@@ -18,54 +18,60 @@ import (
 // regression fixtures in the same review.
 type RawMetrics struct {
 	// Explicit profile pronouns are writer context only; Score never uses them.
-	Pronouns                                  *string  `json:"pronouns,omitempty"`
-	Username                                  string   `json:"username"`
-	ProfileURL                                *string  `json:"profile_url"`
-	AvatarURL                                 *string  `json:"avatar_url"`
-	Name                                      *string  `json:"name"`
-	Bio                                       *string  `json:"bio"`
-	Company                                   *string  `json:"company"`
-	AccountAgeYears                           float64  `json:"account_age_years"`
-	CreatedAt                                 *string  `json:"created_at"`
-	Followers                                 float64  `json:"followers"`
-	Following                                 float64  `json:"following"`
-	PublicRepos                               float64  `json:"public_repos"`
-	FetchedRepoCount                          float64  `json:"fetched_repo_count"`
-	OriginalRepoCount                         float64  `json:"original_repo_count"`
-	NonemptyOriginalRepoCount                 float64  `json:"nonempty_original_repo_count"`
-	ForkRepoCount                             float64  `json:"fork_repo_count"`
-	EmptyOriginalRepoCount                    float64  `json:"empty_original_repo_count"`
-	TotalStars                                float64  `json:"total_stars"`
-	MaxStars                                  float64  `json:"max_stars"`
-	TopRepoEngagementRatio                    *float64 `json:"top_repo_engagement_ratio,omitempty"`
-	AttributedOriginalRepoCount               *float64 `json:"attributed_original_repo_count,omitempty"`
-	AttributedOriginalRepoStars               *float64 `json:"attributed_original_repo_stars,omitempty"`
-	AttributedOriginalRepos                   []string `json:"attributed_original_repos,omitempty"`
-	BestOriginalRepoQualityScore              *float64 `json:"best_original_repo_quality_score,omitempty"`
-	BestOriginalRepoQualityRepo               *string  `json:"best_original_repo_quality_repo,omitempty"`
-	TopStarredOriginalRepoQualityScore        *float64 `json:"top_starred_original_repo_quality_score,omitempty"`
-	TopStarredOriginalRepoQualityRepo         *string  `json:"top_starred_original_repo_quality_repo,omitempty"`
-	MergedPRCount                             float64  `json:"merged_pr_count"`
-	WorkflowLandedPRCount                     *float64 `json:"workflow_landed_pr_count,omitempty"`
-	TotalPRCount                              float64  `json:"total_pr_count"`
-	IssuesCreated                             float64  `json:"issues_created"`
-	LastYearContributions                     float64  `json:"last_year_contributions"`
-	ActivityTypeCount                         float64  `json:"activity_type_count"`
-	ContributionYearsActive                   float64  `json:"contribution_years_active"`
-	DaysSinceLastActivity                     *float64 `json:"days_since_last_activity"`
-	RecentMergedPRSample                      float64  `json:"recent_merged_pr_sample"`
-	RecentTrivialPRCount                      float64  `json:"recent_trivial_pr_count"`
-	RecentDocLikePRCount                      *float64 `json:"recent_doc_like_pr_count,omitempty"`
-	RecentDocLikePRRatio                      *float64 `json:"recent_doc_like_pr_ratio,omitempty"`
-	RecentExternalPRSample                    *float64 `json:"recent_external_pr_sample,omitempty"`
-	RecentExternalDocLikePRCount              *float64 `json:"recent_external_doc_like_pr_count,omitempty"`
-	RecentExternalDocLikePRRatio              *float64 `json:"recent_external_doc_like_pr_ratio,omitempty"`
-	ExternalTrivialPRCount                    float64  `json:"external_trivial_pr_count"`
-	MaxImpactRepoStars                        float64  `json:"max_impact_repo_stars"`
-	ImpactPrestigeScore                       *float64 `json:"impact_prestige_score,omitempty"`
-	ImpactPRCount                             float64  `json:"impact_pr_count"`
-	WorkflowLandedImpactPRCount               *float64 `json:"workflow_landed_impact_pr_count,omitempty"`
-	ImpactDepthRaw                            float64  `json:"impact_depth_raw"`
+	Pronouns                           *string  `json:"pronouns,omitempty"`
+	Username                           string   `json:"username"`
+	ProfileURL                         *string  `json:"profile_url"`
+	AvatarURL                          *string  `json:"avatar_url"`
+	Name                               *string  `json:"name"`
+	Bio                                *string  `json:"bio"`
+	Company                            *string  `json:"company"`
+	AccountAgeYears                    float64  `json:"account_age_years"`
+	CreatedAt                          *string  `json:"created_at"`
+	Followers                          float64  `json:"followers"`
+	Following                          float64  `json:"following"`
+	PublicRepos                        float64  `json:"public_repos"`
+	FetchedRepoCount                   float64  `json:"fetched_repo_count"`
+	OriginalRepoCount                  float64  `json:"original_repo_count"`
+	NonemptyOriginalRepoCount          float64  `json:"nonempty_original_repo_count"`
+	ForkRepoCount                      float64  `json:"fork_repo_count"`
+	EmptyOriginalRepoCount             float64  `json:"empty_original_repo_count"`
+	TotalStars                         float64  `json:"total_stars"`
+	MaxStars                           float64  `json:"max_stars"`
+	WeightedTotalStars                 *float64 `json:"weighted_total_stars,omitempty"`
+	WeightedMaxStars                   *float64 `json:"weighted_max_stars,omitempty"`
+	TopRepoEngagementRatio             *float64 `json:"top_repo_engagement_ratio,omitempty"`
+	AttributedOriginalRepoCount        *float64 `json:"attributed_original_repo_count,omitempty"`
+	AttributedOriginalRepoStars        *float64 `json:"attributed_original_repo_stars,omitempty"`
+	AttributedOriginalRepos            []string `json:"attributed_original_repos,omitempty"`
+	BestOriginalRepoQualityScore       *float64 `json:"best_original_repo_quality_score,omitempty"`
+	BestOriginalRepoQualityRepo        *string  `json:"best_original_repo_quality_repo,omitempty"`
+	TopStarredOriginalRepoQualityScore *float64 `json:"top_starred_original_repo_quality_score,omitempty"`
+	TopStarredOriginalRepoQualityRepo  *string  `json:"top_starred_original_repo_quality_repo,omitempty"`
+	MergedPRCount                      float64  `json:"merged_pr_count"`
+	ExternalMergedPRCount              *float64 `json:"external_merged_pr_count,omitempty"`
+	ExternalHighStarPRShare            *float64 `json:"external_high_star_pr_share,omitempty"`
+	WorkflowLandedPRCount              *float64 `json:"workflow_landed_pr_count,omitempty"`
+	TotalPRCount                       float64  `json:"total_pr_count"`
+	IssuesCreated                      float64  `json:"issues_created"`
+	LastYearContributions              float64  `json:"last_year_contributions"`
+	ActivityTypeCount                  float64  `json:"activity_type_count"`
+	ContributionYearsActive            float64  `json:"contribution_years_active"`
+	DaysSinceLastActivity              *float64 `json:"days_since_last_activity"`
+	RecentMergedPRSample               float64  `json:"recent_merged_pr_sample"`
+	RecentTrivialPRCount               float64  `json:"recent_trivial_pr_count"`
+	RecentDocLikePRCount               *float64 `json:"recent_doc_like_pr_count,omitempty"`
+	RecentDocLikePRRatio               *float64 `json:"recent_doc_like_pr_ratio,omitempty"`
+	RecentExternalPRSample             *float64 `json:"recent_external_pr_sample,omitempty"`
+	RecentExternalDocLikePRCount       *float64 `json:"recent_external_doc_like_pr_count,omitempty"`
+	RecentExternalDocLikePRRatio       *float64 `json:"recent_external_doc_like_pr_ratio,omitempty"`
+	ExternalTrivialPRCount             float64  `json:"external_trivial_pr_count"`
+	MaxImpactRepoStars                 float64  `json:"max_impact_repo_stars"`
+	ImpactPrestigeScore                *float64 `json:"impact_prestige_score,omitempty"`
+	ImpactPRCount                      float64  `json:"impact_pr_count"`
+	WorkflowLandedImpactPRCount        *float64 `json:"workflow_landed_impact_pr_count,omitempty"`
+	ImpactDepthRaw                     float64  `json:"impact_depth_raw"`
+	// ImpactQualityCap is legacy: no longer produced or scored (per-repo code
+	// share replaced it), kept so older snapshots round-trip.
 	ImpactQualityCap                          *float64 `json:"impact_quality_cap,omitempty"`
 	VerifiedImpactPRCount                     *float64 `json:"verified_impact_pr_count,omitempty"`
 	CoreImpactPRCount                         *float64 `json:"core_impact_pr_count,omitempty"`
@@ -315,7 +321,10 @@ func contributionQualityCap(m RawMetrics) (float64, bool) {
 	if sample < 20 || ratio < 0.55 {
 		return 0, false
 	}
-	lowTrustImpact := m.ImpactQualityCap != nil && *m.ImpactQualityCap <= 4 && valueOrZero(m.CoreImpactPRCount) <= 2
+	// Weak, doc-dominated popular-repo impact: little ecosystem credit and the
+	// verified high-star sample is mostly docs/site/example work.
+	lowTrustImpact := ecosystemImpactPoints(m) <= 4 && valueOrZero(m.CoreImpactPRCount) <= 2 &&
+		valueOrZero(m.DocLikeImpactPRCount) > valueOrZero(m.CoreImpactPRCount)
 	weakTopStarProject := valueOr(m.TopStarredOriginalRepoQualityScore, 1) < 0.3 && m.TotalStars > 0
 	selfClosedExternal := valueOrZero(m.SelfClosedExternalPRCount)
 	totalExternalish := m.MergedPRCount + valueOrZero(m.MaintainerClosedUnmergedPRCount) + selfClosedExternal
@@ -325,6 +334,14 @@ func contributionQualityCap(m RawMetrics) (float64, bool) {
 		return 12, true
 	}
 	return 0, false
+}
+
+// impactDepthFullAt is the impact_depth_raw at which depth points saturate.
+const impactDepthFullAt = 10
+
+// ecosystemImpactPoints mirrors ecosystemImpactPoints in src/lib/score.ts.
+func ecosystemImpactPoints(m RawMetrics) float64 {
+	return impactPrestigeSignal(m)*9 + min(m.ImpactDepthRaw/impactDepthFullAt, 1)*11
 }
 
 func impactPrestigeSignal(m RawMetrics) float64 {
@@ -438,6 +455,53 @@ func newcomerMaturityBonus(m RawMetrics, sub SubScores, risk RiskAssessment, tot
 	return 4 * evidence * confidence * decay * decay
 }
 
+// followRatioFullAt followers give follow-ratio points full weight.
+const followRatioFullAt = 500
+
+// Contribution Quality volume split: external merged PRs (12 points, full at
+// 150 effective) and own-repo merged PRs (4 points, full at 200).
+const (
+	externalPRVolumeMax     = 12
+	externalPRVolumeFullAt  = 150
+	ownPRVolumeMax          = 4
+	ownPRVolumeFullAt       = 200
+	lowStarExternalPRWeight = 0.6
+)
+
+func legacyAcceptance(m RawMetrics) float64 {
+	hasClosedPRBreakdown := m.MaintainerClosedUnmergedPRCount != nil || m.SelfClosedExternalPRCount != nil || m.SelfClosedOwnRepoPRCount != nil
+	acceptanceTotal := max(m.MergedPRCount, m.TotalPRCount)
+	if hasClosedPRBreakdown {
+		acceptanceTotal = max(m.MergedPRCount, m.MergedPRCount+valueOrZero(m.MaintainerClosedUnmergedPRCount))
+	}
+	if acceptanceTotal >= 3 {
+		return m.MergedPRCount / acceptanceTotal * 6
+	}
+	return m.MergedPRCount * 1.2
+}
+
+// contributionVolumeAndAcceptance mirrors contributionVolumeAndAcceptance in
+// src/lib/score.ts.
+func contributionVolumeAndAcceptance(m RawMetrics) (float64, float64) {
+	if m.ExternalMergedPRCount == nil {
+		prVolumeRaw := LogRatio(m.MergedPRCount, 200) * 16
+		return max(0, prVolumeRaw-docLikePRVolumeDiscount(m, prVolumeRaw)), min(legacyAcceptance(m), 6)
+	}
+	external := max(0, min(*m.ExternalMergedPRCount, m.MergedPRCount))
+	own := max(0, m.MergedPRCount-external)
+	highStarShare := max(0, min(valueOr(m.ExternalHighStarPRShare, 1), 1))
+	effectiveExternal := external * (highStarShare + lowStarExternalPRWeight*(1-highStarShare))
+	externalRaw := LogRatio(effectiveExternal, externalPRVolumeFullAt) * externalPRVolumeMax
+	externalVolume := max(0, externalRaw-docLikePRVolumeDiscount(m, externalRaw))
+	ownVolume := LogRatio(own, ownPRVolumeFullAt) * ownPRVolumeMax
+	externalDecided := external + valueOrZero(m.MaintainerClosedUnmergedPRCount)
+	acceptance := legacyAcceptance(m)
+	if externalDecided >= 3 {
+		acceptance = external / externalDecided * 6
+	}
+	return externalVolume + ownVolume, min(acceptance, 6)
+}
+
 // Score is a direct Go port of src/lib/score.ts. The API contract and scoring
 // rules stay unchanged while the collector and persistence move out of Next.
 func Score(m RawMetrics) Scoring {
@@ -460,25 +524,12 @@ func Score(m RawMetrics) Scoring {
 		if m.TotalStars > 0 {
 			starQuality = max(0, min(valueOr(m.TopStarredOriginalRepoQualityScore, 1), 1))
 		}
-		starPoints := (LogRatio(m.TotalStars, 5000)*7 + LogRatio(m.MaxStars, 2000)*5) * starQuality * starEngagementMultiplier(m.TopRepoEngagementRatio)
+		starPoints := (LogRatio(valueOr(m.WeightedTotalStars, m.TotalStars), 5000)*7 + LogRatio(valueOr(m.WeightedMaxStars, m.MaxStars), 2000)*5) * starQuality * starEngagementMultiplier(m.TopRepoEngagementRatio)
 		projectSubstance := max(0, min(valueOr(m.BestOriginalRepoQualityScore, 0), 1)) * 6
 		sub.OriginalProjectQuality = roundToEven(starPoints+projectSubstance, 1)
 	}
 
-	prVolumeRaw := LogRatio(m.MergedPRCount, 200) * 16
-	prVolume := max(0, prVolumeRaw-docLikePRVolumeDiscount(m, prVolumeRaw))
-	hasClosedPRBreakdown := m.MaintainerClosedUnmergedPRCount != nil || m.SelfClosedExternalPRCount != nil || m.SelfClosedOwnRepoPRCount != nil
-	acceptanceTotal := max(m.MergedPRCount, m.TotalPRCount)
-	if hasClosedPRBreakdown {
-		acceptanceTotal = max(m.MergedPRCount, m.MergedPRCount+valueOrZero(m.MaintainerClosedUnmergedPRCount))
-	}
-	acceptance := 0.0
-	if acceptanceTotal >= 3 {
-		acceptance = m.MergedPRCount / acceptanceTotal * 6
-	} else {
-		acceptance = m.MergedPRCount * 1.2
-	}
-	acceptance = min(acceptance, 6)
+	prVolume, acceptance := contributionVolumeAndAcceptance(m)
 	contributionRaw := prVolume + acceptance + LogRatio(m.IssuesCreated, 100)*5 + highImpactCorePRBonus(m)
 	contributionCap := 27.0
 	if cap, applies := contributionQualityCap(m); applies {
@@ -489,11 +540,7 @@ func Score(m RawMetrics) Scoring {
 	}
 	sub.ContributionQuality = roundToEven(min(contributionRaw, contributionCap), 1)
 
-	ecosystemRaw := impactPrestigeSignal(m)*9 + min(m.ImpactDepthRaw/8, 1)*11
-	if m.ImpactQualityCap != nil {
-		ecosystemRaw = min(ecosystemRaw, *m.ImpactQualityCap)
-	}
-	sub.EcosystemImpact = roundToEven(ecosystemRaw, 1)
+	sub.EcosystemImpact = roundToEven(ecosystemImpactPoints(m), 1)
 
 	followerPoints := LogRatio(m.Followers, 2000) * 5
 	ratioPoints := 0.0
@@ -516,7 +563,7 @@ func Score(m RawMetrics) Scoring {
 			ratioPoints = 1
 		}
 	}
-	communityRaw := followerPoints + ratioPoints
+	communityRaw := followerPoints + ratioPoints*LogRatio(m.Followers, followRatioFullAt)
 	if hasSocialOnlyDormantSignal(m) {
 		communityRaw = min(communityRaw, 2.5)
 	}
