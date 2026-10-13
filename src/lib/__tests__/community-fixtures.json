@@ -1,0 +1,517 @@
+[
+  {
+    "name": "own-account repo with every filter path",
+    "raw": {
+      "repo": "alice/tool",
+      "forks": 1500,
+      "merged_total": 120,
+      "closed_unmerged_total": 30,
+      "prs_opened_total": 160,
+      "issues_total": 90,
+      "contributors": [
+        {
+          "login": "alice",
+          "type": "User",
+          "contributions": 500
+        },
+        {
+          "login": "renovate[bot]",
+          "type": "Bot",
+          "contributions": 30
+        },
+        {
+          "login": "bob",
+          "type": "User",
+          "contributions": 40
+        },
+        {
+          "login": "erin",
+          "type": "User",
+          "contributions": 12
+        },
+        {
+          "login": "frank",
+          "type": "User",
+          "contributions": 8
+        },
+        {
+          "login": "carol",
+          "type": "User",
+          "contributions": 6
+        },
+        {
+          "login": "dave",
+          "type": "User",
+          "contributions": 3
+        },
+        {
+          "login": "quinn",
+          "type": "User",
+          "contributions": 2
+        },
+        {
+          "login": "grace",
+          "type": "User",
+          "contributions": 1
+        }
+      ],
+      "merged": [
+        {
+          "author": "frank",
+          "author_type": "User",
+          "created_at": "2026-10-01T00:00:00Z",
+          "merged_at": "2026-10-01T12:00:00Z",
+          "title": "feat: faster parser",
+          "churn": 100,
+          "files": [
+            "src/parser.ts"
+          ]
+        },
+        {
+          "author": "bob",
+          "author_type": "User",
+          "created_at": "2026-09-01T00:00:00Z",
+          "merged_at": "2026-09-02T00:00:00Z",
+          "title": "fix: retry on 502",
+          "churn": 50,
+          "files": [
+            "src/net.ts",
+            "src/net.test.ts"
+          ]
+        },
+        {
+          "author": "bob",
+          "author_type": "User",
+          "created_at": "2026-08-20T00:00:00Z",
+          "merged_at": "2026-08-21T00:00:00Z",
+          "title": "docs: usage",
+          "churn": 20,
+          "files": [
+            "README.md"
+          ]
+        },
+        {
+          "author": "carol",
+          "author_type": "User",
+          "created_at": "2026-08-15T00:00:00Z",
+          "merged_at": "2026-08-15T06:00:00Z",
+          "title": "fix typo",
+          "churn": 3,
+          "files": [
+            "src/a.ts"
+          ]
+        },
+        {
+          "author": "carol",
+          "author_type": "User",
+          "created_at": "2026-08-01T00:00:00Z",
+          "merged_at": "2026-08-11T00:00:00Z",
+          "title": "feat: plugin api",
+          "churn": 40,
+          "files": [
+            "src/plugin.ts"
+          ]
+        },
+        {
+          "author": "dave",
+          "author_type": "User",
+          "created_at": "2026-09-10T00:00:00Z",
+          "merged_at": "2026-09-11T00:00:00Z",
+          "title": "feat: new flag",
+          "churn": 30,
+          "files": [
+            "src/cli.ts"
+          ]
+        },
+        {
+          "author": "erin",
+          "author_type": "User",
+          "created_at": "2026-09-12T00:00:00Z",
+          "merged_at": "2026-09-12T01:00:00Z",
+          "title": "refactor: core",
+          "churn": 200,
+          "files": [
+            "src/core.ts"
+          ]
+        },
+        {
+          "author": "dependabot",
+          "author_type": "Bot",
+          "created_at": "2026-09-13T00:00:00Z",
+          "merged_at": "2026-09-13T00:10:00Z",
+          "title": "bump deps",
+          "churn": 4,
+          "files": [
+            "package.json"
+          ]
+        }
+      ],
+      "issues": [
+        {
+          "author": "bob",
+          "author_type": "User",
+          "created_at": "2026-09-20T00:00:00Z",
+          "commenters": [
+            "alice",
+            "bob"
+          ]
+        },
+        {
+          "author": "carol",
+          "author_type": "User",
+          "created_at": "2026-10-12T00:00:00Z",
+          "commenters": []
+        },
+        {
+          "author": "dave",
+          "author_type": "User",
+          "created_at": "2026-09-25T00:00:00Z",
+          "commenters": [
+            "alice"
+          ]
+        },
+        {
+          "author": "github-actions",
+          "author_type": "Bot",
+          "created_at": "2026-09-26T00:00:00Z",
+          "commenters": []
+        },
+        {
+          "author": "frank",
+          "author_type": "User",
+          "created_at": "2026-07-01T00:00:00Z",
+          "commenters": [
+            "bob"
+          ]
+        }
+      ]
+    },
+    "context": {
+      "login": "alice",
+      "owner_orgs": [
+        "alice-org"
+      ],
+      "attributed": false,
+      "mutual_owners": [
+        "frank"
+      ],
+      "profiles": {
+        "bob": {
+          "login": "bob",
+          "created_at": "2018-01-01T00:00:00Z",
+          "followers": 50,
+          "merged_prs": 5,
+          "orgs": []
+        },
+        "carol": {
+          "login": "carol",
+          "created_at": "2019-05-01T00:00:00Z",
+          "followers": 2,
+          "merged_prs": 20,
+          "orgs": []
+        },
+        "dave": {
+          "login": "dave",
+          "created_at": "2026-08-15T00:00:00Z",
+          "followers": 100,
+          "merged_prs": 100,
+          "orgs": []
+        },
+        "erin": {
+          "login": "erin",
+          "created_at": "2015-01-01T00:00:00Z",
+          "followers": 80,
+          "merged_prs": 300,
+          "orgs": [
+            "alice-org"
+          ]
+        },
+        "frank": {
+          "login": "frank",
+          "created_at": "2017-01-01T00:00:00Z",
+          "followers": 12,
+          "merged_prs": 0,
+          "orgs": []
+        },
+        "yuki": {
+          "login": "yuki",
+          "created_at": "2016-01-01T00:00:00Z",
+          "followers": 40,
+          "merged_prs": 10,
+          "orgs": [
+            "big-org"
+          ]
+        },
+        "zed": {
+          "login": "zed",
+          "created_at": "2014-01-01T00:00:00Z",
+          "followers": 900,
+          "merged_prs": 2000,
+          "orgs": []
+        },
+        "quinn": {
+          "login": "quinn",
+          "created_at": "2020-01-01T00:00:00Z",
+          "followers": 1,
+          "merged_prs": 1,
+          "orgs": []
+        }
+      },
+      "now": "2026-10-13T12:00:00.000Z"
+    },
+    "expected_facts": {
+      "weighted_contributors": 1.3618,
+      "sustained_contributors": 3,
+      "outside_demand": 114,
+      "merge_latency_days": 1,
+      "owner_response_share": 0.5,
+      "outside_acceptance": 0.8,
+      "forks": 1500,
+      "days_since_outside_merge": 12,
+      "lead_share": 1
+    },
+    "expected_community": 0.2311
+  },
+  {
+    "name": "attributed org original: lead share and org insiders",
+    "raw": {
+      "repo": "big-org/engine",
+      "forks": 30000,
+      "merged_total": 4000,
+      "closed_unmerged_total": 1000,
+      "prs_opened_total": 6000,
+      "issues_total": 9000,
+      "contributors": [
+        {
+          "login": "zed",
+          "type": "User",
+          "contributions": 400
+        },
+        {
+          "login": "alice",
+          "type": "User",
+          "contributions": 300
+        },
+        {
+          "login": "yuki",
+          "type": "User",
+          "contributions": 50
+        },
+        {
+          "login": "bob",
+          "type": "User",
+          "contributions": 25
+        }
+      ],
+      "merged": [
+        {
+          "author": "bob",
+          "author_type": "User",
+          "created_at": "2026-01-01T00:00:00Z",
+          "merged_at": "2026-01-03T00:00:00Z",
+          "title": "fix: leak",
+          "churn": 80,
+          "files": [
+            "src/mem.c"
+          ]
+        }
+      ],
+      "issues": [
+        {
+          "author": "bob",
+          "author_type": "User",
+          "created_at": "2026-01-05T00:00:00Z",
+          "commenters": [
+            "zed"
+          ]
+        }
+      ]
+    },
+    "context": {
+      "login": "Alice",
+      "owner_orgs": [],
+      "attributed": true,
+      "mutual_owners": [],
+      "profiles": {
+        "bob": {
+          "login": "bob",
+          "created_at": "2018-01-01T00:00:00Z",
+          "followers": 50,
+          "merged_prs": 5,
+          "orgs": []
+        },
+        "carol": {
+          "login": "carol",
+          "created_at": "2019-05-01T00:00:00Z",
+          "followers": 2,
+          "merged_prs": 20,
+          "orgs": []
+        },
+        "dave": {
+          "login": "dave",
+          "created_at": "2026-08-15T00:00:00Z",
+          "followers": 100,
+          "merged_prs": 100,
+          "orgs": []
+        },
+        "erin": {
+          "login": "erin",
+          "created_at": "2015-01-01T00:00:00Z",
+          "followers": 80,
+          "merged_prs": 300,
+          "orgs": [
+            "alice-org"
+          ]
+        },
+        "frank": {
+          "login": "frank",
+          "created_at": "2017-01-01T00:00:00Z",
+          "followers": 12,
+          "merged_prs": 0,
+          "orgs": []
+        },
+        "yuki": {
+          "login": "yuki",
+          "created_at": "2016-01-01T00:00:00Z",
+          "followers": 40,
+          "merged_prs": 10,
+          "orgs": [
+            "big-org"
+          ]
+        },
+        "zed": {
+          "login": "zed",
+          "created_at": "2014-01-01T00:00:00Z",
+          "followers": 900,
+          "merged_prs": 2000,
+          "orgs": []
+        },
+        "quinn": {
+          "login": "quinn",
+          "created_at": "2020-01-01T00:00:00Z",
+          "followers": 1,
+          "merged_prs": 1,
+          "orgs": []
+        }
+      },
+      "now": "2026-10-13T12:00:00.000Z"
+    },
+    "expected_facts": {
+      "weighted_contributors": 2,
+      "sustained_contributors": 2,
+      "outside_demand": 15000,
+      "merge_latency_days": 2,
+      "owner_response_share": 0,
+      "outside_acceptance": 0.8,
+      "forks": 30000,
+      "days_since_outside_merge": 283.5,
+      "lead_share": 0.75
+    },
+    "expected_community": 0.1782
+  },
+  {
+    "name": "no outside contributors",
+    "raw": {
+      "repo": "alice/solo",
+      "forks": 3,
+      "merged_total": 0,
+      "closed_unmerged_total": 0,
+      "prs_opened_total": 0,
+      "issues_total": 0,
+      "contributors": [
+        {
+          "login": "alice",
+          "type": "User",
+          "contributions": 90
+        }
+      ],
+      "merged": [],
+      "issues": []
+    },
+    "context": {
+      "login": "alice",
+      "owner_orgs": [
+        "alice-org"
+      ],
+      "attributed": false,
+      "mutual_owners": [
+        "frank"
+      ],
+      "profiles": {
+        "bob": {
+          "login": "bob",
+          "created_at": "2018-01-01T00:00:00Z",
+          "followers": 50,
+          "merged_prs": 5,
+          "orgs": []
+        },
+        "carol": {
+          "login": "carol",
+          "created_at": "2019-05-01T00:00:00Z",
+          "followers": 2,
+          "merged_prs": 20,
+          "orgs": []
+        },
+        "dave": {
+          "login": "dave",
+          "created_at": "2026-08-15T00:00:00Z",
+          "followers": 100,
+          "merged_prs": 100,
+          "orgs": []
+        },
+        "erin": {
+          "login": "erin",
+          "created_at": "2015-01-01T00:00:00Z",
+          "followers": 80,
+          "merged_prs": 300,
+          "orgs": [
+            "alice-org"
+          ]
+        },
+        "frank": {
+          "login": "frank",
+          "created_at": "2017-01-01T00:00:00Z",
+          "followers": 12,
+          "merged_prs": 0,
+          "orgs": []
+        },
+        "yuki": {
+          "login": "yuki",
+          "created_at": "2016-01-01T00:00:00Z",
+          "followers": 40,
+          "merged_prs": 10,
+          "orgs": [
+            "big-org"
+          ]
+        },
+        "zed": {
+          "login": "zed",
+          "created_at": "2014-01-01T00:00:00Z",
+          "followers": 900,
+          "merged_prs": 2000,
+          "orgs": []
+        },
+        "quinn": {
+          "login": "quinn",
+          "created_at": "2020-01-01T00:00:00Z",
+          "followers": 1,
+          "merged_prs": 1,
+          "orgs": []
+        }
+      },
+      "now": "2026-10-13T12:00:00.000Z"
+    },
+    "expected_facts": {
+      "weighted_contributors": 0,
+      "sustained_contributors": 0,
+      "outside_demand": 0,
+      "merge_latency_days": null,
+      "owner_response_share": 0,
+      "outside_acceptance": 0,
+      "forks": 3,
+      "days_since_outside_merge": null,
+      "lead_share": 1
+    },
+    "expected_community": 0
+  }
+]

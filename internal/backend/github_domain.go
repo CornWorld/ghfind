@@ -483,6 +483,10 @@ type ContribRepoAgg struct {
 	// AttributedOriginal marks an org repo credited as the user's original
 	// project: it counts as own.
 	AttributedOriginal bool `json:"attributed_original,omitempty"`
+	// CommunityFacts/Community: own-project community (absent = not measured);
+	// Community is 0 for star-inflation suspects.
+	CommunityFacts *OwnRepoCommunityFacts `json:"community_facts,omitempty"`
+	Community      *float64               `json:"community,omitempty"`
 }
 
 type ImpactMetrics struct {
@@ -526,9 +530,10 @@ func passesImpactRepoGates(repo ContribRepoAgg, loginLower string) bool {
 	if repo.IsPrivate || repo.IsFork || (isLowSignalEntryRepo(repo.Repo) && repo.Commits <= 1 && repo.PRs <= 1) {
 		return false
 	}
+	// Own repos need 1000★ unless a measured outside community vouches for them.
 	threshold := 200.0
-	if isOwnImpactRepo(repo, loginLower) {
-		threshold = 1000
+	if isOwnImpactRepo(repo, loginLower) && !(valueOrZero(repo.Community) > 0) {
+		threshold = ownRepoImpactMinStars
 	}
 	return repo.Stars >= threshold && (repo.Commits >= defaultBranchCommitMin(repo.Repo) || repo.PRs >= 1)
 }
@@ -586,8 +591,9 @@ func authoredCommits(repo ContribRepoAgg) float64 {
 
 // ComputeImpactFromContribMap mirrors computeImpactFromContribMap in
 // src/lib/github.ts. Each repo is weighted by doc/resource kind, code share and
-// tenure; own repos (including attributed originals) never set prestige and
-// add depth at 0.3 times their community-engagement multiplier.
+// tenure. Own repos (including attributed originals) earn impact from their
+// outside community, never from stars: community-based prestige, plus
+// 2.5 x community depth on top of the legacy damped star depth (>=1000★).
 //
 // TODO(content-repos): also treat a repo as content when its file tree is
 // >=70% md/pdf/png/mp3/html with fewer than 15 code files. The collector has
@@ -611,18 +617,28 @@ func ComputeImpactFromContribMap(repos []ContribRepoAgg, loginLower string) Impa
 			docWeight = docResourceImpactWeight
 		}
 		repoWeight := docWeight * impactRepoCodeWeight(repo) * impactRepoTenureWeight(repo)
-		ownWeight := 1.0
-		if isOwnImpactRepo(repo, loginLower) {
-			ownWeight = ownRepoImpactDepthWeight * starEngagementMultiplier(repo.Engagement)
-		} else {
-			prestige = max(prestige, LogRatio(repo.Stars, 100000)*prestigeWorkMultiplier(authoredCommits(repo), repo.PRs)*repoWeight)
+		own := isOwnImpactRepo(repo, loginLower)
+		// Own repos earn prestige from their outside community, never stars.
+		prestigeBase := LogRatio(repo.Stars, 100000)
+		if own {
+			prestigeBase = valueOrZero(repo.Community)
 		}
+		prestige = max(prestige, prestigeBase*prestigeWorkMultiplier(authoredCommits(repo), repo.PRs)*repoWeight)
 		work := authoredCommits(repo) + repo.PRs
 		weight := 0.0
 		if work > 0 {
 			weight = min(1+math.Log10(work), 2.5)
 		}
-		depth += LogRatio(repo.Stars, 5000) * weight * repoWeight * ownWeight
+		if own {
+			// Legacy damped star depth (>=1000★ only) plus community depth.
+			starDepth := 0.0
+			if repo.Stars >= ownRepoImpactMinStars {
+				starDepth = LogRatio(repo.Stars, 5000) * weight * repoWeight * (ownRepoImpactDepthWeight * starEngagementMultiplier(repo.Engagement))
+			}
+			depth = depth + starDepth + communityDepth*valueOrZero(repo.Community)*repoWeight
+		} else {
+			depth += LogRatio(repo.Stars, 5000) * weight * repoWeight
+		}
 	}
 	metrics.ImpactRepoCount = float64(len(qualifying))
 	metrics.ImpactPrestigeScore = roundJS(prestige*10000) / 10000

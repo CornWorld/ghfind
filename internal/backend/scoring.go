@@ -50,6 +50,7 @@ type RawMetrics struct {
 	MergedPRCount                      float64  `json:"merged_pr_count"`
 	ExternalMergedPRCount              *float64 `json:"external_merged_pr_count,omitempty"`
 	ExternalHighStarPRShare            *float64 `json:"external_high_star_pr_share,omitempty"`
+	OwnPRCommunity                     *float64 `json:"own_pr_community,omitempty"`
 	WorkflowLandedPRCount              *float64 `json:"workflow_landed_pr_count,omitempty"`
 	TotalPRCount                       float64  `json:"total_pr_count"`
 	IssuesCreated                      float64  `json:"issues_created"`
@@ -464,6 +465,7 @@ const (
 	externalPRVolumeMax     = 12
 	externalPRVolumeFullAt  = 150
 	ownPRVolumeMax          = 4
+	ownPRCommunityBonus     = 6
 	ownPRVolumeFullAt       = 200
 	lowStarExternalPRWeight = 0.6
 )
@@ -493,7 +495,8 @@ func contributionVolumeAndAcceptance(m RawMetrics) (float64, float64) {
 	effectiveExternal := external * (highStarShare + lowStarExternalPRWeight*(1-highStarShare))
 	externalRaw := LogRatio(effectiveExternal, externalPRVolumeFullAt) * externalPRVolumeMax
 	externalVolume := max(0, externalRaw-docLikePRVolumeDiscount(m, externalRaw))
-	ownVolume := LogRatio(own, ownPRVolumeFullAt) * ownPRVolumeMax
+	community := max(0, min(valueOrZero(m.OwnPRCommunity), 1))
+	ownVolume := LogRatio(own, ownPRVolumeFullAt) * (ownPRVolumeMax + ownPRCommunityBonus*community)
 	externalDecided := external + valueOrZero(m.MaintainerClosedUnmergedPRCount)
 	acceptance := legacyAcceptance(m)
 	if externalDecided >= 3 {

@@ -182,6 +182,16 @@ type graphQLError struct {
 }
 
 func (c *GitHubClient) graphql(ctx context.Context, query string, variables map[string]any, out any) error {
+	return c.graphqlRequest(ctx, query, variables, out, false)
+}
+
+// graphqlAllowNotFound accepts partial data when every error is NOT_FOUND
+// (aliased lookups of deleted or renamed accounts).
+func (c *GitHubClient) graphqlAllowNotFound(ctx context.Context, query string, variables map[string]any, out any) error {
+	return c.graphqlRequest(ctx, query, variables, out, true)
+}
+
+func (c *GitHubClient) graphqlRequest(ctx context.Context, query string, variables map[string]any, out any, allowNotFound bool) error {
 	if !c.HasToken() {
 		return ErrGitHubAuthRequired
 	}
@@ -206,6 +216,18 @@ func (c *GitHubClient) graphql(ctx context.Context, query string, variables map[
 	}
 	if err := json.NewDecoder(io.LimitReader(response.Body, 12<<20)).Decode(&envelope); err != nil {
 		return fmt.Errorf("decode GitHub GraphQL response: %w", err)
+	}
+	if allowNotFound && len(envelope.Errors) > 0 && len(envelope.Data) > 0 && string(envelope.Data) != "null" {
+		onlyNotFound := true
+		for _, graphErr := range envelope.Errors {
+			if graphErr.Type != "NOT_FOUND" {
+				onlyNotFound = false
+				break
+			}
+		}
+		if onlyNotFound {
+			envelope.Errors = nil
+		}
 	}
 	if len(envelope.Errors) > 0 {
 		first := envelope.Errors[0]
