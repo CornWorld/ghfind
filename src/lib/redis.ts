@@ -979,9 +979,14 @@ const SCORE_HISTOGRAM_KEY = "score-hist:v2";
 // once (~24 refreshes/hour at a 30 min TTL, ~36 at 5 min).
 export const SCORE_HISTOGRAM_FRESH_MS = 30 * 60_000;
 const SCORE_HISTOGRAM_TTL_SECONDS = 6 * 3600;
+/** An unchanged histogram is still rewritten this often, well before the KV
+ *  TTL could expire it. */
+export const SCORE_HISTOGRAM_REWRITE_MS = (SCORE_HISTOGRAM_TTL_SECONDS * 1000) / 2;
 const SCORE_HISTOGRAM_REFRESH_LOCK = "lock:score-hist";
-// Covers one aggregate query; a crashed refresher frees it soon after.
-const SCORE_HISTOGRAM_REFRESH_LOCK_SECONDS = 60;
+// Spans the fresh window: a refresh that finds the histogram unchanged skips
+// its KV write (leaving `at` stale), and this lease keeps the next aggregate a
+// full window away. A crashed refresher delays the next one by at most that.
+const SCORE_HISTOGRAM_REFRESH_LOCK_SECONDS = SCORE_HISTOGRAM_FRESH_MS / 1000;
 
 export interface CachedScoreHistogram {
   rows: ScoreHistogramRow[];
@@ -1085,14 +1090,21 @@ const leaderboardKey = (view: LeaderboardCacheView, window: LeaderboardWindow) =
   `leaderboard:v2:${view}:${window}`;
 export const LEADERBOARD_FRESH_MS = 5 * 60_000;
 const LEADERBOARD_TTL_SECONDS = 30 * 60;
+/** An unchanged board is still rewritten this often, well before the KV TTL
+ *  could expire it. */
+export const LEADERBOARD_REWRITE_MS = (LEADERBOARD_TTL_SECONDS * 1000) / 2;
 export interface CachedLeaderboard { entries: LeaderboardEntry[]; at: number }
 
 /** Coordinate stale refreshes across isolates; retain the lease until expiry
- * so eventually consistent KV readers cannot trigger another refresh at once. */
+ * so eventually consistent KV readers cannot trigger another refresh at once.
+ * The lease spans the whole fresh window: a refresh that finds the board
+ * unchanged skips its KV write (leaving `at` stale), and the lease is what
+ * keeps the next refresh a full window away. */
+const LEADERBOARD_REFRESH_LEASE_SECONDS = LEADERBOARD_FRESH_MS / 1000;
 export async function acquireLeaderboardRefresh(view: LeaderboardCacheView, window: LeaderboardWindow): Promise<boolean> {
   const r = atomicStore();
   if (!r) return true;
-  try { return await r.setIfAbsent(`lock:leaderboard:v2:${view}:${window}`, "1", 60); }
+  try { return await r.setIfAbsent(`lock:leaderboard:v2:${view}:${window}`, "1", LEADERBOARD_REFRESH_LEASE_SECONDS); }
   catch { return true; }
 }
 const CAMPAIGN_LEADERBOARD_REVISION_TTL_SECONDS = 7 * 24 * 60 * 60;
