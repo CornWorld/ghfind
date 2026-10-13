@@ -2,6 +2,8 @@ import { readFileSync, readdirSync } from "node:fs";
 import { createClient } from "@libsql/client";
 import { describe, expect, it } from "vitest";
 import { buildSql, loadImport } from "./deepseek-jobs-import.mts";
+import { buildReviewSql } from "./deepseek-requirement-review.mts";
+import { jobInputHash, hasSkillRequirements } from "../src/lib/talent-match/pipeline";
 import { listJobSources } from "../src/lib/talent-match/store";
 
 const imported = loadImport();
@@ -57,6 +59,18 @@ describe("official DeepSeek directional jobs", () => {
       expect(engineering.text).toContain("Agent Harness Engineer");
       expect(engineering.text).toContain("参与开发 DeepSeek 的 Harness 产品");
       expect(engineering.text).not.toContain("硕士学历及以上");
+      // A single generic bonus must not turn an HR job into a developer's top match.
+      for (const id of ["deepseek-08d2d307-recruiting", "deepseek-1c7e328d-design", "deepseek-1c7e328d-onsite", "deepseek-08d2d307-services"]) {
+        const source = sources.find((job) => job.id === id)!;
+        await db.execute({ sql: "INSERT INTO job_requirements (id,job_id,requirement_json,input_hash,schema_version,updated_at) VALUES (?,?,?,?,1,0)", args: [id,id,JSON.stringify({mustHave: [],niceToHave: [{id:"technical-writing",level:1}]}), id.endsWith("services") ? "subsequently-changed-copy" : jobInputHash(source.text)] });
+      }
+      await db.executeMultiple(buildReviewSql());
+      const requirements = await db.execute("SELECT id,requirement_json FROM job_requirements");
+      const reviewed = (id: string) => JSON.parse(String(requirements.rows.find((row) => row.id === id)!.requirement_json));
+      expect(hasSkillRequirements(reviewed("deepseek-08d2d307-recruiting"))).toBe(false);
+      expect(hasSkillRequirements(reviewed("deepseek-1c7e328d-design"))).toBe(false);
+      expect(reviewed("deepseek-1c7e328d-onsite").mustHave.map((s: {id:string}) => s.id)).toEqual(["networking", "storage-systems"]);
+      expect(reviewed("deepseek-08d2d307-services").niceToHave).toHaveLength(1); // Hash guard protects changed JDs.
       expect((await db.execute("PRAGMA foreign_key_check")).rows).toEqual([]);
     } finally { db.close(); }
   });

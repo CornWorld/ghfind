@@ -2,7 +2,7 @@
 
 来源：[DeepSeek 官方招聘列表](https://app.mokahr.com/social-recruitment/high-flyer/140576#/jobs)。快照共 37 个列表入口，与浏览器 50 行/页的完整列表核对一致。
 
-仓库旧种子有 34 条开放记录，涵盖所有 34 个有效入口；另外 3 个官方入口仅跳转到新的 Harness 团队页，不作为额外推荐岗位。本机未取得线上 D1 凭据，因此这里的“原有记录”指仓库迁移结果，不能当成线上核验结论。
+仓库旧种子有 34 条开放记录，涵盖所有 34 个有效入口；另外 3 个官方入口仅跳转到新的 Harness 团队页，不作为额外推荐岗位。2026-10-14 登录 Cloudflare 后，已只读核验线上同样有 34 条开放记录；随后保存备份并应用本次迁移。
 
 17 个页面拆出 53 条方向记录，保留 17 条独立岗位，共 70 条开放记录。53 条方向记录分别保留本方向原文和共用要求，旧的 17 条混合记录关闭推荐状态，不删除历史数据。AI 产品经理页的 Harness 产品方向指向 Harness 产品经理的同一条记录，避免重复评分。
 
@@ -34,7 +34,8 @@
 2. 登录 Cloudflare，先只读核对线上 `jobs`、`job_translations` 与 `job_requirements` 的 DeepSeek 数据并保存备份。开发与生产共享核心 D1。
 3. 核对后执行 `pnpm exec wrangler d1 execute ghfind --remote --env production --file migrations/0026_deepseek_job_directions.sql`。只应用此文件，不顺带应用其它迁移。
 4. 执行 `pnpm exec wrangler workflows trigger ghfind-talent-jobs '{"all":false}' --config apps/talent/wrangler.jsonc --env production`，让线上模型逐条抽取新增/变更的岗位要求；等待 Workflow 完成，并核对 output 中的 failed 列表及 `job_requirements`。
-5. 核对开放岗位、方向数量、完整 JD、父记录关闭状态和匹配要求哈希。只有 `jobs` 和 `job_requirements` 两层都成功，才可以宣称新岗位进入人才匹配。
+5. 同步后执行 `pnpm exec wrangler d1 execute ghfind --remote --env production --file migrations/0027_deepseek_requirement_review.sql`，应用对本快照的要求人工复核。此文件带原文哈希保护，不覆盖已经改变的 JD；首次建库也须在同步后执行一次。
+6. 核对开放岗位、方向数量、完整 JD、父记录关闭状态和匹配要求哈希。只有 `jobs` 和 `job_requirements` 两层都成功，才可以宣称新岗位进入人才匹配。
 
 更换岗位池后，已生成的报告保持原样；用户主动生成新报告时使用更新后的岗位要求。未写明的薪资、学历、年限和技术条件不补造。无技能要求的职能岗位可以出现在招聘板，但现有技术匹配器会跳过它们。
 
@@ -45,3 +46,12 @@
 - 再次执行 SQL 不增加重复岗位；其它公司岗位数量不变，外键检查通过。
 - Harness 研发岗位不继承研究员的硕士要求；Code Agent 前端不混入移动端要求；IDC 现场不混入设施设计资格。
 - `pnpm test scripts/deepseek-jobs-import.test.ts src/lib/talent-match/__tests__`：75 项测试通过；根类型检查和 lint 通过。
+
+## 线上执行记录（2026-10-14）
+
+- 已备份原有 34 条岗位、306 条多语言文案、34 条匹配要求；本地备份与非删除式回滚 SQL 保存在 `output/`。
+- 已直接向核心 D1 应用迁移：70 条开放岗位，70 条完整中文 JD。
+- JobSyncWorkflow 实例：`df74eab6-2bb1-4613-be25-1c8059283daf`；已完成，70 条抽取成功，0 条失败。
+- 70 条岗位要求均通过 schema 和最新原文哈希校验，无缺失或过期；Harness 7 个方向全部可参与匹配。
+- 发现模型把 HR 文书映射为技术写作、把机房设施设计映射为软件系统设计等问题，已复核并修正 8 条要求。现有技能匹配器可使用其中 56 条；其余 14 条没有可评估的技术技能要求，仅保留在招聘板，不强行赋予匹配分。
+- 既有报告保留原结果，重新生成报告会使用更新后的岗位池。
