@@ -1,4 +1,4 @@
-import { captureNativeProbe, probe, type RuntimeSettings, type Target } from "./router";
+import { captureNativeProbe, classifyLifecycleError, probe, type RuntimeSettings, type Target } from "./router";
 import { HTTPError } from "./security";
 
 export type TransitionRequest = { sourceSha: string; imageBuildId: string; mode: "baseline"; writerEpoch: 1 };
@@ -61,7 +61,7 @@ export class ModeTransition {
         await check(true);
         const stopAt = Date.now() + this.limits.stopMs;
         let stopTimer: ReturnType<typeof setTimeout> | undefined;
-        pendingStop = hooks.stop();
+        pendingStop = hooks.stop().catch((error: unknown) => { throw classifyLifecycleError(error, "stop"); });
         try {
           await Promise.race([pendingStop, new Promise<never>((_, reject) => {
             stopTimer = setTimeout(() => reject(new HTTPError(503, "transition_stop_timeout")), this.limits.stopMs);
@@ -77,7 +77,12 @@ export class ModeTransition {
       }
       controller.signal.throwIfAborted();
       if (hooks.state().actorId !== initial.actorId) throw new HTTPError(503, "container_version_or_contract_mismatch");
-      await hooks.start(controller.signal);
+      try {
+        await hooks.start(controller.signal);
+      } catch (error) {
+        // An abort rejects with the controller's own HTTPError reason.
+        throw classifyLifecycleError(error, "start");
+      }
       controller.signal.throwIfAborted();
       await check(false);
       return { restarted: true as const, target, ...input };

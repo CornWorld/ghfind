@@ -5745,30 +5745,55 @@ export async function getDeveloperCommonProjects(
   usernameB: string,
   limit = 6,
 ): Promise<ProjectListItem[]> {
+  return (await getProfileCommonProjects(usernameA, [usernameB], limit))[0] ?? [];
+}
+
+/**
+ * Common projects between one profile and each of its similar candidates, in
+ * candidate order: per candidate, the first `limit` shared repo keys
+ * (repo_key ASC) as eligible project items. Same answer as one
+ * getDeveloperCommonProjects call per pair, but in two queries total: one
+ * username-index seek over the profile and its candidates, and one
+ * queryProjectItems over the union of shared repos, so a repo shared with
+ * several candidates is read once. When nothing is shared (the common case)
+ * the second query never runs, which keeps a cache miss cheap.
+ */
+export async function getProfileCommonProjects(
+  username: string,
+  candidates: string[],
+  limit = 6,
+): Promise<ProjectListItem[][]> {
   const db = getClient();
-  const a = usernameA.trim().toLowerCase();
-  const b = usernameB.trim().toLowerCase();
-  if (!db || !a || !b || a === b) return [];
+  const user = username.trim().toLowerCase();
+  const others = candidates.map((candidate) => candidate.trim().toLowerCase());
+  const queried = [...new Set(others.filter((candidate) => candidate && candidate !== user))];
+  if (!db || !user || queried.length === 0) return others.map(() => []);
+  const perCandidate = Math.max(1, Math.min(50, limit));
   try {
     await ensureSchema(db);
-    const result = await db.execute({
-      sql: `SELECT repo_key
+    const shared = await db.execute({
+      sql: `SELECT DISTINCT username, repo_key
             FROM repo_developers
-            WHERE username IN (?, ?)
-            GROUP BY repo_key
-            HAVING COUNT(DISTINCT username) = 2
-            ORDER BY repo_key ASC
-            LIMIT ?`,
-      args: [a, b, Math.max(1, Math.min(50, limit))],
+            WHERE username IN (${queried.map(() => "?").join(",")})
+              AND repo_key IN (SELECT repo_key FROM repo_developers WHERE username = ?)
+            ORDER BY username ASC, repo_key ASC`,
+      args: [...queried, user],
     });
-    return await queryProjectItems(db, {
-      sort: "quality",
-      repoKeys: result.rows.map((row) => String(row.repo_key)),
-      limit,
+    const keysByCandidate = new Map<string, string[]>();
+    for (const row of shared.rows) {
+      const keys = keysByCandidate.get(String(row.username)) ?? [];
+      if (keys.length < perCandidate) keys.push(String(row.repo_key));
+      keysByCandidate.set(String(row.username), keys);
+    }
+    const union = [...new Set([...keysByCandidate.values()].flat())];
+    const items = await queryProjectItems(db, { sort: "quality", repoKeys: union, limit: union.length || 1 });
+    return others.map((candidate) => {
+      const keys = new Set(candidate === user ? [] : (keysByCandidate.get(candidate) ?? []));
+      return items.filter((item) => keys.has(item.repo.repo_key)).slice(0, limit);
     });
   } catch (e) {
     // Rethrow: the cache layer must not persist an error as "no common repos".
-    console.error("getDeveloperCommonProjects failed:", e);
+    console.error("getProfileCommonProjects failed:", e);
     throw e;
   }
 }

@@ -17,6 +17,7 @@ vi.mock("@/lib/db", () => ({
 vi.mock("@/lib/redis", () => ({
   getCachedLeaderboard: mocks.getCachedLeaderboard, setCachedLeaderboard: mocks.setCachedLeaderboard,
   acquireLeaderboardRefresh: mocks.acquireLeaderboardRefresh, LEADERBOARD_FRESH_MS: 300_000,
+  LEADERBOARD_REWRITE_MS: 900_000,
 }));
 import { getLeaderboardCached } from "@/lib/leaderboard";
 const old = [{ username: "old" }];
@@ -43,11 +44,36 @@ describe("getLeaderboardCached", () => {
     expect(mocks.getTrendingLeaderboard).not.toHaveBeenCalled();
     expect(mocks.acquireLeaderboardRefresh).not.toHaveBeenCalled();
   });
-  it("serves stale data when another isolate owns the refresh", async () => {
+  it("serves stale data when another isolate owns the refresh, holding it for the lease", async () => {
+    // Its own window: a lost lease holds the copy in this isolate.
     mocks.getCachedLeaderboard.mockResolvedValue({ entries: old, at: 0 });
     mocks.acquireLeaderboardRefresh.mockResolvedValue(false);
-    expect((await getLeaderboardCached()).entries).toEqual(old);
+    expect((await getLeaderboardCached("trending", "7d")).entries).toEqual(old);
+    expect((await getLeaderboardCached("trending", "7d")).entries).toEqual(old);
     expect(mocks.getTrendingLeaderboard).not.toHaveBeenCalled();
+    expect(mocks.acquireLeaderboardRefresh).toHaveBeenCalledOnce();
+  });
+  it("does not rewrite an unchanged board, and holds it instead of re-asking for the lease", async () => {
+    const board = [{ username: "same" }];
+    mocks.getCachedLeaderboard.mockResolvedValue({ entries: board, at: Date.now() - 400_000 });
+    mocks.getLeaderboard.mockResolvedValue([{ username: "same" }]);
+    expect((await getLeaderboardCached("score", "24h")).entries).toEqual(board);
+    expect(mocks.getLeaderboard).toHaveBeenCalledOnce();
+    expect(mocks.setCachedLeaderboard).not.toHaveBeenCalled();
+    await getLeaderboardCached("score", "24h");
+    expect(mocks.acquireLeaderboardRefresh).toHaveBeenCalledOnce();
+    expect(mocks.getLeaderboard).toHaveBeenCalledOnce();
+  });
+  it("rewrites a changed board, and an unchanged one nearing its KV expiry", async () => {
+    mocks.getCachedLeaderboard.mockResolvedValue({ entries: old, at: Date.now() - 400_000 });
+    mocks.getHeatLeaderboard.mockResolvedValue([{ username: "new" }]);
+    await getLeaderboardCached("heat", "24h");
+    expect(mocks.setCachedLeaderboard).toHaveBeenCalledWith([{ username: "new" }], "heat", "24h");
+
+    mocks.getCachedLeaderboard.mockResolvedValue({ entries: old, at: Date.now() - 1_000_000 });
+    mocks.getProgressLeaderboard.mockResolvedValue([{ username: "old" }]);
+    await getLeaderboardCached("progress", "30d");
+    expect(mocks.setCachedLeaderboard).toHaveBeenCalledWith([{ username: "old" }], "progress", "30d");
   });
   it.each([[], new Error("DB down")])("preserves stale data when refresh fails: %s", async outcome => {
     mocks.getCachedLeaderboard.mockResolvedValue({ entries: old, at: 0 });

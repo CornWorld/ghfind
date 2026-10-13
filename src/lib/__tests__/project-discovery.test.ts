@@ -1,15 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ProjectListItem, RelatedProject } from "@/lib/db";
 import {
-  getDeveloperCommonProjects,
+  getProfileCommonProjects,
   getProjects,
   getRelatedProjects,
   getRepoLanguage,
 } from "@/lib/db";
+import { isBotRequest } from "@/lib/bot-user-agent";
 import { setCachedProjectValue } from "@/lib/redis";
 import {
   createCachedLoader,
-  getDeveloperCommonProjectsCached,
+  getProfileCommonProjectsCached,
   getRelatedProjectsCached,
   projectListCacheKey,
   relatedProjectsCacheKey,
@@ -18,7 +19,7 @@ import {
 const store = vi.hoisted(() => new Map<string, unknown>());
 
 vi.mock("@/lib/db", () => ({
-  getDeveloperCommonProjects: vi.fn(async () => []),
+  getProfileCommonProjects: vi.fn(async () => []),
   getProjects: vi.fn(async () => []),
   getRelatedProjects: vi.fn(async () => []),
   getRepoLanguage: vi.fn(async () => null),
@@ -31,6 +32,25 @@ vi.mock("@/lib/redis", () => ({
   }),
 }));
 
+vi.mock("@/lib/bot-user-agent", () => ({ isBotRequest: vi.fn(() => false) }));
+
+/** Minimal `caches.default` (Workers Cache API) honoring max-age. */
+function installEdgeCache() {
+  const entries = new Map<string, { body: string; expires: number }>();
+  const cache = {
+    async match(url: string) {
+      const hit = entries.get(url);
+      return hit && hit.expires > Date.now() ? new Response(hit.body) : undefined;
+    },
+    async put(url: string, response: Response) {
+      const maxAge = Number(/max-age=(\d+)/.exec(response.headers.get("Cache-Control") ?? "")?.[1] ?? 0);
+      entries.set(url, { body: await response.text(), expires: Date.now() + maxAge * 1000 });
+    },
+  };
+  vi.stubGlobal("caches", { default: cache });
+  return entries;
+}
+
 const item = (key: string) => ({ repo: { repo_key: key } }) as unknown as ProjectListItem;
 const related = (key: string, sharedContributorCount: number): RelatedProject =>
   ({ project: item(key), sharedContributorCount }) as unknown as RelatedProject;
@@ -38,6 +58,7 @@ const related = (key: string, sharedContributorCount: number): RelatedProject =>
 beforeEach(() => {
   store.clear();
   vi.clearAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe("project discovery cache", () => {
@@ -122,40 +143,106 @@ describe("project discovery cache", () => {
   });
 });
 
-describe("getDeveloperCommonProjectsCached", () => {
-  it("shares concurrent reversed-pair misses and reuses the cached result", async () => {
-    let release!: (items: ProjectListItem[]) => void;
-    vi.mocked(getDeveloperCommonProjects).mockImplementationOnce(
-      () => new Promise((resolve) => { release = resolve; }),
-    );
-    const first = getDeveloperCommonProjectsCached("Alice", "BOB", 6);
-    const second = getDeveloperCommonProjectsCached("bob", "alice", 6);
-    await vi.waitFor(() => expect(getDeveloperCommonProjects).toHaveBeenCalledOnce());
-    const projects = [item("fixture/shared")];
-    release(projects);
-    await expect(Promise.all([first, second])).resolves.toEqual([projects, projects]);
-    await expect(getDeveloperCommonProjectsCached("alice", "bob", 6)).resolves.toEqual(projects);
-    expect(getDeveloperCommonProjects).toHaveBeenCalledExactlyOnceWith("alice", "bob", 6);
+describe("colo-local tiers", () => {
+  it("keeps values that fail `persist` out of KV and serves them from the isolate", async () => {
+    const cacheSet = vi.fn(async () => undefined);
+    const dbLoad = vi.fn(async () => [] as string[]);
+    const load = createCachedLoader<string[]>({
+      cacheGet: async () => null,
+      cacheSet,
+      dbLoad,
+      fallback: [],
+      persist: (value) => value.length > 0,
+      localTtlSeconds: 60,
+    });
+    await expect(load("empty")).resolves.toEqual([]);
+    await expect(load("empty")).resolves.toEqual([]);
+    expect(dbLoad).toHaveBeenCalledOnce();
+    expect(cacheSet).not.toHaveBeenCalled();
   });
 
-  it("caches successful empty results and separates different limits", async () => {
-    vi.mocked(getDeveloperCommonProjects).mockResolvedValue([]);
-    await getDeveloperCommonProjectsCached("empty-a", "empty-b", 6);
-    await getDeveloperCommonProjectsCached("empty-b", "empty-a", 6);
-    expect(getDeveloperCommonProjects).toHaveBeenCalledOnce();
-    await getDeveloperCommonProjectsCached("empty-a", "empty-b", 3);
-    expect(getDeveloperCommonProjects).toHaveBeenCalledTimes(2);
+  it("skips KV writes on crawler requests but still caches the answer locally", async () => {
+    const cacheSet = vi.fn(async () => undefined);
+    const dbLoad = vi.fn(async (key: string) => [key]);
+    let bot = true;
+    const load = createCachedLoader<string[]>({
+      cacheGet: async () => null,
+      cacheSet,
+      dbLoad,
+      fallback: [],
+      skipBotWrites: true,
+      localTtlSeconds: 60,
+      isBot: () => bot,
+    });
+    await load("crawled");
+    await load("crawled");
+    expect(dbLoad).toHaveBeenCalledOnce();
+    expect(cacheSet).not.toHaveBeenCalled();
+    bot = false;
+    await load("visited");
+    expect(cacheSet).toHaveBeenCalledExactlyOnceWith("visited", ["visited"]);
+  });
+
+  it("shares values kept out of KV across isolates through the Cache API", async () => {
+    const edge = installEdgeCache();
+    const options = {
+      cacheGet: async () => null,
+      cacheSet: vi.fn(async () => undefined),
+      dbLoad: vi.fn(async () => [] as string[]),
+      fallback: [] as string[],
+      persist: (value: string[]) => value.length > 0,
+      localTtlSeconds: 3600,
+    };
+    await createCachedLoader<string[]>(options)("shared-empty");
+    expect(edge.size).toBe(1);
+    // A second loader stands in for another isolate in the same colo.
+    await expect(createCachedLoader<string[]>(options)("shared-empty")).resolves.toEqual([]);
+    expect(options.dbLoad).toHaveBeenCalledOnce();
+    expect(options.cacheSet).not.toHaveBeenCalled();
+  });
+});
+
+describe("getProfileCommonProjectsCached", () => {
+  it("reads every candidate in one database call and one cache entry", async () => {
+    vi.mocked(getProfileCommonProjects).mockResolvedValueOnce([[item("fixture/shared")], [], []]);
+    const result = await getProfileCommonProjectsCached("Octocat", ["S1", "s2", "s3"], 6);
+    expect(result).toEqual([[item("fixture/shared")], [], []]);
+    expect(getProfileCommonProjects).toHaveBeenCalledExactlyOnceWith("Octocat", ["S1", "s2", "s3"], 6);
+    expect(setCachedProjectValue).toHaveBeenCalledOnce();
+    expect([...store.keys()]).toEqual(["projects:common:v2:octocat:6:s1,s2,s3"]);
+    await expect(getProfileCommonProjectsCached("octocat", ["s1", "s2", "s3"], 6)).resolves.toEqual(result);
+    expect(getProfileCommonProjects).toHaveBeenCalledOnce();
+  });
+
+  it("never writes KV for a profile with nothing in common, yet skips the database on repeats", async () => {
+    vi.mocked(getProfileCommonProjects).mockResolvedValue([[], []]);
+    await expect(getProfileCommonProjectsCached("lonely", ["a", "b"], 6)).resolves.toEqual([[], []]);
+    await expect(getProfileCommonProjectsCached("lonely", ["a", "b"], 6)).resolves.toEqual([[], []]);
+    expect(getProfileCommonProjects).toHaveBeenCalledOnce();
+    expect(setCachedProjectValue).not.toHaveBeenCalled();
+  });
+
+  it("never writes KV on a crawler render", async () => {
+    vi.mocked(isBotRequest).mockReturnValue(true);
+    vi.mocked(getProfileCommonProjects).mockResolvedValue([[item("fixture/crawled")]]);
+    await getProfileCommonProjectsCached("crawled", ["c1"], 6);
+    expect(setCachedProjectValue).not.toHaveBeenCalled();
+    vi.mocked(isBotRequest).mockReturnValue(false);
   });
 
   it("does not cache a failed read and allows the next request to recover", async () => {
-    vi.mocked(getDeveloperCommonProjects)
+    vi.mocked(getProfileCommonProjects)
       .mockRejectedValueOnce(new Error("database unavailable"))
-      .mockResolvedValueOnce([item("fixture/recovered")]);
-    await expect(getDeveloperCommonProjectsCached("retry-a", "retry-b")).resolves.toEqual([]);
-    expect(store.has("projects:common:retry-a:retry-b:6")).toBe(false);
-    await expect(getDeveloperCommonProjectsCached("retry-b", "retry-a"))
-      .resolves.toEqual([item("fixture/recovered")]);
-    expect(getDeveloperCommonProjects).toHaveBeenCalledTimes(2);
+      .mockResolvedValueOnce([[item("fixture/recovered")]]);
+    await expect(getProfileCommonProjectsCached("retry", ["r1"], 6)).resolves.toEqual([[]]);
+    expect(store.size).toBe(0);
+    await expect(getProfileCommonProjectsCached("retry", ["r1"], 6)).resolves.toEqual([[item("fixture/recovered")]]);
+    expect(getProfileCommonProjects).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not query without candidates", async () => {
+    await expect(getProfileCommonProjectsCached("solo", [], 6)).resolves.toEqual([]);
+    expect(getProfileCommonProjects).not.toHaveBeenCalled();
   });
 });
 
@@ -184,6 +271,7 @@ describe("getRelatedProjectsCached", () => {
     );
     expect(store.has("projects:list:quality:rust:12:0")).toBe(true);
     expect(store.get("projects:related:x/y:4")).toEqual(result);
+    expect(setCachedProjectValue).toHaveBeenCalledWith("projects:related:x/y:4", result, 86400);
   });
 
   it("returns shared results as-is when they satisfy the limit", async () => {
@@ -199,14 +287,35 @@ describe("getRelatedProjectsCached", () => {
     expect(getProjects).not.toHaveBeenCalled();
   });
 
-  it("caches empty related results so repeat visits skip the database", async () => {
+  it("keeps empty related results out of KV, yet repeat visits skip the database", async () => {
     vi.mocked(getRelatedProjects).mockResolvedValue([]);
     vi.mocked(getRepoLanguage).mockResolvedValue(null);
 
     await expect(getRelatedProjectsCached("b/lonely", 6)).resolves.toEqual([]);
-    expect(setCachedProjectValue).toHaveBeenCalledWith("projects:related:b/lonely:6", []);
-
     await expect(getRelatedProjectsCached("b/lonely", 6)).resolves.toEqual([]);
     expect(getRelatedProjects).toHaveBeenCalledOnce();
+    expect(store.has("projects:related:b/lonely:6")).toBe(false);
+  });
+
+  it("keeps filler-only related results out of KV", async () => {
+    vi.mocked(getRelatedProjects).mockResolvedValue([]);
+    vi.mocked(getRepoLanguage).mockResolvedValue("Go");
+    vi.mocked(getProjects).mockResolvedValue([item("go/one"), item("go/two")]);
+
+    const result = await getRelatedProjectsCached("c/filler", 6);
+    expect(result.map((r) => r.sharedContributorCount)).toEqual([0, 0]);
+    expect(store.has("projects:related:c/filler:6")).toBe(false);
+    // The filler itself is the shared per-language list, which stays in KV.
+    expect(store.has("projects:list:quality:go:12:0")).toBe(true);
+    await getRelatedProjectsCached("c/filler", 6);
+    expect(getRelatedProjects).toHaveBeenCalledOnce();
+  });
+
+  it("does not write related results to KV on a crawler render", async () => {
+    vi.mocked(isBotRequest).mockReturnValue(true);
+    vi.mocked(getRelatedProjects).mockResolvedValue([related("d/one", 2)]);
+    await getRelatedProjectsCached("d/crawled", 1);
+    expect(store.has("projects:related:d/crawled:1")).toBe(false);
+    vi.mocked(isBotRequest).mockReturnValue(false);
   });
 });

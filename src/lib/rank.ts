@@ -20,17 +20,18 @@ import {
   acquireScoreHistogramRefresh,
   getCachedScoreHistogram,
   SCORE_HISTOGRAM_FRESH_MS,
+  SCORE_HISTOGRAM_REWRITE_MS,
   setCachedScoreHistogram,
 } from "@/lib/redis";
 
 /** In-process staleness bound; Redis (30 min) is the cross-instance cache. */
 const LOCAL_TTL_MS = 60_000;
 
-let local: { rows: ScoreHistogramRow[]; at: number } | null = null;
+let local: { rows: ScoreHistogramRow[]; until: number } | null = null;
 let inflight: Promise<ScoreHistogramRow[] | null> | null = null;
 
 async function loadHistogram(): Promise<ScoreHistogramRow[] | null> {
-  if (local && Date.now() - local.at < LOCAL_TTL_MS) return local.rows;
+  if (local && Date.now() < local.until) return local.rows;
   if (!inflight) {
     inflight = (async () => {
       try {
@@ -38,8 +39,15 @@ async function loadHistogram(): Promise<ScoreHistogramRow[] | null> {
         if (cached && cached.rows.length > 0) {
           // Stale: one isolate refreshes, the rest keep serving this copy.
           const fresh = Date.now() - cached.at < SCORE_HISTOGRAM_FRESH_MS;
-          if (fresh || !(await acquireScoreHistogramRefresh())) {
-            local = { rows: cached.rows, at: Date.now() };
+          if (fresh) {
+            local = { rows: cached.rows, until: Date.now() + LOCAL_TTL_MS };
+            return cached.rows;
+          }
+          if (!(await acquireScoreHistogramRefresh())) {
+            // The lease spans a fresh window, and an unchanged refresh leaves
+            // `at` stale: hold this copy for that window rather than asking
+            // for the lease again every minute.
+            local = { rows: cached.rows, until: Date.now() + SCORE_HISTOGRAM_FRESH_MS };
             return cached.rows;
           }
         }
@@ -47,8 +55,13 @@ async function loadHistogram(): Promise<ScoreHistogramRow[] | null> {
         // [] means the DB is unconfigured/erroring or genuinely empty — don't
         // pin that for a TTL; rank degrades to null exactly like db.getRank.
         if (rows.length === 0) return cached?.rows.length ? cached.rows : null;
-        local = { rows, at: Date.now() };
-        await setCachedScoreHistogram(rows);
+        // An identical histogram is not rewritten (the refresh lease spaces
+        // the next aggregate a full fresh window away) unless the shared copy
+        // is getting close to its KV expiry.
+        const unchanged = !!cached && Date.now() - cached.at < SCORE_HISTOGRAM_REWRITE_MS &&
+          JSON.stringify(cached.rows) === JSON.stringify(rows);
+        local = { rows, until: Date.now() + (unchanged ? SCORE_HISTOGRAM_FRESH_MS : LOCAL_TTL_MS) };
+        if (!unchanged) await setCachedScoreHistogram(rows);
         return rows;
       } catch {
         return null;

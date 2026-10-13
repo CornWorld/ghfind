@@ -1,5 +1,5 @@
 import { BADGE_COLOR } from "@/lib/badge";
-import { getGoProfilePresentation } from "@/lib/go-profile.server";
+import { getGoProfileCardPresentation } from "@/lib/go-profile.server";
 import { renderMaterialCardSvg } from "@/lib/material-card";
 import { tierFor } from "@/lib/score-presentation";
 import { getCurrentTitleSponsor } from "@/lib/sponsor.server";
@@ -17,7 +17,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ username: strin
   const { username } = await ctx.params;
   const name = decodeRouteParam(username ?? "").trim();
   const detail = USERNAME_RE.test(name)
-    ? (await getGoProfilePresentation(name))?.detail ?? null
+    ? (await getGoProfileCardPresentation(name))?.detail ?? null
     : null;
 
   if (!detail) {

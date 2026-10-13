@@ -1,11 +1,13 @@
 import {
-  getDeveloperCommonProjects,
+  getProfileCommonProjects,
   getProjects,
   getRelatedProjects,
   getRepoLanguage,
   type ProjectListItem,
   type RelatedProject,
 } from "@/lib/db";
+import { isBotRequest } from "@/lib/bot-user-agent";
+import { createLocalCache, edgeCacheGet, edgeCachePut } from "@/lib/edge-cache";
 import type { ProjectSort } from "@/lib/projects";
 import { getCachedProjectValue, setCachedProjectValue } from "@/lib/redis";
 
@@ -17,11 +19,37 @@ type CacheLoaderDeps<T, Args extends unknown[] = []> = {
    * failure must degrade this one render, not blank the surface for a full
    * TTL (the homepage projects band vanished for 6h per hiccup). */
   fallback: T;
+  /** Whether a loaded value earns a shared KV entry (default: every value).
+   * Rejected values stay in the colo-local tiers instead (see below). */
+  persist?: (value: T) => boolean;
+  /** Keep crawler renders out of KV (lib/bot-user-agent): a long-tail crawler
+   * fetches each page about once per TTL, so its KV write is never read back. */
+  skipBotWrites?: boolean;
+  /** TTL of the colo-local tiers — an in-isolate map plus the Workers Cache
+   * API — that hold values kept out of KV. Without it they are not cached. */
+  localTtlSeconds?: number;
+  isBot?: () => boolean;
 };
+
+const LOCAL_CACHE_ENTRIES = 2000;
 
 export function createCachedLoader<T, Args extends unknown[] = []>(deps: CacheLoaderDeps<T, Args>) {
   const inflight = new Map<string, Promise<T>>();
+  const ttl = deps.localTtlSeconds;
+  const local = ttl ? createLocalCache<T>(ttl * 1000, LOCAL_CACHE_ENTRIES) : null;
+  const isBot = deps.isBot ?? isBotRequest;
   return async (key: string, ...args: Args): Promise<T> => {
+    const memo = local?.get(key);
+    if (memo !== undefined) return memo;
+    // The Cache API before KV: it only ever holds values kept out of KV, and
+    // a match is free while a KV read is billed.
+    if (local) {
+      const edge = await edgeCacheGet<T>(key);
+      if (edge !== null) {
+        local.set(key, edge);
+        return edge;
+      }
+    }
     try {
       const cached = await deps.cacheGet(key);
       if (cached !== null) return cached;
@@ -40,12 +68,16 @@ export function createCachedLoader<T, Args extends unknown[] = []>(deps: CacheLo
         console.error("project discovery dbLoad failed:", key, e);
         return deps.fallback;
       }
-      // Empty *successes* are cached too: "no common projects" is the
-      // overwhelmingly common answer on profile pages, and skipping it meant
-      // every crawler hit went straight to the database (the 2026-07 rows_read
-      // incident). Errors return the fallback above without caching.
+      // Successes are always cached somewhere, empty ones included: skipping
+      // them sent every crawler hit straight to the database (the 2026-07
+      // rows_read incident). Errors return the fallback above uncached.
+      const shared = (deps.persist?.(value) ?? true) && !(deps.skipBotWrites && isBot());
       try {
-        await deps.cacheSet(key, value);
+        if (shared) await deps.cacheSet(key, value);
+        else if (local && ttl) {
+          local.set(key, value);
+          await edgeCachePut(key, value, ttl);
+        }
       } catch {
         // Cache writes must never break a discovery page.
       }
@@ -76,6 +108,10 @@ export function relatedProjectsCacheKey(repoKey: string, limit: number): string 
   return `projects:related:${repoKey.trim().toLowerCase()}:${limit}`;
 }
 
+// The project lists keep writing KV for every answer, crawler renders and
+// empty pages included: the key space is small (sort x language x page) and a
+// cold miss on an unfiltered list is a whole-graph aggregation, far costlier
+// in D1 than the write.
 const listOptions = new Map<string, ProjectListCacheOptions>();
 const projectListLoader = createCachedLoader<ProjectListItem[]>({
   cacheGet: getCachedProjectValue,
@@ -97,10 +133,23 @@ export async function getProjectsCached(options: ProjectListCacheOptions) {
   }
 }
 
+// Related projects of one repo page (~17.5k KV writes/day at a 6h TTL, 4.4k
+// live keys). Repo pages are a crawler long tail, so:
+// - only answers with real shared-contributor neighbors, rendered for a human,
+//   earn a KV entry, for 24h (the graph only moves on scans/backfills);
+// - empty or filler-only answers (no shared contributors — the cheap case: the
+//   neighbor query reads only this repo's few contributors, and the filler is
+//   the per-language list already cached in KV) and crawler renders stay in
+//   the colo-local tiers, so repeats still skip the database.
+const RELATED_TTL_SECONDS = 86400; // 24h
+
 const relatedOptions = new Map<string, { repoKey: string; limit: number }>();
 const relatedLoader = createCachedLoader<RelatedProject[]>({
   cacheGet: getCachedProjectValue,
-  cacheSet: setCachedProjectValue,
+  cacheSet: (key, value) => setCachedProjectValue(key, value, RELATED_TTL_SECONDS),
+  persist: (related) => related.some((item) => item.sharedContributorCount > 0),
+  skipBotWrites: true,
+  localTtlSeconds: RELATED_TTL_SECONDS,
   fallback: [],
   dbLoad: async (key) => {
     const options = relatedOptions.get(key);
@@ -141,19 +190,42 @@ export async function getRelatedProjectsCached(repoKey: string, limit = 6) {
   }
 }
 
-const commonProjectsLoader = createCachedLoader<ProjectListItem[], [string, string, number]>({
+// Common projects for a whole profile — every similar candidate in one entry
+// (and one database round trip, see db.getProfileCommonProjects). The per-pair
+// entries this replaces were ~49k KV writes/day: up to three per crawler view
+// of a profile, almost never read back.
+//
+// D1 stays bounded without KV for the common answer. "Nothing in common" — the
+// overwhelmingly common result — costs only username/primary-key index seeks
+// (the project query never runs), and it is still cached colo-locally (isolate
+// + Cache API), so repeat renders don't reach the database. Only non-empty
+// answers rendered for humans earn a KV entry.
+const PROFILE_COMMON_TTL_SECONDS = 21600; // 6h, the PROJECT_DISCOVERY TTL
+
+function profileCommonProjectsCacheKey(username: string, candidates: string[], limit: number): string {
+  const others = candidates.map((candidate) => candidate.trim().toLowerCase()).join(",");
+  return `projects:common:v2:${username.trim().toLowerCase()}:${limit}:${others}`;
+}
+
+const profileCommonLoader = createCachedLoader<ProjectListItem[][], [string, string[], number]>({
   cacheGet: getCachedProjectValue,
   cacheSet: setCachedProjectValue,
-  dbLoad: (_key, a, b, limit) => getDeveloperCommonProjects(a, b, limit),
+  dbLoad: (_key, username, candidates, limit) => getProfileCommonProjects(username, candidates, limit),
   fallback: [],
+  persist: (lists) => lists.some((items) => items.length > 0),
+  skipBotWrites: true,
+  localTtlSeconds: PROFILE_COMMON_TTL_SECONDS,
 });
 
-export async function getDeveloperCommonProjectsCached(
-  usernameA: string,
-  usernameB: string,
+/** Per candidate (in order), the projects it shares with `username`. */
+export async function getProfileCommonProjectsCached(
+  username: string,
+  candidates: string[],
   limit = 6,
-) {
-  const [a, b] = [usernameA.toLowerCase(), usernameB.toLowerCase()].sort();
-  const key = `projects:common:${a}:${b}:${limit}`;
-  return commonProjectsLoader(key, a, b, limit);
+): Promise<ProjectListItem[][]> {
+  if (candidates.length === 0) return [];
+  const key = profileCommonProjectsCacheKey(username, candidates, limit);
+  const lists = await profileCommonLoader(key, username, candidates, limit);
+  // The fallback (database error) is [] — still one (empty) list per candidate.
+  return candidates.map((_, index) => lists[index] ?? []);
 }

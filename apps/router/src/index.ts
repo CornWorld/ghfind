@@ -1,4 +1,5 @@
 import { decideLocale } from "@ghfind/i18n";
+import { cardRedirect, cardRequest, serveCard } from "./card-cache";
 import { pickTarget } from "./routes";
 
 export interface Env {
@@ -44,8 +45,13 @@ function nonProductionCrawlResponse(url: URL): Response | null {
   return null;
 }
 
+/** `caches.default` where the runtime has it (absent in Node tests). */
+function edgeCache(): Cache | null {
+  return (globalThis as { caches?: { default?: Cache } }).caches?.default ?? null;
+}
+
 export default {
-  async fetch(request, env): Promise<Response> {
+  async fetch(request, env, ctx?: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     if (env.ROUTER_NOINDEX === "1") {
       const crawl = nonProductionCrawlResponse(url);
@@ -56,6 +62,17 @@ export default {
       // /index.md already answers with `Vary: Accept`.
       const res = await env.API.fetch(new Request(new URL("/index.md", url), request));
       return finish(new Response(res.body, res), "api", env);
+    }
+    // README cards/badges: canonical URL, malformed embeds redirected, edge
+    // cached (card-cache.ts). The rollback switch bypasses all of it.
+    const card = forceLegacy ? null : cardRequest(url);
+    if (card && pickTarget(card.canonical.pathname) === "api") {
+      if (card.redirect) return finish(cardRedirect(card), "router", env);
+      const res = await serveCard(request, card, env.API, {
+        cache: edgeCache(),
+        waitUntil: ctx ? (promise) => ctx.waitUntil(promise) : undefined,
+      });
+      return finish(res, "api", env);
     }
     const target = forceLegacy ? "legacy" : pickTarget(url.pathname);
     const upstream = target === "web" ? env.WEB : target === "api" ? env.API : env.LEGACY;
