@@ -1725,6 +1725,15 @@
       "title": "Công cụ tuyển dụng sắp ra mắt",
       "body": "Sắp tới bạn có thể dán mô tả công việc và xem các lập trình viên đang tìm cơ hội, xếp hạng theo kỹ năng đã được xác minh trên GitHub.",
       "cta": "Đăng tin tuyển dụng"
+    },
+    "optIn": {
+      "title": "Sẵn sàng đón cơ hội",
+      "label": "Cho phép doanh nghiệp tìm thấy tôi trong kho nhân tài",
+      "detail": "Doanh nghiệp sẽ thấy tên, tài khoản GitHub, dòng giới thiệu, kỹ năng và mức độ phù hợp từ hồ sơ hiện tại của bạn, không bao giờ thấy nội dung CV. Có thể tắt bất cứ lúc nào; xóa hồ sơ cũng sẽ đưa bạn ra khỏi kho.",
+      "on": "Bạn đang ở trong kho nhân tài.",
+      "off": "Bạn chưa ở trong kho nhân tài.",
+      "notLive": "Tính năng tìm kiếm cho doanh nghiệp chưa ra mắt nên hiện chưa ai xem được hồ sơ của bạn; bật ngay để có mặt trong kho khi tính năng mở.",
+      "saveFailed": "Không lưu được lựa chọn. Vui lòng thử lại."
     }
   }
 }

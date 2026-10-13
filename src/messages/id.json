@@ -1725,6 +1725,15 @@
       "title": "Fitur rekrutmen segera hadir",
       "body": "Sebentar lagi kamu bisa menempelkan deskripsi pekerjaan dan melihat developer yang terbuka untuk peluang, diurutkan berdasarkan keahlian yang terverifikasi di GitHub.",
       "cta": "Pasang lowongan"
+    },
+    "optIn": {
+      "title": "Terbuka untuk peluang",
+      "label": "Izinkan perusahaan menemukan saya di talent pool",
+      "detail": "Perusahaan akan melihat nama, akun GitHub, judul singkat, keahlian, dan skor kecocokan dari profil Anda saat ini, tidak pernah teks CV Anda. Matikan kapan saja; menghapus profil juga mengeluarkan Anda.",
+      "on": "Anda ada di talent pool.",
+      "off": "Anda tidak ada di talent pool.",
+      "notLive": "Pencocokan untuk perusahaan belum aktif, jadi saat ini tidak ada yang bisa melihat profil Anda; aktifkan sekarang agar Anda masuk pool saat dibuka.",
+      "saveFailed": "Pilihan Anda gagal disimpan. Coba lagi."
     }
   }
 }
