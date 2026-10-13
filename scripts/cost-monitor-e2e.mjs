@@ -40,8 +40,8 @@ try {
   result.steps.push({name:"hourly digest, urgent bypass and partial-recipient digest retry"});
   await request("/test/reset");
   const collection=(await request("/test/collection")).body;
-  assert.deepEqual(collection,{transient:0,partial:1,retry:2,quiet:2,reminder:4,recovery:4,pending:0,resolved:true});
-  result.steps.push({name:"persistent collection gap, twelve-hour reminder, silent recovery and recipient retry"});
+  assert.deepEqual(collection,{transient:0,legacyRetired:true,sustained:0,stillIncomplete:true,mixed:2,customerOnly:true,recovery:2,pending:0,resolved:true});
+  result.steps.push({name:"internal collection gaps stay silent; legacy partial mail retires and real business failures still send"});
   await request("/test/reset");
   const business=(await request("/test/business")).body;
   assert.equal(business.rows[0].total,5);assert.equal(business.rows[0].failed,1);assert.equal(business.rows[0].slow,1);assert.equal(business.severity,2);assert.equal(business.remaining,0);

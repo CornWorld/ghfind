@@ -1,8 +1,8 @@
 import { DurableObject } from "cloudflare:workers";
 import { acknowledge, compact, DEFAULT_RULES, emptyState, evaluate, HISTORY_TTL_MS, MAX_METRICS, MAX_STATE_BYTES, MAX_WINDOWS, MAX_WINDOW_BYTES, recipients, STATE_TTL_MS, WINDOW_MS, type Frame, type Rules, type State } from "./engine";
-import { DIGEST_MS, selectMail } from "./mail-policy";
+import { DIGEST_MS, discardInternalMail, selectMail } from "./mail-policy";
 import { renderMail } from "./mail";
-import { acknowledgeCollection, billingDue, observeCollection } from "./collection-health";
+import { billingDue, internalDiagnostics, observeCollection } from "./collection-health";
 import { billable, collect } from "./metrics";
 import { businessPoints, probe, summarize, type BusinessCount } from "./business";
 interface MonitorEnv extends Env {
@@ -90,7 +90,10 @@ export class CostMonitor extends DurableObject<MonitorEnv> {
     for(const notice of state.outbox)if(ids.has(notice.id)){notice.delivered.push(to);notice.attempts++;}
   }
   private async deliver(state:State,now:number,failSecond=false,immediateExercise=false):Promise<void> {
-    if(!state.outbox.length){state.lastDeliveryError=null;return;}
+    // Retire persisted/partially delivered operator diagnostics before checking
+    // recipient configuration, budgets or retrying any delivery.
+    discardInternalMail(state);
+    if(!state.outbox.length){state.lastDeliveryError=null;this.save(state,now);return;}
     const targets=recipients(this.env.ALERT_RECIPIENTS);
     if(!state.nextDigest){state.nextDigest=(Math.floor(now/DIGEST_MS)+1)*DIGEST_MS;state.digestRecipients=[];this.save(state,now);}
     if(immediateExercise && this.env.E2E_ENABLED==="1")state.nextDigest=now;
@@ -140,7 +143,7 @@ export class CostMonitor extends DurableObject<MonitorEnv> {
     if(digestDue && targets.every(to=>state.digestRecipients?.includes(to))){
       state.nextDigest=(Math.floor(now/DIGEST_MS)+1)*DIGEST_MS;state.digestRecipients=[];
     }
-    for(const notice of [...state.outbox])if(targets.every(to=>notice.delivered.includes(to))){acknowledgeCollection(state,notice,now);acknowledge(state,notice,now);}
+    for(const notice of [...state.outbox])if(targets.every(to=>notice.delivered.includes(to)))acknowledge(state,notice,now);
     if(!state.outbox.length || (attempted && !failed && !state.outbox.some(n=>n.attempts>0 && targets.some(to=>!n.delivered.includes(to)))))state.lastDeliveryError=null;
     this.save(state,now);
   }
@@ -187,8 +190,8 @@ export class CostMonitor extends DurableObject<MonitorEnv> {
     const heartbeatHealthy=completed>0 && completed<=now+60_000 && now-completed<30*60_000;
     const collectionHealthy=state.lastSuccess>0 && now-state.lastSuccess<30*60_000 && !state.lastError;
     const deliveryHealthy=!state.lastDeliveryError;
-    const collection=state.collection?{...state.collection,acceptedRecipients:undefined}:null;
-    return {version:2,lastAttempt:state.lastAttempt,lastCompletedAt:completed,lastSuccess:state.lastSuccess,lastFrame:state.lastFrame,lastBilling:state.lastBilling,lastBillingAttempt:state.lastBillingAttempt??0,lastBillingError:state.lastBillingError??null,lastError:state.lastError,lastDeliveryError:state.lastDeliveryError??null,collection,metrics:Object.keys(state.metrics).length,pending:state.outbox.length,deliveries:state.recentDelivery,mailReceipts:state.mailReceipts,mailBudget:state.mailBudget,...counts,bounds:{historyTtlHours:24,stateTtlDays:7,maxWindows:MAX_WINDOWS,maxWindowBytes:MAX_WINDOW_BYTES,maxStateBytes:MAX_STATE_BYTES},heartbeatHealthy,collectionHealthy,deliveryHealthy,healthy:heartbeatHealthy&&collectionHealthy&&deliveryHealthy};
+    const collection=state.collection?{since:state.collection.since,lastFailureWindow:state.collection.lastFailureWindow,lastSuccessWindow:state.collection.lastSuccessWindow,failures:state.collection.failures,good:state.collection.good,lastCompleteAt:state.collection.lastCompleteAt,reason:state.collection.reason}:null;
+    return {version:2,lastAttempt:state.lastAttempt,lastCompletedAt:completed,lastSuccess:state.lastSuccess,lastFrame:state.lastFrame,lastBilling:state.lastBilling,lastBillingAttempt:state.lastBillingAttempt??0,lastBillingError:state.lastBillingError??null,lastError:state.lastError,lastDeliveryError:state.lastDeliveryError??null,collection,internalDiagnostics:internalDiagnostics(state,now),metrics:Object.keys(state.metrics).length,pending:state.outbox.length,deliveries:state.recentDelivery,mailReceipts:state.mailReceipts,mailBudget:state.mailBudget,...counts,bounds:{historyTtlHours:24,stateTtlDays:7,maxWindows:MAX_WINDOWS,maxWindowBytes:MAX_WINDOW_BYTES,maxStateBytes:MAX_STATE_BYTES},heartbeatHealthy,collectionHealthy,deliveryHealthy,healthy:heartbeatHealthy&&collectionHealthy&&deliveryHealthy};
   }
   async alarm():Promise<void> {
     const now=Date.now();this.prune(now);
@@ -201,16 +204,16 @@ export class CostMonitor extends DurableObject<MonitorEnv> {
     try {
       if(phase==="reset"){this.ctx.storage.sql.exec("DELETE FROM monitor_state");this.ctx.storage.sql.exec("DELETE FROM windows");this.ctx.storage.sql.exec("DELETE FROM business_windows");return {status:"reset"};}
       const state=this.load();const base=Math.floor(Date.now()/86400_000)*86400_000;
-      const make=(i:number,efficiency:number):Frame=>({at:base+i*WINDOW_MS,healthy:["D1","Workers","R2","KV","DO","Queues"],errors:[],points:[{key:"D1:e2e:read",product:"D1",resource:"E2E synthetic database",label:"模拟读放大",amount:efficiency*100,operations:100,unit:"rows",usd:efficiency*100*1e-9,efficiency,efficiencyWarning:50_000,efficiencyCritical:200_000,minAmount:100_000}]});
+      const make=(i:number,efficiency:number):Frame=>({at:base+i*WINDOW_MS,healthy:["D1","Workers","R2","KV","DO","Queues"],errors:[],points:[{key:"Workers:e2e:errors",product:"Workers",resource:"E2E synthetic Worker",label:"模拟 Worker 请求失败",amount:efficiency*100,operations:100,unit:"errors",usd:0,efficiency,efficiencyWarning:0.01,efficiencyCritical:0.05,minAmount:3,relative:false}]});
       if(phase==="hourly"){
         const s=emptyState(),notice=(key:string,severity:number)=>({id:key,key,kind:"open" as const,severity,text:"hourly E2E",delivered:[],attempts:0,expiresAt:Date.now()+STATE_TTL_MS});
-        s.outbox.push(notice("D1:test:read",1));
+        s.outbox.push(notice("Service:roast:slow",1));
         await this.deliver(s,base);await this.deliver(s,base+30*60_000);
         const before=s.mailReceipts.length;
         await this.deliver(s,base+60*60_000);const digest=s.mailReceipts.length;
         s.outbox.push(notice("Service:roast:errors",2));await this.deliver(s,base+65*60_000);
         const critical=s.mailReceipts.length;
-        s.outbox.push(notice("KV:test:write",1));await this.deliver(s,base+70*60_000);
+        s.outbox.push(notice("Workers:test:errors",1));await this.deliver(s,base+70*60_000);
         const quiet=s.mailReceipts.length;
         await this.deliver(s,base+120*60_000,true);const partial=s.mailReceipts.length;
         await this.deliver(s,base+125*60_000);const retry=s.mailReceipts.length;
@@ -228,18 +231,18 @@ export class CostMonitor extends DurableObject<MonitorEnv> {
         return {status:"business",rows,severity,remaining:this.ctx.storage.sql.exec<{n:number}>("SELECT COUNT(*) AS n FROM business_windows").one().n};
       }
       if(phase==="atomic"){
-        const s=emptyState();evaluate(s,make(1,200),base+WINDOW_MS);
-        const template=s.metrics["D1:e2e:read"];
+        const s=emptyState();evaluate(s,make(1,0.002),base+WINDOW_MS);
+        const template=s.metrics["Workers:e2e:errors"];
         for(let i=0;Object.keys(s.metrics).length<MAX_METRICS;i++)s.metrics[`D1:fixed:${i}`]={...template,severity:2};
         for(const metric of Object.values(s.metrics))metric.severity=2;
-        const frame=make(2,380_000);frame.points.push({...frame.points[0],key:"D1:new:read"});
+        const frame=make(2,0.2);frame.points.push({...frame.points[0],key:"Workers:new:errors"});
         const before=JSON.stringify(s);
         const count=()=>this.ctx.storage.sql.exec<{n:number}>("SELECT COUNT(*) AS n FROM windows").one().n;
         const rows=count();let rejected=false;
         try{this.acceptFrame(s,frame,base+2*WINDOW_MS,DEFAULT_RULES,true);}catch{rejected=true;}
         const cardinality={rejected,stateUnchanged:JSON.stringify(s)===before,windowsUnchanged:count()===rows,billingUnchanged:s.lastBilling===0};
         const bounded=emptyState();
-        const point=(i:number,high=false)=>({...make(1,high?380_000:2).points[0],key:`D1:${String(i).padEnd(100,"x")}:read`,resource:String(i).padEnd(100,"x")});
+        const point=(i:number,high=false)=>({...make(1,high?0.2:0.002).points[0],key:`Workers:${String(i).padEnd(100,"x")}:errors`,resource:String(i).padEnd(100,"x")});
         for(let i=0;i<8;i++)evaluate(bounded,{at:base+(i+1)*WINDOW_MS,points:Array.from({length:32},(_,j)=>point(i*32+j)),healthy:[],errors:[]},base+(i+1)*WINDOW_MS);
         for(let i=0;i<2;i++)evaluate(bounded,{at:base+(i+9)*WINDOW_MS,points:Array.from({length:i?31:32},(_,j)=>point(i*32+j,true)),healthy:[],errors:[]},base+(i+9)*WINDOW_MS);
         const bytes=()=>new TextEncoder().encode(JSON.stringify(bounded)).byteLength;
@@ -265,31 +268,39 @@ export class CostMonitor extends DurableObject<MonitorEnv> {
       }
       if(phase==="collection"){
         let s=emptyState();
-        const failure=async(minutes:number,partial=false)=>{
+        s.lastSuccess=base-WINDOW_MS;s.lastError="D1: rate limited";
+        const failure=async(minutes:number)=>{
           const at=base+minutes*60_000;
           observeCollection(s,["D1: rate limited"],at,at-3*WINDOW_MS);
-          this.save(s,at);await this.deliver(s,at,partial);
+          this.save(s,at);await this.deliver(s,at);
           s=this.load(at);
         };
         for(let minutes=0;minutes<=30;minutes+=5)await failure(minutes);
         const transient=s.mailReceipts.length;
-        await failure(60,true);const partial=s.mailReceipts.length;
-        await failure(65);const retry=s.mailReceipts.length;
-        for(const minutes of [70,120,180,360,720,780])await failure(minutes);
-        const quiet=s.mailReceipts.length;
-        await failure(785);const reminder=s.mailReceipts.length;
-        for(const minutes of [790,795]){
+        const legacy={id:"Monitor:collection:health:legacy",key:"Monitor:collection:health",kind:"open" as const,severity:2,text:"legacy collection gap",delivered:["one@example.org"],attempts:1,expiresAt:base+STATE_TTL_MS};
+        s.outbox.push(legacy);s.lastDeliveryError="Email delivery failed; pending recipient retained for retry";
+        Object.assign(s.collection!,{notified:true,lastNotifiedAt:base,acceptedRecipients:["one@example.org"]});
+        // Delivery migrates old outboxes even without another collection run.
+        await this.deliver(s,base+60*60_000);s=this.load(base+60*60_000);
+        const legacyRetired=s.outbox.length===0&&!s.collection?.acceptedRecipients&&!s.lastDeliveryError;
+        for(const minutes of [65,70,120,180,360,720,780,785])await failure(minutes);
+        const sustained=s.mailReceipts.length;
+        const stillIncomplete=s.lastSuccess===base-WINDOW_MS&&!!s.lastError&&s.collection?.since===base&&s.collection.reason==="D1: rate limited";
+        s.outbox.push({...legacy,delivered:[]},{...legacy,id:"optimization",key:"D1:test:read",delivered:[]},{...legacy,id:"customer-failure",key:"Service:roast:errors",text:"Observed report failures",delivered:[]});
+        await this.deliver(s,base+790*60_000);s=this.load(base+790*60_000);
+        const mixed=s.mailReceipts.length,customerOnly=s.recentDelivery.length===1&&s.recentDelivery[0].id==="customer-failure";
+        for(const minutes of [795,800]){
           const at=base+minutes*60_000;observeCollection(s,[],at,at-3*WINDOW_MS);
           this.save(s,at);await this.deliver(s,at);
         }
-        return {transient,partial,retry,quiet,reminder,recovery:s.mailReceipts.length,pending:s.outbox.length,resolved:s.collection?.since===0};
+        return {transient,legacyRetired,sustained,stillIncomplete,mixed,customerOnly,recovery:s.mailReceipts.length,pending:s.outbox.length,resolved:s.collection?.since===0};
       }
-      if(phase==="baseline")for(let i=1;i<=14;i++){const f=make(i,200);evaluate(state,f,base+i*WINDOW_MS);this.storeFrame(f,Date.now());}
-      else if(phase==="breach"||phase==="partial"||phase==="duplicate"){const f=make(15,380_000);evaluate(state,f,base+15*WINDOW_MS);this.storeFrame(f,Date.now());}
-      else if(phase==="reminder"){const f=make(88,380_000);evaluate(state,f,base+88*WINDOW_MS);this.storeFrame(f,Date.now());}
-      else if(phase==="recovery")for(let i=89;i<=90;i++){const f=make(i,200);evaluate(state,f,base+i*WINDOW_MS);this.storeFrame(f,Date.now());}
+      if(phase==="baseline")for(let i=1;i<=14;i++){const f=make(i,0.002);evaluate(state,f,base+i*WINDOW_MS);this.storeFrame(f,Date.now());}
+      else if(phase==="breach"||phase==="partial"||phase==="duplicate"){const f=make(15,0.2);evaluate(state,f,base+15*WINDOW_MS);this.storeFrame(f,Date.now());}
+      else if(phase==="reminder"){const f=make(88,0.2);evaluate(state,f,base+88*WINDOW_MS);this.storeFrame(f,Date.now());}
+      else if(phase==="recovery")for(let i=89;i<=90;i++){const f=make(i,0.002);evaluate(state,f,base+i*WINDOW_MS);this.storeFrame(f,Date.now());}
       else if(phase==="retention"){
-        for(let i=0;i<MAX_WINDOWS+20;i++){const f=make(i,200);this.storeFrame(f,Date.now());}
+        for(let i=0;i<MAX_WINDOWS+20;i++){const f=make(i,0.002);this.storeFrame(f,Date.now());}
         this.prune(Date.now());const before=this.ctx.storage.sql.exec<{n:number}>("SELECT COUNT(*) AS n FROM windows").one().n;
         this.prune(Date.now()+HISTORY_TTL_MS+1);
         const after=this.ctx.storage.sql.exec<{n:number}>("SELECT COUNT(*) AS n FROM windows").one().n;
@@ -297,7 +308,7 @@ export class CostMonitor extends DurableObject<MonitorEnv> {
       } else if(phase==="rate-limit"){
         const now=base+15*WINDOW_MS;
         state.mailBudget={hour:Math.floor(now/3600_000),hourly:8,day:Math.floor(now/86400_000),daily:120};
-        state.outbox.push({id:"Monitor:e2e:rate-limit",key:"Monitor:e2e:rate-limit",kind:"open",severity:2,text:"模拟发送预算耗尽",delivered:[],attempts:0,expiresAt:Date.now()+STATE_TTL_MS});
+        state.outbox.push({id:"Workers:e2e:rate-limit",key:"Workers:e2e:errors",kind:"open",severity:2,text:"模拟发送预算耗尽",delivered:[],attempts:0,expiresAt:Date.now()+STATE_TTL_MS});
       } else throw new Error("Unknown E2E phase");
       this.save(state,Date.now());await this.deliver(state,base+(phase==="reminder"?88:phase==="recovery"?90:15)*WINDOW_MS,phase==="partial",true);
       return {status:"exercised",phase,pending:state.outbox.length,deliveries:state.recentDelivery};
