@@ -104,6 +104,7 @@ test('HTTP 200 restart receipts are read once and reach every release identity c
 
 test('HTTP success does not bypass exact receipt identity or permit replay after malformed replies', async () => {
   for (const body of [
+    { rejectedWithoutMutation: true },
     { restarted: true, target: 'api-0', ...identity, sourceSha: 'c'.repeat(40) },
     { restarted: true, target: 'api-0', ...identity, extra: true },
     { kind: 'http-error', code: 'invalid_transition', status: 400 },

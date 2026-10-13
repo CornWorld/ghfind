@@ -36,7 +36,13 @@ export async function readTransitionResponse(response, target, offVersion) {
   // release caller's exact identity validation, without retrying the mutation.
   if (response.status !== 200)
     throw new Error(`mode transition rejected (${response.status}; ${target}; ${await rejectionCode(response)})`);
-  return boundedJSON(response, 2048);
+  const receipt = await boundedJSON(response, 2048);
+  // Only the verified HTTP 409 branch may grant a pre-dispatch retry. A 200
+  // body carrying that internal marker is an invalid receipt, not permission.
+  requireThat(receipt && typeof receipt === 'object' && !Array.isArray(receipt) &&
+    Object.keys(receipt).sort().join(',') === 'imageBuildId,mode,restarted,sourceSha,target,writerEpoch' &&
+    receipt.restarted === true, 'transition reply shape differs');
+  return receipt;
 }
 export function edgePreflight(identity, off, { read, now = Date.now, sleep = ms => new Promise(resolve => setTimeout(resolve, ms)) }) {
   requireThat(/^[a-f0-9-]{36}$/.test(off?.runtime?.versionId ?? '') && typeof off.image === 'string', 'off edge identity required');
