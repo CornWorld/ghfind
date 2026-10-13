@@ -102,7 +102,7 @@ beforeAll(async () => {
   await migrate(feed, "migrations-feed");
   mocks.db = core;
   await core.execute({ sql: "INSERT INTO user_resume_libraries (github_id, login, data, updated_at) VALUES (7, 'lin', ?, 0)", args: [JSON.stringify(library)] });
-  jobId = String((await core.execute("SELECT id FROM jobs WHERE status = 'open' ORDER BY id LIMIT 1")).rows[0].id);
+  jobId = String((await core.execute("SELECT id FROM jobs WHERE status = 'open' AND company_id = 'deepseek' ORDER BY id LIMIT 1")).rows[0].id);
   await upsertJobRequirement(core, { jobId, requirement, inputHash: "h", vectorId: null, now: 1 });
   await feed.execute(`INSERT INTO feed_projects (repo_key, analysis_id, owner_login, name, canonical_url, summary, language, topics_json,
     project_type, lifecycle, product_score, confidence, verification_level, exposure_band, analyzed_at, risks_json, published, source_hash, projected_at)
@@ -151,12 +151,25 @@ describe("candidate pipeline", () => {
 
   it("does not match jobs that state no skills (non-engineering roles, title-only listings)", async () => {
     const empty = { ...requirement, mustHave: [], niceToHave: [] };
-    const other = String((await core.execute({ sql: "SELECT id FROM jobs WHERE status = 'open' AND id <> ? ORDER BY id LIMIT 1", args: [jobId] })).rows[0].id);
+    const other = String((await core.execute({ sql: "SELECT id FROM jobs WHERE status = 'open' AND company_id = 'deepseek' AND id <> ? ORDER BY id LIMIT 1", args: [jobId] })).rows[0].id);
     await upsertJobRequirement(core, { jobId: other, requirement: empty, inputHash: "e", vectorId: null, now: 1 });
     try {
       const profile = (await runVerify(core, { reportId: "v", githubId: 9, login: "nobody", source: { kind: "profile" }, preferences: { location: "", remote: false, employment: [] }, inputHash: "", createdAt: 0 }, JSON.parse(JSON.stringify(extraction)), "v11", 0)).profile;
       const match = await runMatch(core, null, profile, Date.now());
       expect(match.scored.map((s) => s.job.id)).toEqual([jobId]);
+    } finally {
+      await core.execute({ sql: "DELETE FROM job_requirements WHERE id = ?", args: [other] });
+    }
+  });
+
+  it("excludes other employers even when their requirements match perfectly", async () => {
+    const other = String((await core.execute("SELECT id FROM jobs WHERE status = 'open' AND company_id <> 'deepseek' ORDER BY id LIMIT 1")).rows[0].id);
+    await upsertJobRequirement(core, { jobId: other, requirement: { ...requirement, mustHave: [{ id: "python", level: 1 }] }, inputHash: "other", vectorId: null, now: 1 });
+    try {
+      const profile = (await runVerify(core, { reportId: "v", githubId: 9, login: "nobody", source: { kind: "profile" }, preferences: { location: "", remote: false, employment: [] }, inputHash: "", createdAt: 0 }, JSON.parse(JSON.stringify(extraction)), "v11", 0)).profile;
+      const match = await runMatch(core, null, profile, Date.now());
+      expect(match.scored.map((s) => s.job.id)).toEqual([jobId]);
+      expect(match.gaps).toEqual(match.scored[0].score.gaps);
     } finally {
       await core.execute({ sql: "DELETE FROM job_requirements WHERE id = ?", args: [other] });
     }

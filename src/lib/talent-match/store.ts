@@ -284,7 +284,7 @@ export async function deleteTalentData(db: Client, githubId: number): Promise<st
  * Open hiring-board jobs with a current structured requirement, titled in zh
  * and en (each falling back to the other). `ids` narrows to recalled jobs.
  */
-export async function listMatchableJobs(db: Client, now: number, ids?: readonly string[]): Promise<MatchableJob[]> {
+export async function listMatchableJobs(db: Client, now: number, ids?: readonly string[], companyId?: string): Promise<MatchableJob[]> {
   if (ids && ids.length === 0) return [];
   const chunks = ids ? chunk(ids, MAX_BOUND) : [null];
   const jobs: MatchableJob[] = [];
@@ -298,9 +298,10 @@ export async function listMatchableJobs(db: Client, now: number, ids?: readonly 
             LEFT JOIN job_translations tz ON tz.job_id = j.id AND tz.locale = 'zh'
             LEFT JOIN job_translations te ON te.job_id = j.id AND te.locale = 'en'
             WHERE j.status = 'open' AND (j.expires_at IS NULL OR j.expires_at > ?)
+              ${companyId ? "AND j.company_id = ?" : ""}
               ${part ? `AND j.id IN (${part.map(() => "?").join(",")})` : ""}
             ORDER BY j.id`,
-      args: [SCHEMA_VERSION, now, ...(part ?? [])],
+      args: [SCHEMA_VERSION, now, ...(companyId ? [companyId] : []), ...(part ?? [])],
     });
     for (const row of rows) {
       const requirement = extractedRequirementSchema.safeParse(parseJson(row.requirement_json));

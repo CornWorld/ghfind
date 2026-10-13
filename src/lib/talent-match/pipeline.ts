@@ -191,14 +191,14 @@ export function hasSkillRequirements(requirement: { mustHave: readonly unknown[]
 }
 
 /**
- * Step 3: score every open job with stated skill requirements (the board is
+ * Step 3: score every open DeepSeek job with stated skill requirements (the board is
  * small enough that recall would only add misses), then pick Feed projects
- * for the common gaps.
+ * for the top role's gaps.
  */
 export async function runMatch(db: Client, feedDb: Client | null, profile: StoredProfile, now: number): Promise<MatchResult> {
-  const jobs = (await listMatchableJobs(db, now)).filter((job) => hasSkillRequirements(job.requirement));
+  const jobs = (await listMatchableJobs(db, now, undefined, "deepseek")).filter((job) => hasSkillRequirements(job.requirement));
   const scored = topMatches(jobs.map((job) => ({ job, score: scoreMatch(profile, job.requirement) })), REPORT_MATCH_LIMIT);
-  const gaps = commonGaps(scored.slice(0, 5));
+  const gaps = commonGaps(scored.slice(0, 1));
   const pool = feedDb ? await listGrowthProjects(feedDb) : [];
   const projects = await attachStars(db, pickGrowthProjects(gaps, pool));
   return { scored, gaps, projects };

@@ -193,6 +193,7 @@ export function adviceMessages(input: AdviceInput): ChatMessage[] {
       years: input.profile.years,
       skills: input.profile.skills.slice(0, 20).map((s) => ({ skill: s.id === "other" ? s.name : skillLabel(s.id), level: s.level, evidence: s.source })),
     },
+    growthTargetJobId: topMatches(input.matches, 1)[0]?.job.id ?? null,
     jobs: topMatches(input.matches, ADVICE_MATCH_LIMIT).map(({ job, score }) => ({
       jobId: job.id, company: job.company, title: job.title.en, fit: score.fit, reach: score.reach,
       matched: score.matched.map((id) => skillLabel(id)), gaps: score.gaps.map((g) => gapLabel(g).en),
@@ -207,6 +208,7 @@ export function adviceMessages(input: AdviceInput): ChatMessage[] {
       role: "system",
       content: `You write a concise career report for a software developer from the facts given as JSON.
 Rules: refer only to the jobIds, repositories and gap keys in the facts; never invent jobs, companies, repositories, requirements or scores, and do not state any number that is not in the facts.
+Focus the growth plan on growthTargetJobId and its listed gaps. Other jobs are alternative matches. When there are no jobs, give evidence-based general growth advice without inventing a role.
 Reply with one JSON object: {"summary": {"zh","en"} (2-3 sentences), "strengths": [{"zh","en"}] (max 5),
 "reasons": [{"jobId", "reason": {"zh","en"}}] (one sentence per job on why it fits and what is missing),
 "growth": [{"kind": "open_source"|"skill"|"research"|"education"|"portfolio", "title": {"zh","en"}, "detail": {"zh","en"}, "repo": "owner/name" or null (open_source needs a listed repository), "closes": [gap keys], "horizon": {"zh","en"} (e.g. "1-2 months")}] (max 6, most valuable first).

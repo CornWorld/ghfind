@@ -59,8 +59,8 @@ export function TalentMatch({ zh }: { zh: boolean }) {
           <h1 className="text-2xl font-black tracking-tight text-zinc-100 sm:text-3xl">{c("人才匹配", "Talent Match")}</h1>
           <p className="mt-2 max-w-2xl text-sm text-zinc-400 sm:text-base">
             {c(
-              "上传简历或提供 GitHub，生成人才画像、匹配岗位，并告诉你下一步该贡献哪些开源项目、补哪些能力。",
-              "Bring a résumé or your GitHub to get a talent profile, matching roles, and concrete next steps — which open-source projects to contribute to and which skills to build.",
+              "上传简历或提供 GitHub，生成人才画像、匹配 DeepSeek 岗位，并告诉你下一步该贡献哪些开源项目、补哪些能力。",
+              "Bring a résumé or your GitHub to get a talent profile, matching DeepSeek roles, and concrete next steps — which open-source projects to contribute to and which skills to build.",
             )}
           </p>
         </div>
