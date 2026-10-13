@@ -31,7 +31,7 @@ vi.mock("@/lib/redis", async (original) => ({
 import { GET as getLatest, POST } from "@/app/api/talent-match/reports/route";
 import { GET as getReport } from "@/app/api/talent-match/reports/[id]/route";
 import { GET as getQuota } from "@/app/api/talent-match/quota/route";
-import { DELETE as deleteProfile } from "@/app/api/talent-match/profile/route";
+import { DELETE as deleteProfile, GET as getProfileRoute, PUT as putProfile } from "@/app/api/talent-match/profile/route";
 import {
   candidateInputHash,
   failReport,
@@ -46,7 +46,7 @@ import {
   syncJobRequirement,
   type CandidateParams,
 } from "../pipeline";
-import { getOwnReport, getProfile, upsertJobRequirement, updateReport } from "../store";
+import { getOwnReport, getProfile, upsertJobRequirement, upsertProfile, updateReport } from "../store";
 
 const core = createClient({ url: "file::memory:" });
 const feed = createClient({ url: ":memory:" });
@@ -303,6 +303,33 @@ describe("PDF résumés", () => {
     const { rows } = await core.execute("SELECT status, error FROM talent_reports");
     expect(rows.map((r) => [r.status, r.error])).toEqual([["failed", "model_output_invalid"]]);
     expect((await (await getQuota()).json()).used).toBe(0);
+  });
+});
+
+describe("open to opportunities", () => {
+  const put = (body: unknown) =>
+    putProfile(new Request("https://ghfind.com/api/talent-match/profile", { method: "PUT", body: JSON.stringify(body) }) as never);
+
+  it("needs a profile, then toggles consent that survives a regenerated profile", async () => {
+    expect(await (await getProfileRoute()).json()).toEqual({ profile: null });
+    const missing = await put({ optedIn: true });
+    expect(missing.status).toBe(409);
+    expect(await missing.json()).toEqual({ error: "profile_missing" });
+
+    const profile = (await runVerify(core, { reportId: "o", githubId: 7, login: "lin", source: { kind: "profile" }, preferences: { location: "", remote: false, employment: [] }, inputHash: "a", createdAt: 0 }, JSON.parse(JSON.stringify(extraction)), "v11", 0)).profile;
+    expect(await (await getProfileRoute()).json()).toEqual({ profile: { optedIn: false } });
+    expect(await (await put({ optedIn: true })).json()).toEqual({ optedIn: true });
+    await upsertProfile(core, { githubId: 7, login: "lin", profile, inputHash: "b", vectorId: null, now: 1 });
+    expect(await (await getProfileRoute()).json()).toEqual({ profile: { optedIn: true } });
+    expect(await (await put({ optedIn: false })).json()).toEqual({ optedIn: false });
+    expect((await getProfile(core, 7))?.optedIn).toBe(false);
+  });
+
+  it("rejects bad bodies and anonymous callers", async () => {
+    expect((await put({ optedIn: "yes" })).status).toBe(400);
+    mocks.user = null;
+    expect((await put({ optedIn: true })).status).toBe(401);
+    expect((await getProfileRoute()).status).toBe(401);
   });
 });
 

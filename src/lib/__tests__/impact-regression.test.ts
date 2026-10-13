@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   computeImpactFromContribMap,
   computeImpactQualitySignals,
+  ownPrCommunityShare,
+  ownRepoCommunity,
   weightedOriginalStars,
   type ContribRepoAgg,
 } from "../github";
@@ -56,6 +58,8 @@ function recompute(f: ScoreRegressionFixture) {
   return { impact, metrics, scoring: score(metrics) };
 }
 
+const fixtureLogin = (f: ScoreRegressionFixture) => f.metrics.username.toLowerCase();
+
 describe("score regression fixtures (real snapshots)", () => {
   for (const [name, raw] of Object.entries(fixtures)) {
     const fixture = raw as unknown as ScoreRegressionFixture;
@@ -78,6 +82,22 @@ describe("score regression fixtures (real snapshots)", () => {
         "weighted_max_stars",
       ] as const) {
         expect(metrics[key], key).toBe(fixture.metrics[key]);
+      }
+
+      // Community scores and the own-PR community share follow from the
+      // recorded facts (star-inflation suspects get 0).
+      for (const r of fixture.contrib_repos) {
+        if (!r.community_facts) continue;
+        const want = fixture.metrics.star_inflation_suspect ? 0 : ownRepoCommunity(r.community_facts);
+        expect(r.community, r.repo).toBe(want);
+      }
+      if (fixture.metrics.external_merged_pr_count !== undefined) {
+        const ownPrs =
+          fixture.metrics.merged_pr_count -
+          Math.min(fixture.metrics.external_merged_pr_count, fixture.metrics.merged_pr_count);
+        expect(ownPrCommunityShare(fixture.contrib_repos, fixtureLogin(fixture), ownPrs)).toBe(
+          fixture.metrics.own_pr_community,
+        );
       }
 
       expect(impact.impact_prestige_score).toBe(fixture.expected.impact_prestige_score);

@@ -16,6 +16,7 @@ import {
   collect,
   type ContribRepoAgg,
 } from "@/lib/github";
+import { collectorCache } from "@/lib/redis";
 import { score } from "@/lib/score";
 import type { PublicScanPrFact } from "@/lib/scan-run-types";
 import type { ImpactRepo, RecentPr, ScanResult, SignatureWork, SignatureWorkCluster, TopRepo } from "@/lib/types";
@@ -195,7 +196,7 @@ export function buildPublicSignatureWork(
  * requests only crawls GitHub once.
  */
 export async function buildScanResult(username: string): Promise<ScanResult> {
-  const collected = await collect(username);
+  const collected = await collect(username, { cache: collectorCache });
   const scan = {
     ...collected,
     scoring: score(collected.metrics),

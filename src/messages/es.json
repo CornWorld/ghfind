@@ -1740,6 +1740,15 @@
       "title": "Las herramientas de contratación llegan pronto",
       "body": "Pronto podrás pegar una descripción de puesto y ver desarrolladores abiertos a oportunidades, ordenados por habilidades verificadas en GitHub.",
       "cta": "Publicar una oferta"
+    },
+    "optIn": {
+      "title": "Abierto a oportunidades",
+      "label": "Permitir que las empresas me encuentren en el banco de talento",
+      "detail": "Las empresas verían tu nombre, usuario de GitHub, titular, habilidades y nivel de coincidencia de tu perfil actual, nunca el texto de tu currículum. Puedes desactivarlo cuando quieras; eliminar tu perfil también te retira.",
+      "on": "Estás en el banco de talento.",
+      "off": "No estás en el banco de talento.",
+      "notLive": "La búsqueda para empresas aún no está disponible, así que hoy nadie puede ver tu perfil; si lo activas ahora, estarás en el banco cuando se abra.",
+      "saveFailed": "No se pudo guardar tu elección. Inténtalo de nuevo."
     }
   }
 }

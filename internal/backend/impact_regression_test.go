@@ -97,6 +97,26 @@ func TestImpactRegressionFixturesMatchNode(t *testing.T) {
 					t.Errorf("%s = %v, Node recorded %v", field, pair[0], pair[1])
 				}
 			}
+			// Community scores and the own-PR community share follow from the
+			// recorded facts (star-inflation suspects get 0).
+			for _, repo := range fixture.ContribRepos {
+				if repo.CommunityFacts == nil {
+					continue
+				}
+				want := OwnRepoCommunity(*repo.CommunityFacts)
+				if recorded.StarInflationSuspect {
+					want = 0
+				}
+				if repo.Community == nil || *repo.Community != want {
+					t.Errorf("%s community = %v, want %v", repo.Repo, repo.Community, want)
+				}
+			}
+			if recorded.ExternalMergedPRCount != nil {
+				ownPRs := recorded.MergedPRCount - min(*recorded.ExternalMergedPRCount, recorded.MergedPRCount)
+				if got, want := OwnPRCommunityShare(fixture.ContribRepos, login, ownPRs), valueOrZero(recorded.OwnPRCommunity); got != want {
+					t.Errorf("own_pr_community = %v, Node recorded %v", got, want)
+				}
+			}
 			got := Score(m)
 
 			want := fixture.Expected

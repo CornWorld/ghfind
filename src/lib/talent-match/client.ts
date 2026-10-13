@@ -66,6 +66,16 @@ export const createReport = (input: CreateReportInput) =>
     body: JSON.stringify(input),
   });
 
+/** The account's profile state: null before any report has built one. */
+export const getTalentProfile = () => call<{ profile: { optedIn: boolean } | null }>("/api/talent-match/profile");
+
+export const setOpenToOpportunities = (optedIn: boolean) =>
+  call<{ optedIn: boolean }>("/api/talent-match/profile", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ optedIn }),
+  });
+
 export const deleteTalentProfile = () => call<void>("/api/talent-match/profile", { method: "DELETE" });
 
 /** Cloud-saved résumés (newest first) plus the reusable profile, the sources a report can read. */

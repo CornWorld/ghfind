@@ -1740,6 +1740,15 @@
       "title": "Hiring tools are coming soon",
       "body": "Soon you'll be able to paste a job description and see developers who are open to opportunities, ranked by GitHub-verified skills.",
       "cta": "Post a job"
+    },
+    "optIn": {
+      "title": "Open to opportunities",
+      "label": "Let companies find me in the talent pool",
+      "detail": "Companies would see your name, GitHub login, headline, skills and match score from your current profile — never your résumé text. Turn it off any time; deleting your profile also removes you.",
+      "on": "You're in the talent pool.",
+      "off": "You're not in the talent pool.",
+      "notLive": "Company matching isn't live yet, so nobody can see your profile today; opting in now puts you in the pool when it opens.",
+      "saveFailed": "Couldn't save your choice. Please try again."
     }
   }
 }
