@@ -33,7 +33,11 @@ describe("critical business telemetry",()=>{
     const frame=(i:number,amount:number,efficiency:number)=>({at:at+i*WINDOW_MS,points:[{key,product:"DO" as const,resource:"coord",label:"读取",amount,efficiency,operations:1722,unit:"rows",usd:amount*1e-9}],healthy:[],errors:[]});
     for(let i=0;i<15;i++)evaluate(s,frame(i,100,.01),at+i*WINDOW_MS);
     evaluate(s,frame(15,426,.247),at+15*WINDOW_MS);expect(s.outbox).toEqual([]);
-    evaluate(s,frame(16,100_000_000,1000),at+16*WINDOW_MS);expect(s.outbox[0].severity).toBe(2);
+    evaluate(s,frame(16,100_000_000,1000),at+16*WINDOW_MS);
+    expect(s.metrics[key].severity).toBe(2);expect(s.outbox).toEqual([]); // $0.10 remains an optimization signal.
+    evaluate(s,frame(17,2_000_000_000,2000),at+17*WINDOW_MS);
+    expect(s.outbox[0]).toMatchObject({key:"account:burn",severity:2});
+    expect(s.outbox[0].evidence?.value).toBe("本 5 分钟已观测至少 $2.00");
   });
 });
 

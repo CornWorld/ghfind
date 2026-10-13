@@ -1,4 +1,5 @@
 // Bounded, aggregated telemetry only: no user IDs, SQL text, parameters or bodies.
+import { userFacing } from "./mail-policy";
 export const WINDOW_MS = 5 * 60_000;
 export const HISTORY_TTL_MS = 24 * 60 * 60_000;
 export const STATE_TTL_MS = 7 * HISTORY_TTL_MS;
@@ -8,7 +9,6 @@ export const MAX_WINDOWS = 288;
 export const MAX_STATE_BYTES = 192 * 1024;
 export const MAX_NOTICES = 64;
 export const MAX_DIAGNOSTIC_METRICS = 96;
-export const MAX_DIAGNOSTIC_NOTICES = 24;
 export const MAX_WINDOW_BYTES = 48 * 1024;
 export const REMINDER_MS = 6 * 60 * 60_000;
 export function reminderInterval(key: string): number { return key.startsWith("Billing:") ? HISTORY_TTL_MS : REMINDER_MS; }
@@ -33,6 +33,8 @@ export interface Point {
   denominator?: string;
   relative?: boolean;
   diagnostic?: boolean; // Per-SQL breakdown: never double count database cost.
+  // Account-only partial coverage: positive cost evidence, never a full bucket.
+  costLowerBound?: true;
 }
 export interface Frame {
   at: number;
@@ -97,6 +99,8 @@ function triggerFor(p: Point, m: MetricState, at: number, rules: Rules): MetricS
   const value = p.efficiency ?? p.amount;
   const make = (severity: number, condition: string, observed: string, basis: NonNullable<MetricState["trigger"]>["basis"] = "absolute") => ({ at: p.observedAt ?? at, severity, basis, condition, observed });
   if (p.key === "account:burn") {
+    if (p.costLowerBound) return p.usd >= rules.hourlyCritical
+      ? make(2, `单个 5 分钟已观测估算消耗 ≥ $${rules.hourlyCritical}`, `已观测至少 $${p.usd.toFixed(2)}（部分产品尚未覆盖）`, "burn") : undefined;
     const quarter = burnRate(m, at, 3), hour = burnRate(m, at, 12);
     if (p.usd >= rules.hourlyCritical) return make(2, `单个 5 分钟估算消耗 ≥ $${rules.hourlyCritical}`, `本窗 $${p.usd.toFixed(2)}`, "burn");
     if (quarter !== undefined && value >= rules.hourlyCritical && quarter >= rules.hourlyCritical) return make(2, `5 + 15 分钟均 ≥ $${rules.hourlyCritical}/h`, `5 分钟 $${value.toFixed(2)}/h；15 分钟 $${quarter.toFixed(2)}/h`, "burn");
@@ -114,8 +118,11 @@ function triggerFor(p: Point, m: MetricState, at: number, rules: Rules): MetricS
   for (const severity of [2, 1]) {
     const absolute = severity === 2 ? p.efficiencyCritical : p.efficiencyWarning;
     if (absolute !== undefined && value >= absolute) {
-      const condition = absolute === 0 ? `观测数量 ≥ ${p.minAmount ?? 100} ${p.unit}` : `${p.efficiency === undefined ? "观测值" : `每次${p.denominator ?? "操作"}`} ≥ ${absolute} ${p.unit}`;
-      return make(severity, condition, `${value.toFixed(2)} ${p.unit}`);
+      const condition = absolute === 0 ? `观测数量 ≥ ${p.minAmount ?? 100} ${p.unit}`
+        : p.key.startsWith("Service:probe-") ? "本次公开检查失败"
+        : failureSignal(p) ? `${p.key.endsWith(":slow") ? "慢响应比例" : "失败率"} ≥ ${percentage(absolute)}（至少 ${p.minAmount ?? 100} 次${p.key.endsWith(":slow") ? "慢响应" : "失败"}${p.gauge ? "" : `、${p.minOperations ?? 20} 次运行`}）`
+        : `${p.efficiency === undefined ? "观测值" : `每次${p.denominator ?? "操作"}`} ≥ ${absolute} ${p.unit}`;
+      return make(severity, condition, observation(p));
     }
     const multiple = severity === 2 ? 10 : 3, hourly = severity === 2 ? 0.5 : 0.05;
     if (m.samples >= 12 && p.relative !== false && ratio >= multiple && p.usd * 12 >= hourly) {
@@ -132,6 +139,8 @@ export function recipients(value: string): string[] {
   return addresses;
 }
 export function compact(state: State, now: number): void {
+  // Purge legacy operational mail before it can occupy the customer queue.
+  state.outbox = state.outbox.filter(userFacing);
   for (const [key, value] of Object.entries(state.metrics)) if (value.expiresAt <= now) delete state.metrics[key];
   // Migrate an old fingerprint-heavy state without letting optional query
   // diagnostics consume every slot needed by core usage and service incidents.
@@ -140,8 +149,6 @@ export function compact(state: State, now: number): void {
     delete state.metrics[key];
     state.outbox = state.outbox.filter(n => n.key !== key);
   }
-  const retained = new Set(state.outbox.filter(n => state.metrics[n.key]?.diagnostic).sort((a, b) => b.expiresAt - a.expiresAt).slice(0, MAX_DIAGNOSTIC_NOTICES).map(n => n.id));
-  state.outbox = state.outbox.filter(n => !state.metrics[n.key]?.diagnostic || retained.has(n.id));
   state.outbox = state.outbox.filter(n => n.expiresAt > now).slice(-MAX_NOTICES);
   state.mailReceipts = state.mailReceipts.filter(n => n.at > now - HISTORY_TTL_MS).slice(-12);
   state.recentDelivery = state.recentDelivery.filter(n => n.at > now - HISTORY_TTL_MS).slice(-12);
@@ -172,7 +179,11 @@ export function evaluate(state: State, frame: Frame, now: number, rules = DEFAUL
   }
   const points = [...frame.points];
   const priced = frame.points.filter(p => !p.diagnostic && p.product !== "Billing");
-  if ((frame.costComplete ?? !frame.errors.length) && ["D1", "Workers", "R2", "KV", "DO", "Queues"].every(p => frame.healthy.includes(p as Product))) points.push({ key: "account:burn", product: "Monitor", resource: "account", label: "已覆盖产品的用量消耗速度（不含外部 LLM 等费用）", amount: priced.reduce((s,p) => s+p.usd,0)*12, operations: 1, unit: "USD/hour", usd: priced.reduce((s,p) => s+p.usd,0) });
+  const completeCost = (frame.costComplete ?? !frame.errors.length) && ["D1", "Workers", "R2", "KV", "DO", "Queues"].every(p => frame.healthy.includes(p as Product));
+  const knownCost = priced.reduce((sum, point) => sum + point.usd, 0);
+  // Missing sources cannot establish a safe total, but already observed cost
+  // above the single-window limit is sufficient positive evidence of a spike.
+  if (completeCost || knownCost >= rules.hourlyCritical) points.push({ key: "account:burn", product: "Monitor", resource: "account", label: "已覆盖产品的用量消耗速度（不含外部 LLM 等费用）", amount: knownCost*12, operations: 1, unit: "USD/hour", usd: knownCost, costLowerBound: completeCost ? undefined : true });
   // Keys measured in this window; the zero points added below for vanished
   // metrics are bookkeeping and must not pin those metrics against eviction.
   const measured = new Set(points.map(p => p.key));
@@ -211,11 +222,13 @@ export function evaluate(state: State, frame: Frame, now: number, rules = DEFAUL
       }
       m = state.metrics[p.key] = { baseline: 0, samples: 0, bad: 0, good: 0, severity: 0, notifiedSeverity: 0, lastNotified: 0, lastSeen: 0, expiresAt: now + STATE_TTL_MS, incident: 0, gauge: p.gauge, diagnostic: p.diagnostic };
     }
+    // A same-bucket correction after a lower-bound alert is conservatively
+    // skipped too; the next complete bucket resumes history without double count.
     if (m.lastSeen === frame.at) continue; // Source correction can fill missing metrics, never train an existing one twice.
     if (m.lastSeen && frame.at-m.lastSeen>WINDOW_MS && p.product!=="Billing") {m.bad=0;m.good=0;}
     const value = p.efficiency ?? p.amount;
     const ratio = m.baseline > 0 ? value / m.baseline : 0;
-    if (p.key === "account:burn") {
+    if (p.key === "account:burn" && !p.costLowerBound) {
       m.burnWindows = [...(m.burnWindows ?? []).filter(([at]) => at > frame.at - 12 * WINDOW_MS && at < frame.at), [frame.at, p.usd]];
     }
     const trigger = triggerFor(p, m, frame.at, rules);
@@ -255,6 +268,9 @@ export function evaluate(state: State, frame: Frame, now: number, rules = DEFAUL
         state.outbox = state.outbox.filter(n => n.key !== p.key);
       }
     }
+    // Keep diagnosis and baseline state, but reserve all mail capacity for
+    // observed business/runtime failures and account-level spend signals.
+    if (!userFacing(p)) continue;
     const waiting=state.outbox.find(n=>n.key===p.key);
     if(waiting && m.severity>waiting.severity){
       waiting.severity=m.severity;waiting.kind=m.notifiedSeverity || waiting.delivered.length ? "escalation" : "open";
@@ -270,11 +286,6 @@ export function evaluate(state: State, frame: Frame, now: number, rules = DEFAUL
     else if (m.severity > m.notifiedSeverity) kind = "escalation";
     else if (m.severity && now - m.lastNotified >= reminderInterval(p.key)) kind = "reminder";
     if (kind && !state.outbox.some(n => n.key === p.key)) {
-      if (p.diagnostic && (state.outbox.length >= MAX_NOTICES || state.outbox.filter(n => state.metrics[n.key]?.diagnostic).length >= MAX_DIAGNOSTIC_NOTICES)) { limitDiagnostic(); continue; }
-      if (state.outbox.length >= MAX_NOTICES) {
-        const diagnostic = state.outbox.find(n => state.metrics[n.key]?.diagnostic);
-        if (diagnostic) { state.outbox = state.outbox.filter(n => n.id !== diagnostic.id); limitDiagnostic(); }
-      }
       if (state.outbox.length >= MAX_NOTICES) throw new Error("Notification outbox limit exceeded");
       state.outbox.push({ id: `${p.key}:${m.incident}:${kind}:${Math.floor(now/reminderInterval(p.key))}`, key: p.key, kind, severity: m.severity,
         text: describeNotice(p, m, frame.at, ratio),
@@ -302,16 +313,36 @@ const RESOURCE_NAMES: Record<string,string> = {
   account: "Cloudflare 账户",
 };
 function money(n:number):string { return n>0 && n<0.000001 ? "<$0.000001" : `$${n.toFixed(6)}`; }
+function percentage(value: number): string { return `${(value * 100).toLocaleString("en-US", { maximumFractionDigits: 1 })}%`; }
+function failureSignal(p: Point): boolean { return p.product === "Service" || p.product === "Workers" && p.key.endsWith(":errors"); }
+function observation(p: Point): string {
+  const count = p.amount.toLocaleString("en-US");
+  if (p.key === "account:burn" && p.costLowerBound) return `本 5 分钟已观测至少 $${p.usd.toFixed(2)}`;
+  if (p.key.startsWith("Service:probe-")) return p.amount ? `公开检查失败 ${count} 次` : "本次公开检查通过";
+  if (failureSignal(p)) {
+    const result = p.key.endsWith(":slow") ? `响应超过 30 秒` : "失败";
+    return p.operations > 0
+      ? `${p.operations.toLocaleString("en-US")} 次${p.product === "Service" ? "调用" : "运行"}中 ${count} 次${result}（${percentage(p.amount / p.operations)}）`
+      : p.amount ? `已观测 ${count} 次${result}；本窗缺少调用总数` : `本窗口没有${p.product === "Service" ? "调用" : "运行"}样本`;
+  }
+  return `${count} ${p.unit}${p.efficiency === undefined ? "" : `；每次${p.denominator ?? "操作"} ${p.efficiency.toFixed(2)} ${p.unit}`}`;
+}
+function availabilityImpact(p: Point): string | undefined {
+  if (!failureSignal(p)) return;
+  if (p.key.startsWith("Service:probe-")) return p.amount ? "自动检查未收到预期响应；请复查公开页面是否可访问。" : "本次自动检查收到预期响应。";
+  if (!p.amount) return "本窗口未再观测到该问题。";
+  if (p.key.endsWith(":slow")) return "部分请求等待超过 30 秒，用户可能需要等待更久才能看到结果。";
+  return p.product === "Service" ? "部分功能调用失败，相关用户可能未能获得结果。" : "已观测到 Worker 运行失败；需结合请求日志确认受影响功能。";
+}
 export function describeEvidence(p: Point, m: MetricState, at: number, rules = DEFAULT_RULES): NoticeEvidence {
   const resource = RESOURCE_NAMES[p.resource] ?? p.resource;
   const time = (n: number) => new Date(n + 8 * 3600_000).toISOString().slice(5, 16).replace("T", " ");
   const e: NoticeEvidence = {
-    resource, metric: p.label, value: `${p.amount.toLocaleString("en-US")} ${p.unit}`,
+    resource, metric: p.label, value: observation(p),
     window: p.observedAt ? `${time(p.observedAt)} 北京时间` : `${time(at)}–${time(at + WINDOW_MS)} 北京时间`,
     action: p.product === "Service" ? "检查该功能部署、上游服务及失败请求日志。" : p.product === "D1" ? "检查查询计划、索引与重复查询。" : p.product === "Workers" ? "检查错误日志、CPU 耗时与最近部署。" : "检查流量变化、重试与重复操作。",
   };
-  if (p.efficiency !== undefined) e.value += `；每次${p.denominator ?? "操作"} ${p.efficiency.toFixed(2)} ${p.unit}`;
-  if (p.product === "Service" || p.key.endsWith(":errors")) e.impact = "影响可用性；不按费用降级。";
+  if (failureSignal(p)) e.impact = availabilityImpact(p);
   else if (p.product === "Billing") {
     e.window = `${p.resource} 已上报日账单`;
     e.cost = `已上报 $${p.amount.toFixed(2)}；账单可能调整。`;
@@ -319,8 +350,8 @@ export function describeEvidence(p: Point, m: MetricState, at: number, rules = D
     const windows = m.burnWindows ?? [];
     const rate = (n: number) => windows.length >= n && windows.slice(-n).every(([t], i) => t === at - (n - 1 - i) * WINDOW_MS)
       ? `$${(windows.slice(-n).reduce((sum, [, usd]) => sum + usd, 0) * 12 / n).toFixed(2)}/h` : "数据未齐";
-    e.value = `5 分钟 $${p.amount.toFixed(2)}/h；15 分钟 ${rate(3)}；1 小时 ${rate(12)}`;
-    e.cost = `本 5 分钟 ${money(p.usd)}，按套餐外单价估算；未扣套餐额度。`;
+    e.value = p.costLowerBound ? observation(p) : `5 分钟 $${p.amount.toFixed(2)}/h；15 分钟 ${rate(3)}；1 小时 ${rate(12)}`;
+    e.cost = p.costLowerBound ? "部分产品尚未覆盖；该数额按已观测用量的套餐外单价估算，未扣套餐额度，非最终账单。" : `本 5 分钟 ${money(p.usd)}，按套餐外单价估算；未扣套餐额度。`;
     e.action = "核对各产品用量及 Cloudflare 已上报账单，排查流量或操作突增。";
   } else e.cost = `本 5 分钟 ${money(p.usd)}，按套餐外单价估算；未扣套餐额度。`;
   const current = triggerFor(p, m, at, rules);
@@ -340,9 +371,8 @@ export function describeNotice(p:Point,m:MetricState,at:number,ratio:number):str
   const category = p.product==="Service" ? "关键功能故障" : p.key.endsWith(":errors") ? "运行错误" : p.product==="Billing" || p.key==="account:burn" ? "账单风险" : "性能 / 用量异常";
   const time = (n:number)=>new Date(n+8*3600_000).toISOString().slice(0,16).replace("T"," ");
   const advice = p.product==="Service" ? "优先检查该功能的部署、上游服务和生成结果日志；故障可能直接影响用户。" : p.product==="D1" ? "检查查询计划、索引、缓存命中与重复查询。" : p.product==="DO" || p.product==="KV" ? "检查缓存命中、协调对象轮询、重试与批量读写。" : p.product==="Workers" ? "检查异常日志、CPU 耗时、循环与近期部署。" : "检查流量变化、重复操作及近期部署。";
-  const evidence = p.efficiency===undefined ? "" : `；每次${p.denominator??"操作"} ${p.efficiency.toFixed(2)} ${p.unit}`;
   const baseline = p.relative===false || m.samples < 12 || ratio < 3 ? "" : `；健康基线 ${ratio.toFixed(1)} 倍`;
-  const cost = p.product==="Billing" ? `已上报日费用：$${p.amount.toFixed(4)}；对应日期：${p.resource}。账单可能延迟或调整，每 6 小时重新对账。` : p.product==="Service" || p.key.endsWith(":errors") ? "影响可用性，不按费用降级。" : `本 5 分钟 ${money(p.usd)}，按套餐外单价估算；未扣套餐额度，非最终账单。`;
+  const cost = p.product==="Billing" ? `已上报日费用：$${p.amount.toFixed(4)}；对应日期：${p.resource}。账单可能延迟或调整，每 6 小时重新对账。` : p.costLowerBound ? "部分产品尚未覆盖；该数额按已观测用量的套餐外单价估算，未扣套餐额度，非最终账单。" : availabilityImpact(p) ?? `本 5 分钟 ${money(p.usd)}，按套餐外单价估算；未扣套餐额度，非最终账单。`;
   const period=p.observedAt ? `探测时间（北京时间）：${time(p.observedAt)}` : `北京时间：${time(at)} 至 ${time(at+WINDOW_MS)}`;
-  return `【${category}】${RESOURCE_NAMES[p.resource]??p.resource} / ${p.label}\n${m.severity?"需要排查":"已连续两个有效窗口恢复正常"}：${p.amount.toLocaleString("en-US")} ${p.unit}${evidence}${baseline}\n${period}\n${cost}\n建议：${advice}`;
+  return `【${category}】${RESOURCE_NAMES[p.resource]??p.resource} / ${p.label}\n${m.severity?"需要排查":"已连续两个有效窗口恢复正常"}：${observation(p)}${baseline}\n${period}\n${cost}\n建议：${advice}`;
 }
