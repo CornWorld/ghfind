@@ -1180,8 +1180,11 @@ const FACET_TTL_SECONDS = 3600; // 1h
 // Per-bucket developer lists (the /developers/{type}/{value} boards). Crawlers
 // walk thousands of distinct buckets, so a 1h TTL still missed ~2k times an
 // hour (~12k rows_read each — the largest D1 read in production). A bucket's
-// head only moves when a member re-scans; six hours of staleness is invisible.
-const FACET_LIST_TTL_SECONDS = 21600; // 6h
+// head only moves when a member re-scans, so a day of staleness is still
+// invisible and each bucket costs one write a day instead of four. Crawler
+// renders keep writing here (unlike profile discovery): a ~12k rows_read miss
+// costs more than the KV write that prevents the next one.
+const FACET_LIST_TTL_SECONDS = 86400; // 24h
 // The repo graph only changes on scans/backfills, and each cold miss on the
 // unfiltered /projects list is a whole-graph aggregation — so discovery reads
 // tolerate hours of staleness. Matches the facet boards' 6h ISR window.
@@ -1310,11 +1313,15 @@ export async function getCachedProjectValue<T>(key: string): Promise<T | null> {
   }
 }
 
-export async function setCachedProjectValue<T>(key: string, value: T): Promise<void> {
+export async function setCachedProjectValue<T>(
+  key: string,
+  value: T,
+  ttlSeconds = PROJECT_DISCOVERY_TTL_SECONDS,
+): Promise<void> {
   const r = cacheStore();
   if (!r) return;
   try {
-    await r.set(key, value, PROJECT_DISCOVERY_TTL_SECONDS);
+    await r.set(key, value, ttlSeconds);
   } catch {
     // best-effort cache
   }

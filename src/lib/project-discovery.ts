@@ -108,6 +108,10 @@ export function relatedProjectsCacheKey(repoKey: string, limit: number): string 
   return `projects:related:${repoKey.trim().toLowerCase()}:${limit}`;
 }
 
+// The project lists keep writing KV for every answer, crawler renders and
+// empty pages included: the key space is small (sort x language x page) and a
+// cold miss on an unfiltered list is a whole-graph aggregation, far costlier
+// in D1 than the write.
 const listOptions = new Map<string, ProjectListCacheOptions>();
 const projectListLoader = createCachedLoader<ProjectListItem[]>({
   cacheGet: getCachedProjectValue,
@@ -129,10 +133,23 @@ export async function getProjectsCached(options: ProjectListCacheOptions) {
   }
 }
 
+// Related projects of one repo page (~17.5k KV writes/day at a 6h TTL, 4.4k
+// live keys). Repo pages are a crawler long tail, so:
+// - only answers with real shared-contributor neighbors, rendered for a human,
+//   earn a KV entry, for 24h (the graph only moves on scans/backfills);
+// - empty or filler-only answers (no shared contributors — the cheap case: the
+//   neighbor query reads only this repo's few contributors, and the filler is
+//   the per-language list already cached in KV) and crawler renders stay in
+//   the colo-local tiers, so repeats still skip the database.
+const RELATED_TTL_SECONDS = 86400; // 24h
+
 const relatedOptions = new Map<string, { repoKey: string; limit: number }>();
 const relatedLoader = createCachedLoader<RelatedProject[]>({
   cacheGet: getCachedProjectValue,
-  cacheSet: setCachedProjectValue,
+  cacheSet: (key, value) => setCachedProjectValue(key, value, RELATED_TTL_SECONDS),
+  persist: (related) => related.some((item) => item.sharedContributorCount > 0),
+  skipBotWrites: true,
+  localTtlSeconds: RELATED_TTL_SECONDS,
   fallback: [],
   dbLoad: async (key) => {
     const options = relatedOptions.get(key);

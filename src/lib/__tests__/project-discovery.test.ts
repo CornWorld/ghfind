@@ -271,6 +271,7 @@ describe("getRelatedProjectsCached", () => {
     );
     expect(store.has("projects:list:quality:rust:12:0")).toBe(true);
     expect(store.get("projects:related:x/y:4")).toEqual(result);
+    expect(setCachedProjectValue).toHaveBeenCalledWith("projects:related:x/y:4", result, 86400);
   });
 
   it("returns shared results as-is when they satisfy the limit", async () => {
@@ -286,14 +287,35 @@ describe("getRelatedProjectsCached", () => {
     expect(getProjects).not.toHaveBeenCalled();
   });
 
-  it("caches empty related results so repeat visits skip the database", async () => {
+  it("keeps empty related results out of KV, yet repeat visits skip the database", async () => {
     vi.mocked(getRelatedProjects).mockResolvedValue([]);
     vi.mocked(getRepoLanguage).mockResolvedValue(null);
 
     await expect(getRelatedProjectsCached("b/lonely", 6)).resolves.toEqual([]);
-    expect(setCachedProjectValue).toHaveBeenCalledWith("projects:related:b/lonely:6", []);
-
     await expect(getRelatedProjectsCached("b/lonely", 6)).resolves.toEqual([]);
     expect(getRelatedProjects).toHaveBeenCalledOnce();
+    expect(store.has("projects:related:b/lonely:6")).toBe(false);
+  });
+
+  it("keeps filler-only related results out of KV", async () => {
+    vi.mocked(getRelatedProjects).mockResolvedValue([]);
+    vi.mocked(getRepoLanguage).mockResolvedValue("Go");
+    vi.mocked(getProjects).mockResolvedValue([item("go/one"), item("go/two")]);
+
+    const result = await getRelatedProjectsCached("c/filler", 6);
+    expect(result.map((r) => r.sharedContributorCount)).toEqual([0, 0]);
+    expect(store.has("projects:related:c/filler:6")).toBe(false);
+    // The filler itself is the shared per-language list, which stays in KV.
+    expect(store.has("projects:list:quality:go:12:0")).toBe(true);
+    await getRelatedProjectsCached("c/filler", 6);
+    expect(getRelatedProjects).toHaveBeenCalledOnce();
+  });
+
+  it("does not write related results to KV on a crawler render", async () => {
+    vi.mocked(isBotRequest).mockReturnValue(true);
+    vi.mocked(getRelatedProjects).mockResolvedValue([related("d/one", 2)]);
+    await getRelatedProjectsCached("d/crawled", 1);
+    expect(store.has("projects:related:d/crawled:1")).toBe(false);
+    vi.mocked(isBotRequest).mockReturnValue(false);
   });
 });
