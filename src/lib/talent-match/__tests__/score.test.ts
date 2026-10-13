@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { MATCH_VERSION, rankMatches, reachOf, scoreMatch, type MatchCandidate, type MatchRequirement } from "../score";
+import {
+  MATCH_VERSION,
+  rankMatches,
+  reachOf,
+  requirementSpecificity,
+  scoreMatch,
+  type MatchCandidate,
+  type MatchRequirement,
+} from "../score";
 
 const candidate = (over: Partial<MatchCandidate> = {}): MatchCandidate => ({
   years: 4,
@@ -23,10 +31,14 @@ const requirement = (over: Partial<MatchRequirement> = {}): MatchRequirement => 
 });
 
 describe("scoreMatch", () => {
-  it("scores a fully met verified requirement at 100 with high reach", () => {
-    const score = scoreMatch(candidate(), requirement({
+  it("scores a fully met, fully specific verified requirement at 100 with high reach", () => {
+    const skills = [
+      { id: "python", level: 4, source: "verified" as const, evidence: "" },
+      { id: "llm-inference", level: 4, source: "verified" as const, evidence: "" },
+    ];
+    const score = scoreMatch(candidate({ skills }), requirement({
       yearsMin: 3,
-      mustHave: [{ id: "python", level: 3 }, { id: "llm-inference", level: 3 }],
+      mustHave: [{ id: "python", level: 4 }, { id: "llm-inference", level: 4 }],
       degree: "bachelor",
     }));
     expect(score).toMatchObject({
@@ -34,6 +46,7 @@ describe("scoreMatch", () => {
       fit: 100,
       reach: "high",
       breakdown: { mustHave: 100, niceToHave: 100, conditions: 100 },
+      specificity: 1,
       matched: ["python", "llm-inference"],
       gaps: [],
       verifiedShare: 1,
@@ -58,9 +71,10 @@ describe("scoreMatch", () => {
 
   it("caps fit at 60 when a must-have is absent, and marks it medium cost", () => {
     const score = scoreMatch(candidate(), requirement({
-      mustHave: [{ id: "python", level: 4 }, { id: "distributed-training", level: 3 }],
+      mustHave: [{ id: "python", level: 4 }, { id: "llm-inference", level: 3 }, { id: "distributed-training", level: 3 }],
     }));
-    expect(score.breakdown.mustHave).toBe(50);
+    // must 67, nice none → 100, conditions 100: 80 uncapped, fully specific.
+    expect(score.breakdown.mustHave).toBe(67);
     expect(score.fit).toBe(60);
     expect(score.gaps).toEqual([
       { kind: "skill", skillId: "distributed-training", required: 3, have: 0, mustHave: true, cost: "medium" },
@@ -102,8 +116,9 @@ describe("scoreMatch", () => {
   });
 
   it("lists preferred research as a gap without lowering fit or reach", () => {
-    const score = scoreMatch(candidate(), requirement({ research: "preferred" }));
-    expect(score.fit).toBe(100);
+    const mustHave = [{ id: "python", level: 4 }, { id: "llm-inference", level: 3 }, { id: "cuda", level: 1 }];
+    const score = scoreMatch(candidate(), requirement({ mustHave, research: "preferred" }));
+    expect(score.fit).toBe(scoreMatch(candidate(), requirement({ mustHave })).fit);
     expect(score.reach).toBe("high");
     expect(score.gaps).toEqual([{ kind: "research", required: false, cost: "high" }]);
   });
@@ -140,5 +155,51 @@ describe("rankMatches", () => {
       { id: "d", score: { ...base, fit: 90, reach: "low" as const } },
     ]);
     expect(ranked.map((m) => m.id)).toEqual(["d", "a", "b", "c"]);
+  });
+
+  it("orders roles sharing the must-have cap by their uncapped fit", () => {
+    const base = scoreMatch(candidate(), requirement());
+    const ranked = rankMatches([
+      { id: "a", score: { ...base, fit: 60, uncappedFit: 60 } },
+      { id: "b", score: { ...base, fit: 60, uncappedFit: 72 } },
+    ]);
+    expect(ranked.map((m) => m.id)).toEqual(["b", "a"]);
+  });
+});
+
+describe("sparse and non-engineering roles", () => {
+  it("rates specificity by skill levels, with nice-to-haves and soft skills at half", () => {
+    expect(requirementSpecificity(requirement({ mustHave: [{ id: "llm-inference", level: 3 }, { id: "python", level: 3 }, { id: "cuda", level: 2 }] }))).toBe(1);
+    expect(requirementSpecificity(requirement({ mustHave: [{ id: "python", level: 3 }] }))).toBe(3 / 8);
+    // HR copy extracted to soft skills: team-leadership (practice) and prompt-engineering.
+    expect(requirementSpecificity(requirement({
+      mustHave: [{ id: "team-leadership", level: 1 }],
+      niceToHave: [{ id: "prompt-engineering", level: 1 }],
+    }))).toBe((0.5 + 0.25) / 8);
+  });
+
+  it("does not treat an empty must-have list as fully met", () => {
+    const score = scoreMatch(candidate(), requirement({ niceToHave: [{ id: "rust", level: 2 }, { id: "go", level: 2 }] }));
+    // Core and nice both 0, conditions 100 → 20, scaled by specificity and no domain evidence.
+    expect(score.fit).toBeLessThan(20);
+  });
+
+  it("ranks a sparse soft-skill role below a specific role with one missing must-have", () => {
+    const hr = scoreMatch(candidate({ skills: [...candidate().skills, { id: "technical-writing", level: 2, source: "verified", evidence: "" }] }), requirement({
+      niceToHave: [{ id: "technical-writing", level: 1 }],
+    }));
+    const inference = scoreMatch(candidate(), requirement({
+      mustHave: [{ id: "llm-inference", level: 3 }, { id: "python", level: 3 }, { id: "distributed-systems", level: 2 }],
+    }));
+    expect(inference.fit).toBe(60);
+    expect(hr.fit).toBeLessThan(50);
+  });
+
+  it("discounts a role whose only match is a language", () => {
+    const req = requirement({ mustHave: [{ id: "python", level: 3 }, { id: "kubernetes", level: 2 }] });
+    const withDomain = scoreMatch(candidate({ skills: [...candidate().skills, { id: "kubernetes", level: 1, source: "verified", evidence: "" }] }), req);
+    const languageOnly = scoreMatch(candidate(), req);
+    expect(languageOnly.breakdown.mustHave).toBe(50);
+    expect(languageOnly.fit).toBeLessThan(withDomain.fit);
   });
 });
