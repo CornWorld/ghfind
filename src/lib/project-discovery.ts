@@ -202,7 +202,7 @@ export async function getRelatedProjectsCached(repoKey: string, limit = 6) {
 // answers rendered for humans earn a KV entry.
 const PROFILE_COMMON_TTL_SECONDS = 21600; // 6h, the PROJECT_DISCOVERY TTL
 
-export function profileCommonProjectsCacheKey(username: string, candidates: string[], limit: number): string {
+function profileCommonProjectsCacheKey(username: string, candidates: string[], limit: number): string {
   const others = candidates.map((candidate) => candidate.trim().toLowerCase()).join(",");
   return `projects:common:v2:${username.trim().toLowerCase()}:${limit}:${others}`;
 }

@@ -80,8 +80,5 @@ export function createLocalCache<T>(ttlMs: number, maxEntries: number) {
         entries.delete(oldest);
       }
     },
-    clear(): void {
-      entries.clear();
-    },
   };
 }
