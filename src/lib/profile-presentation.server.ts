@@ -372,6 +372,34 @@ export async function buildProfilePresentation(
   };
 }
 
+/** What the embeddable cards render (`/api/card/*`, mini, material). */
+export type ProfileCardPresentation = Pick<
+  ProfilePresentation,
+  "detail" | "snapshot" | "rank" | "percentile" | "delta"
+>;
+
+/**
+ * The card subset of {@link buildProfilePresentation}, without the discovery
+ * reads cards never show (similar accounts, common projects, battles, facet
+ * rank, repo-link check, scan breakdown). Card URLs are a crawler / camo long
+ * tail whose cache-busting params miss the CDN, so every miss used to pay a
+ * whole profile build — including the per-profile common-projects cache write.
+ */
+export async function buildProfileCardPresentation(
+  username: string,
+): Promise<ProfileCardPresentation | null> {
+  const handle = normalizeUsername(username);
+  if (!handle) return null;
+  const detail = await getAccountDetail(handle);
+  if (!detail) return null;
+  const [snapshot, { rank, percentile }, delta] = await Promise.all([
+    getProfileSnapshot(detail.username),
+    buildScorePercentile(detail.final_score),
+    weeklyScoreDelta(detail),
+  ]);
+  return { detail: toPresentationDetail(detail), snapshot, rank, percentile, delta };
+}
+
 export async function buildVsPresentation(a: string, b: string): Promise<VsPresentation | null> {
   const handleA = normalizeUsername(a);
   const handleB = normalizeUsername(b);

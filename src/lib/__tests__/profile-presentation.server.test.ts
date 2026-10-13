@@ -44,6 +44,7 @@ vi.mock("@/lib/redis", () => ({ getCachedScan: mocks.getCachedScan }));
 
 import {
   getGoLiveProfileScan,
+  getGoProfileCardPresentation,
   getGoProfilePresentation,
   getGoTrendingVsMatchups,
   getGoVsPresentation,
@@ -284,6 +285,34 @@ describe("getGoProfilePresentation", () => {
   it("returns null when the common-projects cache loader unexpectedly rejects", async () => {
     mocks.getProfileCommonProjectsCached.mockRejectedValue(new Error("turso down"));
     await expect(getGoProfilePresentation("octocat")).resolves.toBeNull();
+  });
+});
+
+describe("getGoProfileCardPresentation", () => {
+  it("returns what cards render without any discovery read", async () => {
+    const card = await getGoProfileCardPresentation("octocat");
+
+    expect(card).toEqual({
+      detail: expect.objectContaining({ username: "octocat", score_version: "v9" }),
+      snapshot,
+      rank: { rank: 12, total: 100, below: 80 },
+      percentile: { beat: 75, total: 120, rank: 12 },
+      delta: 7.5,
+    });
+    // Similar accounts, common projects (and their KV entry), battles, facet
+    // rank, the repo-link check and the scan breakdown are profile-page only.
+    expect(mocks.getSimilarAccounts).not.toHaveBeenCalled();
+    expect(mocks.getProfileCommonProjectsCached).not.toHaveBeenCalled();
+    expect(mocks.getUserMatchups).not.toHaveBeenCalled();
+    expect(mocks.getFacetRank).not.toHaveBeenCalled();
+    expect(mocks.filterExistingRepoKeys).not.toHaveBeenCalled();
+    expect(mocks.getCurrentCanonicalQuickScan).not.toHaveBeenCalled();
+  });
+
+  it("returns null for invalid handles and unknown accounts", async () => {
+    await expect(getGoProfileCardPresentation("bad--handle")).resolves.toBeNull();
+    mocks.getAccountDetail.mockResolvedValue(null);
+    await expect(getGoProfileCardPresentation("ghost")).resolves.toBeNull();
   });
 });
 
