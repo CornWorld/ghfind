@@ -47,14 +47,9 @@ import { VS_MIN_SCORE } from "./site";
 import {
   advanceScoreDetailRevision,
   bumpCampaignLeaderboardRevision,
-  clearCachedReactionCounts,
   getCachedLanguageLadder,
-  getCachedSimilarUsernames,
-  getCachedReactionCounts,
   releaseLookupGate,
   setCachedLanguageLadder,
-  setCachedSimilarUsernames,
-  setCachedReactionCounts,
   tryAcquireLookupGate,
 } from "./redis";
 import type { Lang } from "./lang";
@@ -5750,30 +5745,55 @@ export async function getDeveloperCommonProjects(
   usernameB: string,
   limit = 6,
 ): Promise<ProjectListItem[]> {
+  return (await getProfileCommonProjects(usernameA, [usernameB], limit))[0] ?? [];
+}
+
+/**
+ * Common projects between one profile and each of its similar candidates, in
+ * candidate order: per candidate, the first `limit` shared repo keys
+ * (repo_key ASC) as eligible project items. Same answer as one
+ * getDeveloperCommonProjects call per pair, but in two queries total: one
+ * username-index seek over the profile and its candidates, and one
+ * queryProjectItems over the union of shared repos, so a repo shared with
+ * several candidates is read once. When nothing is shared (the common case)
+ * the second query never runs, which keeps a cache miss cheap.
+ */
+export async function getProfileCommonProjects(
+  username: string,
+  candidates: string[],
+  limit = 6,
+): Promise<ProjectListItem[][]> {
   const db = getClient();
-  const a = usernameA.trim().toLowerCase();
-  const b = usernameB.trim().toLowerCase();
-  if (!db || !a || !b || a === b) return [];
+  const user = username.trim().toLowerCase();
+  const others = candidates.map((candidate) => candidate.trim().toLowerCase());
+  const queried = [...new Set(others.filter((candidate) => candidate && candidate !== user))];
+  if (!db || !user || queried.length === 0) return others.map(() => []);
+  const perCandidate = Math.max(1, Math.min(50, limit));
   try {
     await ensureSchema(db);
-    const result = await db.execute({
-      sql: `SELECT repo_key
+    const shared = await db.execute({
+      sql: `SELECT DISTINCT username, repo_key
             FROM repo_developers
-            WHERE username IN (?, ?)
-            GROUP BY repo_key
-            HAVING COUNT(DISTINCT username) = 2
-            ORDER BY repo_key ASC
-            LIMIT ?`,
-      args: [a, b, Math.max(1, Math.min(50, limit))],
+            WHERE username IN (${queried.map(() => "?").join(",")})
+              AND repo_key IN (SELECT repo_key FROM repo_developers WHERE username = ?)
+            ORDER BY username ASC, repo_key ASC`,
+      args: [...queried, user],
     });
-    return await queryProjectItems(db, {
-      sort: "quality",
-      repoKeys: result.rows.map((row) => String(row.repo_key)),
-      limit,
+    const keysByCandidate = new Map<string, string[]>();
+    for (const row of shared.rows) {
+      const keys = keysByCandidate.get(String(row.username)) ?? [];
+      if (keys.length < perCandidate) keys.push(String(row.repo_key));
+      keysByCandidate.set(String(row.username), keys);
+    }
+    const union = [...new Set([...keysByCandidate.values()].flat())];
+    const items = await queryProjectItems(db, { sort: "quality", repoKeys: union, limit: union.length || 1 });
+    return others.map((candidate) => {
+      const keys = new Set(candidate === user ? [] : (keysByCandidate.get(candidate) ?? []));
+      return items.filter((item) => keys.has(item.repo.repo_key)).slice(0, limit);
     });
   } catch (e) {
     // Rethrow: the cache layer must not persist an error as "no common repos".
-    console.error("getDeveloperCommonProjects failed:", e);
+    console.error("getProfileCommonProjects failed:", e);
     throw e;
   }
 }
@@ -6571,9 +6591,11 @@ const SIMILAR_POOL = 300;
  * Developers most similar to `username`: pre-filter by a score band (uses the
  * final_score index — the cost-safe lever), then rank that pool by 6-dim profile
  * distance and return the closest `limit`. The target's score/profile are passed
- * in (the caller already has them) to avoid a second lookup. Cache ranked
- * membership for one hour, then rehydrate selected users by primary key on
- * hits to respect current visibility. Returns [] on failure/unconfigured DB.
+ * in (the caller already has them) to avoid a second lookup. Not cached across
+ * requests: profile traffic is a crawler long tail, so a shared KV entry was
+ * written on nearly every render (~53k/day) and rarely read back, and a KV
+ * write costs more than the bounded read it saved. Concurrent identical calls
+ * in one isolate share a query. Returns [] on failure/unconfigured DB.
  */
 const similarInflight = new Map<string, Promise<LeaderboardEntry[]>>();
 
@@ -6583,49 +6605,17 @@ export async function getSimilarAccounts(
   subScores: SubScores,
   limit = 6,
 ): Promise<LeaderboardEntry[]> {
-  const db = getClient();
-  if (!db || limit <= 0) return [];
-  // Include every ranking input so re-scoring cannot reuse another profile's
-  // recommendation. Sorting keys makes semantically identical inputs share it.
-  const key = createHash("sha256").update(JSON.stringify([
-    SCORE_CACHE_VERSION, username.toLowerCase(), finalScore, limit,
+  if (!getClient() || limit <= 0) return [];
+  const key = JSON.stringify([
+    username.toLowerCase(), finalScore, limit,
     Object.entries(subScores).sort(([a], [b]) => a.localeCompare(b)),
-  ])).digest("hex");
+  ]);
   const existing = similarInflight.get(key);
   if (existing) return existing;
-  const run = (async () => {
-    try {
-      const usernames = bypassGeneratedCaches() ? null : await getCachedSimilarUsernames(key);
-      if (usernames?.length) {
-        await ensureSchema(db);
-        const res = await db.execute({
-          sql: `WITH selected(username) AS (VALUES ${usernames.map(() => "(?)").join(",")})
-                SELECT s.username, s.display_name, s.avatar_url, s.profile_url,
-                       s.final_score, s.tier, s.tags, s.score_version,
-                       MAX(COALESCE(stats.lookup_count, 0), ${MIN_RECORDED_LOOKUP_COUNT}) AS lookup_count
-                FROM selected
-                CROSS JOIN scores AS s ON s.username = selected.username
-                LEFT JOIN account_stats AS stats ON stats.username = s.username
-                WHERE s.hidden = 0 AND ${canonicalPublicScorePredicate("s")}`,
-          args: usernames,
-        });
-        const entries = new Map(res.rows.map(row => {
-          const entry = toLeaderboardEntry(row as unknown as LeaderboardRow);
-          return [entry.username, entry] as const;
-        }));
-        return usernames.flatMap(name => entries.has(name) ? [entries.get(name)!] : []);
-      }
-      const entries = await getSimilarAccountsUncached(username, finalScore, subScores, limit);
-      // DB failures also return []; never pin a transient failure in the cache.
-      if (entries.length && !bypassGeneratedCaches()) {
-        await setCachedSimilarUsernames(key, entries.map(entry => entry.username));
-      }
-      return entries;
-    } catch (error) {
-      console.error("getSimilarAccounts cache failed:", error);
-      return [];
-    }
-  })();
+  const run = getSimilarAccountsUncached(username, finalScore, subScores, limit).catch((error) => {
+    console.error("getSimilarAccounts failed:", error);
+    return [];
+  });
   similarInflight.set(key, run);
   try { return await run; }
   finally { similarInflight.delete(key); }
@@ -7099,14 +7089,14 @@ function validGithubId(value: number): boolean {
   return Number.isSafeInteger(value) && value > 0;
 }
 
-/** Cache-aside read of a profile's global reaction tallies. A hit skips the
- *  GROUP BY entirely — the hot path for crawlers and logged-out visitors. */
+/** A profile's global reaction tallies. Read live: the GROUP BY is answered
+ *  from idx_profile_reactions_target_reaction (a handful of rows), while a
+ *  60s shared cache missed on nearly every crawler render and turned each one
+ *  into a KV write — far more expensive than the read it saved. */
 async function readReactionCounts(
   db: Client,
   target: string,
 ): Promise<ProfileReactionCounts> {
-  const cached = await getCachedReactionCounts(target);
-  if (cached) return cached;
   const counts = emptyReactionCounts();
   const res = await db.execute({
     sql: `SELECT reaction, COUNT(*) AS count
@@ -7118,7 +7108,6 @@ async function readReactionCounts(
   for (const row of res.rows) {
     if (isProfileReaction(row.reaction)) counts[row.reaction] = Number(row.count) || 0;
   }
-  await setCachedReactionCounts(target, counts);
   return counts;
 }
 
@@ -7184,7 +7173,6 @@ export async function setProfileReaction(
               updated_at = excluded.updated_at`,
       args: [target, input.voterGithubId, voterLogin, input.reaction, now, now],
     });
-    await clearCachedReactionCounts(target);
     return getProfileReactionState(target, input.voterGithubId);
   } catch (e) {
     console.error("setProfileReaction failed:", e);
@@ -7206,7 +7194,6 @@ export async function removeProfileReaction(
             WHERE target_username = ? AND voter_github_id = ?`,
       args: [target, input.voterGithubId],
     });
-    await clearCachedReactionCounts(target);
     return getProfileReactionState(target, input.voterGithubId);
   } catch (e) {
     console.error("removeProfileReaction failed:", e);

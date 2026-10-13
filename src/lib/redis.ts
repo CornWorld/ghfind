@@ -32,14 +32,12 @@ import { PUBLIC_SCAN_COLLECTION_VERSION } from "./scan-run-types";
 import type {
   AccountDetail,
   FacetCategory,
-  FacetRank,
   LeaderboardEntry,
   LeaderboardWindow,
   ScoreHistogramRow,
 } from "./db";
 import type { FacetType } from "./facets";
 import type { Lang } from "./lang";
-import type { ProfileReactionCounts } from "./reactions";
 import type { RoastJudgeResult, RoastLine, ScanResult } from "./types";
 
 let redis: Redis | null = null;
@@ -517,6 +515,19 @@ export async function checkRoastRequestNetworkRateLimit(ip: string): Promise<Rat
   }
 }
 
+/** Talent Match reports run two LLM calls; one submission a minute per account
+ * (the monthly quota and the one-in-flight rule are enforced in D1). */
+export async function checkTalentReportRateLimit(githubId: number): Promise<RateLimitResult> {
+  const limiter = rateLimiter("rl:talent-report", 1, "60 s");
+  if (!limiter) return unavailableRateLimitResult("talent-report", "missing_redis_config");
+  try {
+    const { success, limit, remaining, reset } = await limiter.limit(String(githubId));
+    return { success, limit, remaining, reset };
+  } catch (error) {
+    return unavailableRateLimitResult("talent-report", error instanceof Error ? error.name : "redis_request_failed");
+  }
+}
+
 /** Project analysis starts a long-running Cattle Agent, so it uses a separate,
  * tighter budget than account scans. Turso still deduplicates identical active
  * analyses; this protects against many distinct repository submissions. */
@@ -983,9 +994,14 @@ const SCORE_HISTOGRAM_KEY = "score-hist:v2";
 // once (~24 refreshes/hour at a 30 min TTL, ~36 at 5 min).
 export const SCORE_HISTOGRAM_FRESH_MS = 30 * 60_000;
 const SCORE_HISTOGRAM_TTL_SECONDS = 6 * 3600;
+/** An unchanged histogram is still rewritten this often, well before the KV
+ *  TTL could expire it. */
+export const SCORE_HISTOGRAM_REWRITE_MS = (SCORE_HISTOGRAM_TTL_SECONDS * 1000) / 2;
 const SCORE_HISTOGRAM_REFRESH_LOCK = "lock:score-hist";
-// Covers one aggregate query; a crashed refresher frees it soon after.
-const SCORE_HISTOGRAM_REFRESH_LOCK_SECONDS = 60;
+// Spans the fresh window: a refresh that finds the histogram unchanged skips
+// its KV write (leaving `at` stale), and this lease keeps the next aggregate a
+// full window away. A crashed refresher delays the next one by at most that.
+const SCORE_HISTOGRAM_REFRESH_LOCK_SECONDS = SCORE_HISTOGRAM_FRESH_MS / 1000;
 
 export interface CachedScoreHistogram {
   rows: ScoreHistogramRow[];
@@ -1089,14 +1105,21 @@ const leaderboardKey = (view: LeaderboardCacheView, window: LeaderboardWindow) =
   `leaderboard:v2:${view}:${window}`;
 export const LEADERBOARD_FRESH_MS = 5 * 60_000;
 const LEADERBOARD_TTL_SECONDS = 30 * 60;
+/** An unchanged board is still rewritten this often, well before the KV TTL
+ *  could expire it. */
+export const LEADERBOARD_REWRITE_MS = (LEADERBOARD_TTL_SECONDS * 1000) / 2;
 export interface CachedLeaderboard { entries: LeaderboardEntry[]; at: number }
 
 /** Coordinate stale refreshes across isolates; retain the lease until expiry
- * so eventually consistent KV readers cannot trigger another refresh at once. */
+ * so eventually consistent KV readers cannot trigger another refresh at once.
+ * The lease spans the whole fresh window: a refresh that finds the board
+ * unchanged skips its KV write (leaving `at` stale), and the lease is what
+ * keeps the next refresh a full window away. */
+const LEADERBOARD_REFRESH_LEASE_SECONDS = LEADERBOARD_FRESH_MS / 1000;
 export async function acquireLeaderboardRefresh(view: LeaderboardCacheView, window: LeaderboardWindow): Promise<boolean> {
   const r = atomicStore();
   if (!r) return true;
-  try { return await r.setIfAbsent(`lock:leaderboard:v2:${view}:${window}`, "1", 60); }
+  try { return await r.setIfAbsent(`lock:leaderboard:v2:${view}:${window}`, "1", LEADERBOARD_REFRESH_LEASE_SECONDS); }
   catch { return true; }
 }
 const CAMPAIGN_LEADERBOARD_REVISION_TTL_SECONDS = 7 * 24 * 60 * 60;
@@ -1174,24 +1197,6 @@ export async function clearCachedLeaderboards(): Promise<void> {
   }
 }
 
-// Cache recommendation membership; hydrate the few selected users from D1 on
-// every hit so hiding a user immediately removes them from recommendations.
-export async function getCachedSimilarUsernames(key: string): Promise<string[] | null> {
-  const r = cacheStore();
-  if (!r) return null;
-  try {
-    const value = await r.get<string[]>(`similar:v1:${key}`);
-    return Array.isArray(value) && value.every(name => typeof name === "string") ? value : null;
-  } catch { return null; }
-}
-
-export async function setCachedSimilarUsernames(key: string, usernames: string[]): Promise<void> {
-  const r = cacheStore();
-  if (!r) return;
-  try { await r.set(`similar:v1:${key}`, usernames, 3600); }
-  catch { /* best-effort */ }
-}
-
 // /developers directory caches. Both reads (per-bucket dev list, category grid)
 // are slow-moving — a bucket's ranking only shifts when someone in it re-scans —
 // and the category grid runs an expensive GROUP BY, so a longer TTL than the
@@ -1202,46 +1207,15 @@ const FACET_TTL_SECONDS = 3600; // 1h
 // Per-bucket developer lists (the /developers/{type}/{value} boards). Crawlers
 // walk thousands of distinct buckets, so a 1h TTL still missed ~2k times an
 // hour (~12k rows_read each — the largest D1 read in production). A bucket's
-// head only moves when a member re-scans; six hours of staleness is invisible.
-const FACET_LIST_TTL_SECONDS = 21600; // 6h
+// head only moves when a member re-scans, so a day of staleness is still
+// invisible and each bucket costs one write a day instead of four. Crawler
+// renders keep writing here (unlike profile discovery): a ~12k rows_read miss
+// costs more than the KV write that prevents the next one.
+const FACET_LIST_TTL_SECONDS = 86400; // 24h
 // The repo graph only changes on scans/backfills, and each cold miss on the
 // unfiltered /projects list is a whole-graph aggregation — so discovery reads
 // tolerate hours of staleness. Matches the facet boards' 6h ISR window.
 const PROJECT_DISCOVERY_TTL_SECONDS = 21600; // 6h
-
-// Per-profile language-board position. Rank shifts only when the bucket is
-// rescanned, so an hour of staleness is invisible; uncached it was a join over
-// the whole bucket (~13k rows_read) on every profile render.
-const FACET_RANK_TTL_SECONDS = 3600;
-const facetRankKey = (username: string, score: number) => `facets:rank:${username}:${score}`;
-
-/** Wrapped so a cached "no rank" (null) is distinguishable from a miss. */
-export async function getCachedFacetRank(
-  username: string,
-  score: number,
-): Promise<{ value: FacetRank | null } | null> {
-  const r = cacheStore();
-  if (!r) return null;
-  try {
-    return (await r.get<{ value: FacetRank | null }>(facetRankKey(username, score))) ?? null;
-  } catch {
-    return null;
-  }
-}
-
-export async function setCachedFacetRank(
-  username: string,
-  score: number,
-  value: FacetRank | null,
-): Promise<void> {
-  const r = cacheStore();
-  if (!r) return;
-  try {
-    await r.set(facetRankKey(username, score), { value }, FACET_RANK_TTL_SECONDS);
-  } catch {
-    // best-effort
-  }
-}
 
 // One language bucket's ranked scores (the "score ladder"): every per-profile
 // rank/total/ahead is answered from it in memory, so the bucket is read once
@@ -1366,55 +1340,17 @@ export async function getCachedProjectValue<T>(key: string): Promise<T | null> {
   }
 }
 
-export async function setCachedProjectValue<T>(key: string, value: T): Promise<void> {
-  const r = cacheStore();
-  if (!r) return;
-  try {
-    await r.set(key, value, PROJECT_DISCOVERY_TTL_SECONDS);
-  } catch {
-    // best-effort cache
-  }
-}
-
-// Reaction *counts* are global to a profile — every visitor sees the same
-// numbers — so they cache well. The per-viewer "which did I pick" is NOT cached
-// (it's user-specific and read live). Short TTL keeps counts near-real-time;
-// writes also bust the key so the actor sees their own vote immediately.
-const reactionCountsKey = (target: string) => `reactions:counts:${target}`;
-const REACTION_COUNTS_TTL_SECONDS = 60;
-
-export async function getCachedReactionCounts(
-  target: string,
-): Promise<ProfileReactionCounts | null> {
-  const r = cacheStore();
-  if (!r) return null;
-  try {
-    return (await r.get<ProfileReactionCounts>(reactionCountsKey(target))) ?? null;
-  } catch {
-    return null;
-  }
-}
-
-export async function setCachedReactionCounts(
-  target: string,
-  counts: ProfileReactionCounts,
+export async function setCachedProjectValue<T>(
+  key: string,
+  value: T,
+  ttlSeconds = PROJECT_DISCOVERY_TTL_SECONDS,
 ): Promise<void> {
   const r = cacheStore();
   if (!r) return;
   try {
-    await r.set(reactionCountsKey(target), counts, REACTION_COUNTS_TTL_SECONDS);
+    await r.set(key, value, ttlSeconds);
   } catch {
-    // best-effort
-  }
-}
-
-export async function clearCachedReactionCounts(target: string): Promise<void> {
-  const r = cacheStore();
-  if (!r) return;
-  try {
-    await r.del(reactionCountsKey(target));
-  } catch {
-    // best-effort
+    // best-effort cache
   }
 }
 

@@ -2,7 +2,7 @@ name: Deploy apps (production)
 
 # Deploys the Astro-migration Workers (apps/*) from every successful main CI
 # run: ghfind-coord (Durable Objects other Workers bind to, so first),
-# ghfind-web, ghfind-api, then ghfind-router. Independent of the legacy/Feed
+# ghfind-web, ghfind-talent (the Workflow ghfind-api binds to), ghfind-api, then ghfind-router. Independent of the legacy/Feed
 # release (deploy-cf-production.yml): the router reaches the legacy Worker over
 # a service binding and keeps Feed there, so neither release blocks the other.
 #
@@ -74,6 +74,9 @@ jobs:
       # Tail consumer must exist before the API producer is deployed.
       - name: Deploy fault and cost monitor before API tail binding
         run: pnpm --filter @ghfind/cost-monitor exec wrangler deploy --env production --keep-vars --tag "production-$RELEASE_SHA"
+      # Hosts the Talent Match Workflow that ghfind-api binds to, so before the API.
+      - name: Deploy ghfind-talent
+        run: pnpm --filter @ghfind/talent exec wrangler deploy --env production --tag "production-$RELEASE_SHA"
       - name: Deploy ghfind-api
         run: pnpm --filter @ghfind/api exec wrangler deploy --env production --tag "production-$RELEASE_SHA"
       - name: Sync release-managed credentials to ghfind-api

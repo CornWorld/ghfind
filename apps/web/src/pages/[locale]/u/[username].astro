@@ -4,8 +4,8 @@ import { PendingProfileIsland } from "../../../islands/PendingProfileIsland";
 import { ProfileIsland } from "../../../islands/ProfileIsland";
 import { getMessages, getTranslator, pickMessages, routeLocale } from "../../../lib/i18n";
 import { notFound } from "../../../lib/not-found";
-import { getAsViewer, getViewer } from "../../../lib/session";
-import { getProfileComments } from "@/lib/db";
+import { getAsViewer, getViewer, hasSessionCookie } from "../../../lib/session";
+import { getProfileComments, getProfileReactionState } from "@/lib/db";
 import { getGoLiveProfileScan, getGoProfilePresentation } from "@/lib/go-profile.server";
 import { loadProfileRoastState, profileMetadata } from "@/lib/pages/profile";
 import type { ProfileReactionState } from "@/lib/reactions";
@@ -45,7 +45,11 @@ if (presentation && d) {
     getProfileComments(d.username),
     getViewer(Astro.request),
   ]);
-  const reactionState = await getAsViewer<ProfileReactionState>(Astro.request, `/api/profile-reactions/${encodeURIComponent(d.username)}`);
+  // Only a session needs the API Worker (it holds the auth secrets); anonymous
+  // visitors get the same public counts straight from D1.
+  const reactionState = hasSessionCookie(Astro.request)
+    ? await getAsViewer<ProfileReactionState>(Astro.request, `/api/profile-reactions/${encodeURIComponent(d.username)}`)
+    : await getProfileReactionState(d.username);
   page = {
     locale,
     presentation,

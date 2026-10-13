@@ -115,7 +115,7 @@ function RailSkeleton() {
  * time (that used to render an empty rail that got ISR-cached for everyone).
  * Instead the static shell ships the rail frame + skeleton and the three
  * boards are fetched from /api/leaderboard on mount (CDN-cached, one request
- * per view) — the same pattern as DeveloperCount. Tab switching stays purely
+ * per view). Tab switching stays purely
  * local. Each board shows RAIL_LIMIT rows; the interactive board (time
  * windows, pagination, VS) still lives at /leaderboard.
  */

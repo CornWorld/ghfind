@@ -1,7 +1,6 @@
 ---
 import Base from "../../layouts/Base.astro";
 import { Home } from "../../views";
-import { DeveloperCountIsland } from "../../islands/DeveloperCountIsland";
 import { HomeCollectionsIsland } from "../../islands/HomeCollectionsIsland";
 import { HomeSponsorRowIsland } from "../../islands/HomeSponsorRowIsland";
 import { LeaderboardRailIsland } from "../../islands/LeaderboardRailIsland";
@@ -31,7 +30,6 @@ Astro.response.headers.set("Cache-Control", "public, s-maxage=3600, stale-while-
 <Base locale={locale} path="/" alternates="layout">
   <Home route={{ locale, path: "/" }} locale={locale} t={t} tFaq={tFaq} tBoards={tBoards} tJobs={tJobs} jobs={jobs} faq={faqItems(tFaq)} projectEntries={projectEntries}>
     <RoasterIsland slot="roaster" client:load intl={intl(["badge", "byok", "detail", "dimensions", "omnibox", "roaster", "scanErrors", "share", "shareCard", "tiers"])} />
-    <DeveloperCountIsland slot="developerCount" client:idle intl={intl([])} />
     <HomeSponsorRowIsland slot="sponsorRow" client:idle intl={intl(["sponsor"])} />
     <HomeCollectionsIsland slot="collections" client:visible locale={locale} cards={cards} intl={intl(["collections", "blog"])} />
     <LeaderboardRailIsland slot="leaderboardRail" client:visible intl={intl(["home", "leaderboard", "tiers"])} />

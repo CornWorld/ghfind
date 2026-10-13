@@ -65,10 +65,12 @@
       "talent": "发现值得认识的开发者",
       "githubBot": "按作者评分给 issue 和 PR 自动打标签",
       "cliApi": "安装 ghfind CLI、配置 Agent Skill 并管理 API Token",
-      "jobs": "AI 与开源公司的在招职位"
+      "jobs": "AI 与开源公司的在招职位",
+      "talentMatch": "AI 人才画像、岗位匹配与成长建议"
     },
     "cliApi": "CLI & API",
-    "jobs": "招聘"
+    "jobs": "招聘",
+    "talentMatch": "人才匹配"
   },
   "globalSearch": {
     "open": "打开全局搜索",
@@ -506,7 +508,6 @@
     "cancel": "取消",
     "saveContinue": "保存并继续"
   },
-  "developerCount": "已经有 <n>{count, number}</n> 名开发者惨遭锐评。",
   "shareCard": {
     "beatLabel": "超越的开发者",
     "brand": "🔥 ghfind · 来测测你的含金量"
@@ -561,7 +562,9 @@
     "suggestLanguage": "{value} 开发者含金量榜",
     "suggestOrg": "{value} · 组织成员榜",
     "pkHalfHint": "再输一个对手，回车开战",
-    "lockedRemove": "移除"
+    "lockedRemove": "移除",
+    "ctaMatch": "人才匹配",
+    "ctaMatchHint": "生成人才画像并匹配岗位"
   },
   "blog": {
     "heading": "研究",
@@ -1682,5 +1685,68 @@
     "applyByEmail": "邮件投递简历",
     "emailNote": "简历请发送至 {email}",
     "detailNote": "ghfind 仅展示该职位信息，招聘决定由企业自行做出。"
+  },
+  "talentMatch": {
+    "source": {
+      "legend": "选择简历来源",
+      "existingTitle": "使用平台上的简历",
+      "existingHint": "从「我的简历」里选一份",
+      "uploadTitle": "上传自己的简历",
+      "uploadHint": "PDF，不超过 {max} MB",
+      "loading": "正在读取你的简历…",
+      "loadFailed": "读取云端简历失败，请稍后再试，或直接上传 PDF。",
+      "listLabel": "你的简历",
+      "profileOption": "资料库（可复用的个人资料）",
+      "profileHint": "跨简历复用的个人资料",
+      "updated": "更新于 {date}",
+      "manage": "管理简历",
+      "emptyTitle": "你在 ghfind 上还没有简历",
+      "emptyBody": "用简历编辑器几分钟就能做好一份，保存到云端后回到这里分析。",
+      "emptyCta": "去创建简历",
+      "emptyUpload": "改为上传 PDF"
+    },
+    "drop": {
+      "label": "上传 PDF 简历",
+      "title": "把 PDF 拖到这里",
+      "or": "或",
+      "browse": "选择文件",
+      "rules": "仅支持 PDF · 不超过 {max} MB",
+      "dragging": "松开即可读取简历",
+      "reading": "正在读取 {name}…",
+      "readingHint": "在你的浏览器里解析，只需几秒。",
+      "readyTitle": "简历已就绪",
+      "readyMeta": "{pages, plural, other {# 页}} · {chars} 字",
+      "replace": "更换",
+      "remove": "移除",
+      "errorTitle": "这个文件无法使用",
+      "retry": "换一个文件",
+      "privacy": "PDF 只在你的浏览器里解析，文件不会上传；只发送文字（已去掉邮箱和电话），且不会保存原文。",
+      "errors": {
+        "type": "这不是 PDF 文件，请选择 .pdf 文件。",
+        "size": "文件大小为 {size} MB，上限是 {max} MB。",
+        "empty": "这个文件是空的。",
+        "multiple": "一次只能拖入一个文件。",
+        "unreadable": "这个 PDF 里读不到文字（可能是扫描件或图片），请换一份可复制文字的 PDF。",
+        "parse": "无法打开这个 PDF，文件可能已损坏或加密。"
+      }
+    },
+    "history": {
+      "title": "历史分析",
+      "empty": "生成报告后，历史分析会显示在这里。",
+      "untitled": "人才报告",
+      "viewing": "正在查看",
+      "opening": "正在打开…",
+      "running": "生成中",
+      "failed": "失败",
+      "matches": "{count, plural, other {# 个匹配岗位}}",
+      "topFit": "最高匹配 {fit}",
+      "openFailed": "无法打开这份分析，请重试。"
+    },
+    "company": {
+      "badge": "即将上线",
+      "title": "招聘功能即将上线",
+      "body": "很快你就可以粘贴岗位描述，查看开放机会的开发者，并按 GitHub 已验证的能力排序。",
+      "cta": "发布职位"
+    }
   }
 }

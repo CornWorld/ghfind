@@ -86,6 +86,15 @@ describe("pickTarget", () => {
     }
   });
 
+  it("serves the Talent Match routes from api, by whole path only", () => {
+    for (const p of ["/api/talent-match/reports", "/api/talent-match/reports/abc-123", "/api/talent-match/quota", "/api/talent-match/profile"]) {
+      expect(pickTarget(p)).toBe("api");
+    }
+    for (const p of ["/api/talent-match", "/api/talent-match/reports/a/b", "/api/talent-match/other"]) {
+      expect(pickTarget(p)).toBe("legacy");
+    }
+  });
+
   it("serves scoring, scans, LLM and job routes from api; Feed stays on legacy", () => {
     for (const p of ["/api/score/torvalds", "/api/scan", "/api/roast", "/api/vs-verdict", "/api/project-analyses", "/api/project-analyses/abc", "/api/campaigns/advx/leaderboard/events", "/api/profile/backfill", "/api/admin/backfill-facets", "/api/admin/backfill-scores", "/api/internal/project-analyses/reconcile"]) {
       expect(pickTarget(p)).toBe("api");

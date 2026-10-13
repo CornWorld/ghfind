@@ -2,12 +2,16 @@ import "./runtime-compat";
 import { Hono } from "hono";
 import * as apiNotFound from "@/app/api/[...notFound]/route";
 import { NextRequest } from "next/server";
+import { registerRequestProvider } from "@/lib/bot-user-agent";
 import { API_ROUTES } from "./routes";
 import { requestContext } from "./request-context";
 
 type Handler = (req: Request, ctx: { params: Promise<Record<string, string>> }) => Response | Promise<Response>;
 
 const app = new Hono();
+
+// Shared caching code skips KV writes on crawler requests (lib/bot-user-agent).
+registerRequestProvider(() => requestContext.getStore()?.request);
 
 // Parity with the legacy Next Worker, which serves every 404 as uncacheable
 // regardless of the handler's own Cache-Control (so e.g. the catch-all's

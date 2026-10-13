@@ -107,4 +107,17 @@ describe("project contributors with a large unrelated score population", () => {
     expect(details.some((detail) => detail.includes("SEARCH repo_developers") && detail.includes("repo_key=?"))).toBe(true);
     expect(details.some((detail) => detail.includes("idx_scores_hidden_score"))).toBe(false);
   });
+
+  it("finds a profile's shared repos with username index seeks, never a repo_developers scan", async () => {
+    statements.length = 0;
+    await db.getProfileCommonProjects("alice", ["bob", "carol", "nobody"], 6);
+    const query = statements.find((statement) => statement.sql.startsWith("SELECT DISTINCT username, repo_key"));
+    expect(query).toBeDefined();
+    const plan = await client.execute({ sql: `EXPLAIN QUERY PLAN ${query!.sql}`, args: query!.args as InArgs });
+    const details = plan.rows.map((row) => String(row.detail));
+    // Rows read stay proportional to the profile's own repos: one username
+    // index seek plus a (repo_key, username) primary-key probe per candidate.
+    expect(details.some((detail) => detail.startsWith("SCAN repo_developers"))).toBe(false);
+    expect(details.some((detail) => detail.includes("idx_repo_developers_user (username=?)"))).toBe(true);
+  });
 });

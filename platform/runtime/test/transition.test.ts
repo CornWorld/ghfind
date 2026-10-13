@@ -147,6 +147,38 @@ test("final dependency failure or actor drift after stop cannot grant a restart 
       failure==="dependency"?/container_dependency_not_ready/:/container_version_or_contract_mismatch/);
   }
 });
+test("untyped lifecycle failures are named instead of collapsing into feed_unavailable",async()=>{
+  const noInstance = fixture(); noInstance.state.running = false;
+  noInstance.hooks.start = async () => { throw new Error("There is no container instance that can be provided to this Durable Object, try again later"); };
+  await assert.rejects(new ModeTransition(limits).run("api-0",env,input,noInstance.hooks), /container_no_instance/);
+  const startFailed = fixture(); startFailed.state.running = false;
+  startFailed.hooks.start = async () => { throw new Error("Container exited with code 1"); };
+  await assert.rejects(new ModeTransition(limits).run("api-0",env,input,startFailed.hooks), /container_start_failed/);
+  assert.equal(startFailed.state.starts, 0);
+  const stopFailed = fixture();
+  stopFailed.hooks.stop = async () => { throw new TypeError("stop failed"); };
+  await assert.rejects(new ModeTransition(limits).run("api-0",env,input,stopFailed.hooks), /container_stop_failed/);
+  assert.equal(stopFailed.state.starts, 0);
+  const textBody = fixture(); textBody.state.running = false;
+  textBody.hooks.fetch = async () => new Response("Failed to start container: boom", { status: 500 });
+  await assert.rejects(new ModeTransition(limits).run("api-0",env,input,textBody.hooks), /container_response_not_json/);
+});
+test("restart RPC failures answer a fixed code, never the platform message",async()=>{
+  const request = new Request("https://runtime/internal/runtime/api-0/restart",{method:"POST",
+    headers:{authorization:`Bearer ${env.FEED_RUNTIME_ADMIN_SECRET}`,"content-type":"application/json"},body:JSON.stringify(input)});
+  const fail = (error: unknown) => ({fetch:async()=>Response.json({}),stop:async()=>{},restart:async()=>{ throw error; }});
+  const cases: [unknown, string][] = [
+    [Object.assign(new Error("Durable Object reset because its code was updated."), { durableObjectReset: true, retryable: true }), "actor_reset_by_deploy"],
+    [Object.assign(new Error("Durable Object is overloaded."), { overloaded: true }), "actor_overloaded"],
+    [Object.assign(new Error("Network connection lost."), { retryable: true }), "actor_rpc_retryable_error"],
+    [new Error("internal error; reference = abc"), "container_rpc_failed"],
+  ];
+  for (const [error, code] of cases) {
+    const response = await handleRequest(request.clone(), env, fail(error));
+    assert.equal(response.status, 503);
+    assert.deepEqual(await response.json(), { error: code });
+  }
+});
 
 // Production invokes runtimeRestart over a DO RPC boundary, which strips custom
 // Error prototypes. The result envelope must survive that boundary unchanged.

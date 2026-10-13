@@ -1,4 +1,4 @@
-import { getGoProfilePresentation } from "@/lib/go-profile.server";
+import { getGoProfileCardPresentation } from "@/lib/go-profile.server";
 import { BADGE_COLOR, TIER_EN, TIER_LABEL_EN } from "@/lib/badge";
 import { getCurrentTitleSponsor } from "@/lib/sponsor.server";
 import { USERNAME_RE } from "@/lib/username";
@@ -32,7 +32,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ username: strin
 
   // Satori rasterizes this away, so the full-size mark costs the response nothing.
   const titleSponsor = await getCurrentTitleSponsor();
-  const presentation = USERNAME_RE.test(name) ? await getGoProfilePresentation(name) : null;
+  const presentation = USERNAME_RE.test(name) ? await getGoProfileCardPresentation(name) : null;
   const detail = presentation?.detail ?? null;
 
   // Unrated placeholder — keeps READMEs from showing a broken image.

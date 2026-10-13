@@ -23,7 +23,6 @@ export function HomeView({
   jobs,
   projectEntries,
   roaster,
-  developerCount,
   sponsorRow,
   collections,
   leaderboardRail,
@@ -42,7 +41,6 @@ export function HomeView({
   jobs: JobListing[];
   projectEntries: ProjectAssessment[];
   roaster: ReactNode;
-  developerCount: ReactNode;
   sponsorRow: ReactNode;
   collections: ReactNode;
   leaderboardRail: ReactNode;
@@ -60,9 +58,6 @@ export function HomeView({
           </p>
         </header>
         {roaster}
-        <div className="home-proof">
-          {developerCount}
-        </div>
         {sponsorRow}
       </section>
 

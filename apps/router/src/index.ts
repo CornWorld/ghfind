@@ -1,4 +1,5 @@
 import { decideLocale } from "@ghfind/i18n";
+import { cardRedirect, cardRequest, serveCard } from "./card-cache";
 import { pickTarget } from "./routes";
 
 export interface Env {
@@ -28,14 +29,50 @@ function wantsHomeMarkdown(request: Request, url: URL): boolean {
   );
 }
 
+/**
+ * Non-production crawl policy. `noindex` keeps pages out of search results but
+ * not off the crawl list: serving the production robots.txt and sitemap let
+ * meta-webindexer walk ~77k dev pages in a day (SSR, KV writes and prod D1
+ * reads on every hit). Disallow everything and publish no sitemap instead.
+ */
+function nonProductionCrawlResponse(url: URL): Response | null {
+  if (url.pathname === "/robots.txt") {
+    return new Response("User-agent: *\nDisallow: /\n", {
+      headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=3600" },
+    });
+  }
+  if (url.pathname === "/sitemap.xml") return new Response("Not found", { status: 404 });
+  return null;
+}
+
+/** `caches.default` where the runtime has it (absent in Node tests). */
+function edgeCache(): Cache | null {
+  return (globalThis as { caches?: { default?: Cache } }).caches?.default ?? null;
+}
+
 export default {
-  async fetch(request, env): Promise<Response> {
+  async fetch(request, env, ctx?: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+    if (env.ROUTER_NOINDEX === "1") {
+      const crawl = nonProductionCrawlResponse(url);
+      if (crawl) return finish(crawl, "router", env);
+    }
     const forceLegacy = env.ROUTER_FORCE_LEGACY === "1";
     if (!forceLegacy && wantsHomeMarkdown(request, url)) {
       // /index.md already answers with `Vary: Accept`.
       const res = await env.API.fetch(new Request(new URL("/index.md", url), request));
       return finish(new Response(res.body, res), "api", env);
+    }
+    // README cards/badges: canonical URL, malformed embeds redirected, edge
+    // cached (card-cache.ts). The rollback switch bypasses all of it.
+    const card = forceLegacy ? null : cardRequest(url);
+    if (card && pickTarget(card.canonical.pathname) === "api") {
+      if (card.redirect) return finish(cardRedirect(card), "router", env);
+      const res = await serveCard(request, card, env.API, {
+        cache: edgeCache(),
+        waitUntil: ctx ? (promise) => ctx.waitUntil(promise) : undefined,
+      });
+      return finish(res, "api", env);
     }
     const target = forceLegacy ? "legacy" : pickTarget(url.pathname);
     const upstream = target === "web" ? env.WEB : target === "api" ? env.API : env.LEGACY;

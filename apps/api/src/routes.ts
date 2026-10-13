@@ -60,6 +60,10 @@ import * as sponsors from "@/app/api/sponsors/route";
 import * as stats from "@/app/api/stats/route";
 import * as talentById from "@/app/api/talent/[id]/route";
 import * as talentIntake from "@/app/api/talent/intake/route";
+import * as talentMatchProfile from "@/app/api/talent-match/profile/route";
+import * as talentMatchQuota from "@/app/api/talent-match/quota/route";
+import * as talentMatchReport from "@/app/api/talent-match/reports/[id]/route";
+import * as talentMatchReports from "@/app/api/talent-match/reports/route";
 import * as talent from "@/app/api/talent/route";
 import * as vsVerdict from "@/app/api/vs-verdict/route";
 import * as authMd from "@/app/auth.md/route";
@@ -123,6 +127,11 @@ export const API_ROUTES: ApiRoute[] = [
   // /api/talent/intake above /api/talent/[id] by itself).
   { path: "/api/talent/intake", module: talentIntake },
   { path: "/api/talent/:id", module: talentById },
+  // Talent Match: reports run on the ghfind-talent Worker's Workflow.
+  { path: "/api/talent-match/reports", module: talentMatchReports },
+  { path: "/api/talent-match/reports/:id", module: talentMatchReport },
+  { path: "/api/talent-match/quota", module: talentMatchQuota },
+  { path: "/api/talent-match/profile", module: talentMatchProfile },
   // Batch 5: scoring, scans, LLM roasts/verdicts, project analyses, campaign
   // SSE, profile backfill, and the secret-gated admin/internal jobs.
   { path: "/api/score/:username", module: score },

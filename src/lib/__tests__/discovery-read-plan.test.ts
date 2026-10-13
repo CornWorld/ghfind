@@ -7,16 +7,10 @@ import type { SubScores } from "../types";
 
 const state = vi.hoisted(() => ({
   binding: null as D1DatabaseLike | null,
-  cache: new Map<string, string[]>(),
   fail: false,
 }));
 vi.mock("../d1-client", async original => ({
   ...await original<typeof import("../d1-client")>(), getD1Binding: () => state.binding,
-}));
-vi.mock("../redis", async original => ({
-  ...await original<typeof import("../redis")>(),
-  getCachedSimilarUsernames: async (key: string) => state.cache.get(key) ?? null,
-  setCachedSimilarUsernames: async (key: string, names: string[]) => { state.cache.set(key, names); },
 }));
 const client = createClient({ url: "file::memory:" });
 const statements: { sql: string; args: unknown[] }[] = [];
@@ -71,7 +65,7 @@ beforeAll(async () => {
   };
   db = await import("../db");
 });
-beforeEach(() => { state.cache.clear(); state.fail = false; statements.length = 0; });
+beforeEach(() => { state.fail = false; statements.length = 0; });
 afterAll(() => client.close());
 
 describe("bounded score leaderboard", () => {
@@ -100,21 +94,17 @@ describe("bounded score leaderboard", () => {
   });
 });
 
-describe("similar recommendation membership cache", () => {
-  it("avoids a second candidate scan while keeping order and current stats", async () => {
+describe("similar recommendations", () => {
+  it("reads live, so current stats show without a cross-request cache", async () => {
     const first = await db.getSimilarAccounts("target", 90, subScores, 2);
-    statements.length = 0;
     await client.execute("UPDATE account_stats SET lookup_count=101 WHERE username='alice'");
+    statements.length = 0;
     const second = await db.getSimilarAccounts("TARGET", 90, subScores, 2);
     expect(second.map(entry => entry.username)).toEqual(first.map(entry => entry.username));
     expect(second.find(entry => entry.username === "alice")?.lookup_count).toBe(101);
-    expect(statements).toHaveLength(1);
-    expect(statements[0].sql).not.toContain("BETWEEN");
-    const plan = await client.execute({ sql: `EXPLAIN QUERY PLAN ${statements[0].sql}`, args: statements[0].args as InArgs });
-    expect(plan.rows.some(row => String(row.detail).includes("SEARCH s") && String(row.detail).includes("username=?"))).toBe(true);
-    expect(plan.rows.some(row => String(row.detail).includes("idx_scores_public_order"))).toBe(false);
+    expect(statements.filter(statement => statement.sql.includes("BETWEEN"))).toHaveLength(1);
   });
-  it("filters a newly hidden user on cache hits", async () => {
+  it("filters a newly hidden user", async () => {
     const first = await db.getSimilarAccounts("target", 90, subScores, 2);
     const hidden = first[0].username;
     await db.hideUser(hidden);
@@ -122,18 +112,15 @@ describe("similar recommendation membership cache", () => {
       expect((await db.getSimilarAccounts("target", 90, subScores, 2)).some(entry => entry.username === hidden)).toBe(false);
     } finally { await client.execute({ sql: "UPDATE scores SET hidden=0 WHERE username=?", args: [hidden] }); }
   });
-  it("changes the key when ranking inputs change and coalesces concurrent cold requests", async () => {
+  it("coalesces concurrent identical requests into one candidate scan", async () => {
     await Promise.all([db.getSimilarAccounts("target", 90, subScores, 2), db.getSimilarAccounts("target", 90, subScores, 2)]);
     expect(statements.filter(statement => statement.sql.includes("BETWEEN"))).toHaveLength(1);
-    await db.getSimilarAccounts("target", 90, { ...subScores, contribution_quality: 25 }, 2);
-    expect(statements.filter(statement => statement.sql.includes("BETWEEN"))).toHaveLength(2);
   });
-  it("does not cache a database failure", async () => {
+  it("returns [] on a database failure", async () => {
     state.fail = true;
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
     try {
       expect(await db.getSimilarAccounts("target", 90, subScores, 2)).toEqual([]);
-      expect(state.cache.size).toBe(0);
     } finally { error.mockRestore(); }
   });
 });

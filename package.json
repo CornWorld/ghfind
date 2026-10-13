@@ -57,6 +57,7 @@
     "recharts": "^3.9.1",
     "remark-gfm": "^4.0.1",
     "tailwind-merge": "^3.6.0",
+    "unpdf": "^1.8.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {

@@ -19,10 +19,8 @@ import type { FacetType } from "@/lib/facets";
 import {
   getCachedFacetCategories,
   getCachedFacetDevelopers,
-  getCachedFacetRank,
   setCachedFacetCategories,
   setCachedFacetDevelopers,
-  setCachedFacetRank,
 } from "@/lib/redis";
 
 const categoriesInflight = new Map<string, Promise<FacetCategory[]>>();
@@ -84,26 +82,22 @@ export async function getDevelopersByFacetCached(
 
 const rankInflight = new Map<string, Promise<FacetRank | null>>();
 
-/** A developer's language-board position, cache-aside + single-flight. */
+/**
+ * A developer's language-board position, single-flight. No per-profile cache:
+ * the answer comes from one indexed lookup plus the shared per-language ladder
+ * (cached in getFacetRank), and a per-username KV entry missed on nearly every
+ * crawler render, so it only added a KV write to each profile view.
+ */
 export async function getFacetRankCached(
   username: string,
   score: number,
 ): Promise<FacetRank | null> {
   const uname = username.toLowerCase();
-  const cached = await getCachedFacetRank(uname, score);
-  if (cached) return cached.value;
-
   const key = `${uname}:${score}`;
   const existing = rankInflight.get(key);
   if (existing) return existing;
 
-  const run = (async () => {
-    const value = await getFacetRank(uname, score);
-    // getFacetRank swallows DB errors into null, so a null can't be told apart
-    // from "no rank" — only cache real ranks, never a possible failure.
-    if (value) await setCachedFacetRank(uname, score, value);
-    return value;
-  })();
+  const run = getFacetRank(uname, score);
   rankInflight.set(key, run);
   try {
     return await run;

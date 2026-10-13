@@ -23,7 +23,7 @@ import {
 } from "@/lib/mini-card";
 import { beatPercent } from "@/lib/percentile";
 import { aggregateLanguages } from "@/lib/profile-insights";
-import { getGoProfilePresentation } from "@/lib/go-profile.server";
+import { getGoProfileCardPresentation } from "@/lib/go-profile.server";
 import { tierFor } from "@/lib/score-presentation";
 import { getCurrentTitleSponsor } from "@/lib/sponsor.server";
 import { publicDisplayName, USERNAME_RE } from "@/lib/username";
@@ -62,7 +62,7 @@ export async function GET(
   const lang = parseMiniCardLang(params.get("lang"));
 
   const name = decodeRouteParam(username ?? "").trim();
-  const presentation = USERNAME_RE.test(name) ? await getGoProfilePresentation(name) : null;
+  const presentation = USERNAME_RE.test(name) ? await getGoProfileCardPresentation(name) : null;
   const detail = presentation?.detail ?? null;
   if (!detail) {
     // Never 404: an embedded card that fails renders as a broken image in

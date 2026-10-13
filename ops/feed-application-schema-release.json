@@ -52,6 +52,10 @@
     {
       "name": "0024_job_descriptions.sql",
       "sha256": "aa27f9d484d51a09a932005a7cec048a8561fe095087554289db06b653d7476f"
+    },
+    {
+      "name": "0025_talent_match.sql",
+      "sha256": "959bce48f9cb647ae2933b0ad03bede9d5471778bd4d3e796cf834671746cc2c"
     }
   ],
   "feed": [

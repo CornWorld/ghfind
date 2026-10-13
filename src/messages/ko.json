@@ -65,10 +65,12 @@
       "talent": "알아 둘 만한 개발자 찾기",
       "githubBot": "작성자 점수로 issue와 PR에 자동 라벨",
       "cliApi": "Install the ghfind CLI and Agent Skill, and manage API tokens",
-      "jobs": "AI·오픈소스 기업의 채용 공고"
+      "jobs": "AI·오픈소스 기업의 채용 공고",
+      "talentMatch": "AI 인재 리포트, 직무 매칭, 성장 조언"
     },
     "cliApi": "CLI & API",
-    "jobs": "채용"
+    "jobs": "채용",
+    "talentMatch": "인재 매칭"
   },
   "globalSearch": {
     "open": "전체 검색 열기",
@@ -506,7 +508,6 @@
     "cancel": "취소",
     "saveContinue": "저장하고 계속"
   },
-  "developerCount": "벌써 <n>{count, number}</n>명의 개발자가 참전했습니다 ⚔️",
   "shareCard": {
     "beatLabel": "제친 개발자",
     "brand": "🔥 ghfind · 내 성적 재보기"
@@ -561,7 +562,9 @@
     "suggestLanguage": "{value} 개발자 랭킹",
     "suggestOrg": "{value} · 조직 멤버",
     "pkHalfHint": "상대를 입력하고 Enter로 파이트",
-    "lockedRemove": "제거"
+    "lockedRemove": "제거",
+    "ctaMatch": "매칭",
+    "ctaMatchHint": "인재 리포트와 직무 매칭"
   },
   "blog": {
     "heading": "리서치",
@@ -1675,5 +1678,68 @@
     "applyByEmail": "이메일로 지원",
     "emailNote": "이력서 보낼 곳: {email}",
     "detailNote": "ghfind는 채용 정보만 게시하며, 채용 결정은 기업이 합니다."
+  },
+  "talentMatch": {
+    "source": {
+      "legend": "이력서를 어떻게 불러올까요?",
+      "existingTitle": "ghfind 이력서 사용",
+      "existingHint": "내 이력서에 저장한 것 중에서 선택",
+      "uploadTitle": "직접 업로드",
+      "uploadHint": "PDF, 최대 {max} MB",
+      "loading": "이력서를 불러오는 중…",
+      "loadFailed": "저장된 이력서를 불러오지 못했습니다. 나중에 다시 시도하거나 PDF를 업로드하세요.",
+      "listLabel": "내 이력서",
+      "profileOption": "프로필 (재사용 정보)",
+      "profileHint": "여러 이력서에서 재사용하도록 저장한 정보",
+      "updated": "{date} 업데이트",
+      "manage": "이력서 관리",
+      "emptyTitle": "아직 ghfind에 이력서가 없습니다",
+      "emptyBody": "이력서 빌더로 몇 분 만에 만들 수 있습니다. 클라우드에 저장한 뒤 여기로 돌아와 분석하세요.",
+      "emptyCta": "이력서 만들기",
+      "emptyUpload": "대신 PDF 업로드"
+    },
+    "drop": {
+      "label": "PDF 이력서 업로드",
+      "title": "PDF를 여기로 끌어다 놓으세요",
+      "or": "또는",
+      "browse": "파일 선택",
+      "rules": "PDF만 · 최대 {max} MB",
+      "dragging": "놓으면 이력서를 읽습니다",
+      "reading": "{name} 읽는 중…",
+      "readingHint": "브라우저 안에서 처리되며 몇 초면 끝납니다.",
+      "readyTitle": "이력서 준비 완료",
+      "readyMeta": "{pages, plural, other {#페이지}} · {chars}자",
+      "replace": "바꾸기",
+      "remove": "제거",
+      "errorTitle": "이 파일은 사용할 수 없습니다",
+      "retry": "다른 파일 선택",
+      "privacy": "PDF는 브라우저에서 읽히며 업로드되지 않습니다. 텍스트만 전송되고(이메일과 전화번호 제거) 텍스트 자체도 저장되지 않습니다.",
+      "errors": {
+        "type": "PDF 파일이 아닙니다. .pdf 파일을 선택하세요.",
+        "size": "파일 크기가 {size} MB입니다. 최대 {max} MB까지 가능합니다.",
+        "empty": "빈 파일입니다.",
+        "multiple": "한 번에 파일 하나만 놓아 주세요.",
+        "unreadable": "이 PDF에서 텍스트를 읽을 수 없습니다(스캔본이나 이미지일 수 있음). 텍스트를 선택할 수 있는 PDF를 사용하세요.",
+        "parse": "이 PDF를 열 수 없습니다. 손상되었거나 암호로 보호되어 있을 수 있습니다."
+      }
+    },
+    "history": {
+      "title": "지난 분석",
+      "empty": "리포트를 생성하면 여기에 표시됩니다.",
+      "untitled": "인재 리포트",
+      "viewing": "보는 중",
+      "opening": "여는 중…",
+      "running": "생성 중",
+      "failed": "실패",
+      "matches": "{count, plural, other {매칭 직무 #개}}",
+      "topFit": "최고 적합도 {fit}",
+      "openFailed": "이 분석을 열 수 없습니다. 다시 시도하세요."
+    },
+    "company": {
+      "badge": "곧 출시",
+      "title": "채용 기능이 곧 출시됩니다",
+      "body": "곧 채용 공고를 붙여 넣으면 기회를 찾는 개발자를 GitHub로 검증된 역량 순으로 볼 수 있습니다.",
+      "cta": "채용 공고 등록"
+    }
   }
 }

@@ -22,7 +22,7 @@ import {
 } from "@/lib/db";
 import { getFacetRankCached } from "@/lib/developers";
 import { getPercentileCached, getRankCached } from "@/lib/rank";
-import { getDeveloperCommonProjectsCached } from "@/lib/project-discovery";
+import { getProfileCommonProjectsCached } from "@/lib/project-discovery";
 import { beatPercent } from "@/lib/percentile";
 import { getCachedScan } from "@/lib/redis";
 import { normalizeUsername } from "@/lib/username";
@@ -241,7 +241,8 @@ function toCommonProject(item: ProjectListItem): CommonProfileProject {
 /**
  * Common projects with the first few similar developers, deduped across
  * candidates. Each candidate batch is ordered by average member score (the Go
- * query's ORDER BY AVG DESC, repo_key ASC) before merging.
+ * query's ORDER BY AVG DESC, repo_key ASC) before merging. All candidates are
+ * read together — one cache entry and one database round trip per profile.
  */
 async function buildCommonProjects(
   username: string,
@@ -249,9 +250,9 @@ async function buildCommonProjects(
 ): Promise<CommonProfileProject[]> {
   const seen = new Set<string>();
   const result: CommonProfileProject[] = [];
-  for (const candidate of candidates) {
+  const lists = await getProfileCommonProjectsCached(username, candidates, COMMON_PROJECT_LIMIT);
+  for (const items of lists) {
     if (result.length >= COMMON_PROJECT_LIMIT) break;
-    const items = await getDeveloperCommonProjectsCached(username, candidate, COMMON_PROJECT_LIMIT);
     const batch = items
       .map(toCommonProject)
       .toSorted(
@@ -369,6 +370,34 @@ export async function buildProfilePresentation(
     facetRank,
     existing_repo_keys,
   };
+}
+
+/** What the embeddable cards render (`/api/card/*`, mini, material). */
+export type ProfileCardPresentation = Pick<
+  ProfilePresentation,
+  "detail" | "snapshot" | "rank" | "percentile" | "delta"
+>;
+
+/**
+ * The card subset of {@link buildProfilePresentation}, without the discovery
+ * reads cards never show (similar accounts, common projects, battles, facet
+ * rank, repo-link check, scan breakdown). Card URLs are a crawler / camo long
+ * tail whose cache-busting params miss the CDN, so every miss used to pay a
+ * whole profile build — including the per-profile common-projects cache write.
+ */
+export async function buildProfileCardPresentation(
+  username: string,
+): Promise<ProfileCardPresentation | null> {
+  const handle = normalizeUsername(username);
+  if (!handle) return null;
+  const detail = await getAccountDetail(handle);
+  if (!detail) return null;
+  const [snapshot, { rank, percentile }, delta] = await Promise.all([
+    getProfileSnapshot(detail.username),
+    buildScorePercentile(detail.final_score),
+    weeklyScoreDelta(detail),
+  ]);
+  return { detail: toPresentationDetail(detail), snapshot, rank, percentile, delta };
 }
 
 export async function buildVsPresentation(a: string, b: string): Promise<VsPresentation | null> {
