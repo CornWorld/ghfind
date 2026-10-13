@@ -347,6 +347,13 @@ var coreCodePathRE = regexp.MustCompile(`(?i)\.(c|cc|cpp|cs|go|java|js|jsx|kt|m|
 var docLikeTitleRE = regexp.MustCompile(`(?i)\b(docs?|readme|typo|translate|translation|i18n|website|site|blog|examples?|templates?|tutorial|guide)\b`)
 var docLikeRepoRE = regexp.MustCompile(`(^|[-_.])(docs?|site|website|blog|examples?|templates?|profile|notebook|learning|tutorial|interview|guide|manual)([-_.]|$)`)
 
+// Project websites: "<x>-site", "<x>-website", "<x>-homepage", or a name that
+// simply ends in "website". A bare trailing "site" needs a separator so code
+// such as "composite" or "parasite" is not swept up. Domain-style names only
+// count for GitHub Pages: "socket.io" or "foo.org" are real projects.
+var siteRepoNameRE = regexp.MustCompile(`(^|[-_.])(site|homepage)$|website$`)
+var resourceRepoTopicRE = regexp.MustCompile(`(?i)^(awesome|awesome-lists?|courses?|tutorials?|notes|docs|documentation)$`)
+
 func isLowSignalEntryRepo(repo string) bool {
 	return strings.EqualFold(strings.TrimSpace(repo), "is-a-dev/register") || strings.EqualFold(strings.TrimSpace(repo), "tuna/blogroll")
 }
@@ -359,7 +366,21 @@ func isDocLikeRepo(repo string) bool {
 	if !found {
 		name = strings.ToLower(repo)
 	}
-	return docLikeRepoRE.MatchString(name) || strings.HasSuffix(name, ".github.io")
+	return docLikeRepoRE.MatchString(name) || siteRepoNameRE.MatchString(name) || strings.HasSuffix(name, ".github.io")
+}
+
+// isDocOrResourceRepo matches docs/site repos by name, plus resource
+// collections (awesome lists, courses, tutorials, notes) by GitHub topic.
+func isDocOrResourceRepo(repo ContribRepoAgg) bool {
+	if isDocLikeRepo(repo.Repo) {
+		return true
+	}
+	for _, topic := range repo.Topics {
+		if resourceRepoTopicRE.MatchString(topic) {
+			return true
+		}
+	}
+	return false
 }
 
 func isDocLikePath(path string) bool { return docLikePathRE.MatchString(strings.ToLower(path)) }
@@ -405,7 +426,8 @@ func lowQualityImpactCap(verified, docLike, core, impactPRCount float64) *float6
 		return nil
 	}
 	dominance := (docLike - core) / verified
-	confidence := math.Sqrt(LogRatio(verified, 10) * LogRatio(max(impactPRCount, verified), 10))
+	// Small samples are allowed but only reach full confidence at 20 PRs.
+	confidence := math.Sqrt(LogRatio(verified, 20) * LogRatio(max(impactPRCount, verified), 10))
 	cap := roundJS(max(4, min(20, 20-max(0, min(1, dominance*confidence))*36))*10) / 10
 	return &cap
 }
@@ -431,7 +453,7 @@ func ComputeImpactQualitySignals(recentPRs []RecentPR, impactPRCount float64, lo
 	}
 	var cap *float64
 	// Only extrapolate a sufficiently broad and covered file-level sample.
-	if verified >= 10 && len(repoCounts) >= 3 && float64(largestRepo) <= verified/2 && verified >= impactPRCount/2 {
+	if verified >= 5 && len(repoCounts) >= 3 && float64(largestRepo) <= verified/2 && verified >= impactPRCount/2 {
 		cap = lowQualityImpactCap(verified, docLike, core, impactPRCount)
 	}
 	return ImpactQualitySignals{
@@ -452,6 +474,11 @@ type ContribRepoAgg struct {
 	Commits     float64 `json:"commits"`
 	PRs         float64 `json:"prs"`
 	ActiveYears float64 `json:"active_years"`
+	// MergeCommits estimates how many of Commits are merge commits (more than
+	// one parent); Topics feeds resource-repo detection. Both are absent when
+	// the repo signal query was unavailable.
+	MergeCommits float64  `json:"merge_commits,omitempty"`
+	Topics       []string `json:"topics,omitempty"`
 }
 
 type ImpactMetrics struct {
@@ -482,17 +509,45 @@ func prestigeWorkMultiplier(commits, prs float64) float64 {
 	return math.Log10(1+workSignal*9) / math.Log10(10)
 }
 
+// passesImpactRepoGates holds the popularity and landed-work gates shared by
+// impact scoring and the repo signal query.
+func passesImpactRepoGates(repo ContribRepoAgg, loginLower string) bool {
+	if repo.IsPrivate || repo.IsFork || (isLowSignalEntryRepo(repo.Repo) && repo.Commits <= 1 && repo.PRs <= 1) {
+		return false
+	}
+	threshold := 200.0
+	if strings.EqualFold(repo.OwnerLogin, loginLower) {
+		threshold = 1000
+	}
+	return repo.Stars >= threshold && (repo.Commits >= defaultBranchCommitMin(repo.Repo) || repo.PRs >= 1)
+}
+
+const (
+	// Doc/resource repos below this many stars earn no ecosystem impact;
+	// popular ones count at docResourceImpactWeight.
+	docResourceImpactMinStars = 5000
+	docResourceImpactWeight   = 0.5
+	// Own repos already earn their stars in Original Project Quality: they add
+	// damped depth and never prestige.
+	ownRepoImpactDepthWeight = 0.3
+)
+
+// authoredCommits excludes merge commits from a repo's work count.
+func authoredCommits(repo ContribRepoAgg) float64 {
+	return max(0, repo.Commits-max(0, repo.MergeCommits))
+}
+
+// ComputeImpactFromContribMap mirrors computeImpactFromContribMap in
+// src/lib/github.ts.
+//
+// TODO(content-repos): also treat a repo as content when its file tree is
+// >=70% md/pdf/png/mp3/html with fewer than 15 code files. The collector has
+// no file listing for contribution repos, and a recursive tree per impact repo
+// is too expensive to add to every scan.
 func ComputeImpactFromContribMap(repos []ContribRepoAgg, loginLower string) ImpactMetrics {
 	qualifying := make([]ContribRepoAgg, 0)
 	for _, repo := range repos {
-		if repo.IsPrivate || repo.IsFork || (isLowSignalEntryRepo(repo.Repo) && repo.Commits <= 1 && repo.PRs <= 1) {
-			continue
-		}
-		threshold := 200.0
-		if strings.EqualFold(repo.OwnerLogin, loginLower) {
-			threshold = 1000
-		}
-		if repo.Stars >= threshold && (repo.Commits >= defaultBranchCommitMin(repo.Repo) || repo.PRs >= 1) {
+		if passesImpactRepoGates(repo, loginLower) && (repo.Stars >= docResourceImpactMinStars || !isDocOrResourceRepo(repo)) {
 			qualifying = append(qualifying, repo)
 		}
 	}
@@ -502,8 +557,22 @@ func ComputeImpactFromContribMap(repos []ContribRepoAgg, loginLower string) Impa
 		metrics.MaxImpactRepoStars = max(metrics.MaxImpactRepoStars, repo.Stars)
 		metrics.ImpactCommitCount += repo.Commits
 		metrics.ImpactPRCount += repo.PRs
-		prestige = max(prestige, LogRatio(repo.Stars, 100000)*prestigeWorkMultiplier(repo.Commits, repo.PRs))
-		depth += LogRatio(repo.Stars, 5000) * min(1+math.Log10(repo.Commits+repo.PRs), 2.5)
+		docWeight := 1.0
+		if isDocOrResourceRepo(repo) {
+			docWeight = docResourceImpactWeight
+		}
+		ownWeight := 1.0
+		if strings.EqualFold(repo.OwnerLogin, loginLower) {
+			ownWeight = ownRepoImpactDepthWeight
+		} else {
+			prestige = max(prestige, LogRatio(repo.Stars, 100000)*prestigeWorkMultiplier(authoredCommits(repo), repo.PRs)*docWeight)
+		}
+		work := authoredCommits(repo) + repo.PRs
+		weight := 0.0
+		if work > 0 {
+			weight = min(1+math.Log10(work), 2.5)
+		}
+		depth += LogRatio(repo.Stars, 5000) * weight * docWeight * ownWeight
 	}
 	metrics.ImpactRepoCount = float64(len(qualifying))
 	metrics.ImpactPrestigeScore = roundJS(prestige*10000) / 10000
