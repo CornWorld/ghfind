@@ -7,8 +7,9 @@ through it. Aggregation delay does not guarantee final or complete analytics.
 
 ## Read an alert
 
-The subject states the main problem. Metrics are grouped by affected resource,
-with the next action, observed value, trigger and time window. HTML expands at
+The subject names the affected feature or account cost signal. Each compact
+section starts with the observed result and possible impact, followed by one
+suggested action. Trigger and time-window evidence stays below it. HTML expands at
 most three resources and three metrics per resource, then lists up to five other
 resources and a remaining count. Plain text preserves every selected metric's
 evidence once. Both use UTC+8 and support rolling upgrades from old text notices.
@@ -16,11 +17,17 @@ HTML supports light/dark email clients, narrow screens and keyboard focus.
 
 - **Functional/runtime incident:** an observed operation failed or crossed a
   runtime threshold. Check the feature, recent deployment and upstream logs.
-- **Usage/reported-cost incident:** valid data crossed consumption or efficiency
-  thresholds. Check the resource and billing dashboard. Analytics estimates are
-  not an invoice.
-- **Collection gap:** some data is unavailable. Check the named source, permissions,
-  limits or delay. Missing telemetry does not prove overspending or a user outage.
+- **Account consumption/reported-cost incident:** complete account consumption
+  windows or reported daily cost crossed a threshold. An incomplete collection
+  can still prove extreme spending when its observed lower bound alone exceeds
+  the single-window threshold. Analytics estimates are not an invoice.
+
+Customer mail excludes collection gaps and per-resource SQL/CPU/operation
+efficiency diagnostics. These remain in authenticated health, bounded metric
+state and structured logs. Missing telemetry does not prove overspending or a
+user outage, and cannot create a customer notification or a false recovery.
+Automatic public probes are described as checks, not observed customer failures.
+Runtime error ratios use counts and percentages, for example 3 of 12 calls failed.
 
 Only fixed sanitized failure classifications leave collectors. Raw upstream
 errors, SQL, parameters, user IDs, request bodies and keys are not retained or
@@ -31,20 +38,22 @@ included in mail. Recipient addresses remain private configuration.
 | Event | First notification | Unchanged reminder |
 | --- | --- | --- |
 | Severe key-feature failure, account consumption or reported daily cost | Next evaluation, bypassing digest wait | 6 hours for fast telemetry; 24 hours for reported daily cost |
-| Other usage/runtime/efficiency issue | Next hourly digest after confirmation | 6 hours |
-| Collection gap | At least 30 minutes and three distinct failed cycles, then next hourly digest | 12 hours |
-| Monitor stopped or email sending failed | External watchdog's next hourly check | 12 hours per recipient |
+| Other runtime failure, slow feature or account-cost warning | Next hourly digest after confirmation | 6 hours; 24 hours for reported daily cost |
+| Collection gap or resource-efficiency diagnostic | No customer email; authenticated health/logs | None |
+| Monitor stopped or email sending failed | Hourly Actions check; optional separate ops recipients | 12 hours per ops recipient |
 
 Escalation can notify sooner. Ordinary incidents that recover before their digest
-are withdrawn. Recovery needs two valid normal observations; missing data or no
-traffic is not recovery. Key-feature and collection recovery are silent. Other
+are withdrawn. Recovery needs two valid normal observations; missing source data
+is not recovery. Key-feature checks also require actual traffic or a new probe;
+a successfully collected Worker with no invocation errors can recover. Key-feature
+and collection recovery are silent. Other
 previously delivered incidents can appear as recovered in the next digest. Stale
 open/reminder messages are removed on confirmed recovery, including partial sends.
 
-A collection gap is one persisted incident even if its reason changes. A complete
-observation withdraws its queued message; two distinct complete windows close it.
-Partial-recipient receipts survive a single good observation followed by failure.
-Old stateless critical collection notices are discarded during upgrade.
+A collection gap is one persisted diagnostic incident even if its reason changes;
+two distinct complete windows close it. Upgrades discard old collection/efficiency
+mail and delivery receipts before evaluation, so stale diagnostics cannot occupy
+customer queue capacity or be retried to remaining recipients.
 
 Each recipient receives at most one aggregate message per evaluation. Accepted
 recipients are not resent on ordinary retries; failures remain queued. Sending is
@@ -61,6 +70,12 @@ Account consumption retains twelve complete five-minute buckets at most:
 - Warning: both the **15-minute** and **1-hour** rates exceed the warning threshold.
 - Extreme spend: a single five-minute bucket already consumes the critical hourly
   amount, so it alerts immediately without waiting for longer history.
+- Even with incomplete collection, an observed five-minute consumption lower
+  bound at or above that extreme threshold triggers a clearly marked notice.
+  It does not enter complete-window averages, train a low baseline or establish
+  recovery. Unknown costs remain unknown. A later correction of that same bucket
+  is conservatively skipped for account history and notification; the next
+  complete bucket resumes normal evaluation without counting consumption twice.
 - Missing buckets stay unknown, never zero. Replays do not add consumption or
   train baselines twice. High current use with incomplete history cannot falsely
   close a consumption incident.
@@ -77,15 +92,18 @@ fast total. R2 storage uses the last hour's peak and a 30-day conversion. A know
 storage gauge missing from the current snapshot makes account cost coverage
 incomplete: old charges are neither copied forward as current data nor assumed
 zero. Deleted buckets can remain conservatively unknown until a new snapshot or
-the remembered gauge's original seven-day TTL expires. Other resource alerts
-continue while account cost coverage is incomplete.
+the remembered gauge's original seven-day TTL expires. Observed Service failures,
+slow calls and application Worker errors continue to notify while account cost
+coverage is incomplete. Monitor Worker errors stay in operational diagnostics.
 
 Closed reported daily billable usage is reconciled every six hours across all
 products. Failed requests retry at most hourly and remain a collection gap until
 success; a skipped billing tick cannot erase that failure. Reported billing can
 be delayed or adjusted and stays separate from fast estimates.
 
-Ordinary warnings need two consecutive valid windows. Healthy EWMA baselines
+Ordinary per-metric warnings need two consecutive valid windows. Account cost
+warnings already require confirmed multiwindow history, so do not wait for two
+additional evaluations. Healthy EWMA baselines
 need twelve observations and minimum activity; suspicious data does not train
 them. Relative 3x/10x anomalies also require $0.05/$0.50 per-hour estimated use,
 including SQL fingerprints. SQL diagnostics require two windows even for absolute
@@ -104,9 +122,9 @@ SQL fingerprints are optional diagnostics, not extra billable consumption:
 
 - At most 48 diagnostic points, leaving 16 point slots and 8 KiB for later
   business/probe/billing additions within the 192-point/48-KiB frame limit.
-- At most 96 diagnostic states and 24 diagnostic notices within overall limits
-  of 256 metrics and 64 notices. Old fingerprint-heavy states are compacted;
-  core observations and notices take priority.
+- At most 96 diagnostic states within the overall limit of 256 metrics.
+  Diagnostic states do not enter the 64-notice customer queue. Old
+  fingerprint-heavy states are compacted; core observations take priority.
 - Limited/failed SQL breakdowns appear in `Frame.diagnostics`, not as failed core
   collection. Missing fingerprints in incomplete breakdowns cannot prove recovery.
 
@@ -144,12 +162,17 @@ to detection latency.
 
 Authenticated `GET /health` version 2 separates `heartbeatHealthy`,
 `collectionHealthy` and `deliveryHealthy`, with last attempted/completed ticks,
-billing attempt/success and sanitized incident metadata. Recipient receipts with
-addresses are omitted. Legacy `healthy` remains the combined status.
+billing attempt/success and sanitized incident metadata. `internalDiagnostics`
+counts active internal anomalies and includes at most 16 key/severity/lastSeen
+records. Recipient receipts with addresses are omitted. Legacy `healthy` remains
+the combined status.
 `POST /run` performs a real collection and can send due mail; it is not read-only.
 
-The GitHub Actions watchdog checks hourly. It alerts only for a missing/stale
-heartbeat or explicit delivery failure; the Worker owns upstream collection gaps.
+The GitHub Actions watchdog checks hourly. Missing/stale heartbeat or explicit
+delivery failure fails the workflow. Optional `MONITOR_OPS_RECIPIENTS` routes
+these faults to a separate operations mailbox; it never falls back to customer
+`ALERT_RECIPIENTS`. Without ops recipients there is no email, and sending
+credentials are not required. Upstream collection gaps remain in Worker health.
 For legacy responses it uses `lastAttempt`, falling back to `lastSuccess` only
 when the former field is absent.
 
@@ -174,7 +197,9 @@ and Email Sending Edit for the external watchdog. Native Worker mail uses the
 `EMAIL` binding and an already-onboarded sender domain.
 
 GitHub uses `CF_MONITOR_API_TOKEN`, `COST_MONITOR_ADMIN_TOKEN` and
-`COST_MONITOR_RECIPIENTS` secrets plus the `COST_MONITOR_URL` variable. The workflow
+`COST_MONITOR_RECIPIENTS` secrets plus the `COST_MONITOR_URL` variable. Optional
+`COST_MONITOR_OPS_RECIPIENTS` is an independent JSON address list for the watchdog;
+absent, blank or `[]` disables only its email path, not health checks. The workflow
 provides `WATCHDOG_STATE_FILE`. Production requires successful main CI and source
 SHA checks. Deploy the Tail consumer before its API producer. Production has no
 synthetic routes or captured-mail mode.
@@ -187,13 +212,14 @@ Run `pnpm --filter @ghfind/cost-monitor typecheck`,
 `node scripts/cost-monitor-e2e.mjs`.
 
 E2E uses isolated real workerd/SQLite with captured mail. It checks hourly batching,
-urgent bypass, partial-recipient retries, twelve-hour collection reminders,
-recovery, storage limits, TTL cleanup and scheduled gaps. No live recipient is
+urgent bypass, partial-recipient retries, silent long-running collection gaps,
+legacy-outbox cleanup, recovery, storage limits, TTL cleanup and scheduled gaps. No live recipient is
 used locally. A remote `COST_MONITOR_URL` changes the suite into an explicit
 rehearsal that can send mail: only use an isolated E2E Worker with approved private
 recipients, never production. Evidence belongs in private git-ignored files.
 
 Design references: [Alertmanager grouping and inhibition](https://prometheus.io/docs/alerting/latest/alertmanager/),
+[Google SRE symptom-based human alerts](https://sre.google/sre-book/monitoring-distributed-systems/),
 [Google SRE multiwindow alerting](https://sre.google/workbook/alerting-on-slos/),
 [Cloudflare Workers metrics](https://developers.cloudflare.com/workers/observability/metrics-and-analytics/),
 [D1 metric definitions](https://developers.cloudflare.com/d1/observability/metrics-analytics/).
