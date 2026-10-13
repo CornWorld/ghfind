@@ -227,6 +227,7 @@ interface RestReadme {
 interface RestUser {
   login: string;
   id: number;
+  node_id?: string;
   html_url: string;
   avatar_url: string | null;
   name: string | null;
@@ -2178,8 +2179,10 @@ function lowQualityImpactCap(input: {
   }
 
   const dominance = (input.docLikeCount - input.coreCount) / input.verifiedCount;
+  // Small samples are allowed (see representativeSample) but only reach full
+  // confidence at 20 verified PRs.
   const confidence = Math.sqrt(
-    logRatio(input.verifiedCount, 10) *
+    logRatio(input.verifiedCount, 20) *
       logRatio(Math.max(input.impactPrCount, input.verifiedCount), 10),
   );
   const severity = Math.max(0, Math.min(1, dominance * confidence));
@@ -2213,7 +2216,7 @@ export function computeImpactQualitySignals(
     repoCounts.set(repo, (repoCounts.get(repo) ?? 0) + 1);
   }
   const representativeSample =
-    verifiedImpactPrs.length >= 10 &&
+    verifiedImpactPrs.length >= 5 &&
     repoCounts.size >= 3 &&
     Math.max(0, ...repoCounts.values()) <= verifiedImpactPrs.length / 2 &&
     verifiedImpactPrs.length >= impactPrCount / 2;
@@ -2249,6 +2252,13 @@ export interface ContribRepoAgg {
   commits: number;
   prs: number;
   active_years: number;
+  /** Estimated share of `commits` that are merge commits (more than one
+   * parent). Merging other people's PRs is bookkeeping, not authored work.
+   * Absent when the repo signal query was unavailable. */
+  merge_commits?: number;
+  /** GitHub topics, used to recognise resource collections (awesome lists,
+   * courses, notes). Absent when the repo signal query was unavailable. */
+  topics?: string[];
 }
 
 export interface OrgRepoAttribution {
@@ -2277,14 +2287,30 @@ function isLowSignalEntryRepo(nameWithOwner: string | null | undefined): boolean
   return LOW_SIGNAL_ENTRY_REPOS.has((nameWithOwner ?? "").trim().toLowerCase());
 }
 
-function isDocLikeRepo(nameWithOwner: string | null | undefined): boolean {
+// Project websites: "<x>-site", "<x>-website", "<x>-homepage", or a name that
+// simply ends in "website". A bare trailing "site" needs a separator so code
+// such as "composite" or "parasite" is not swept up. Domain-style names only
+// count for GitHub Pages: "socket.io" or "foo.org" are real projects.
+const SITE_REPO_NAME = /(^|[-_.])(site|homepage)$|website$/;
+
+export function isDocLikeRepo(nameWithOwner: string | null | undefined): boolean {
   if (isLowSignalEntryRepo(nameWithOwner)) return true;
   const name = repoName(nameWithOwner);
   return (
     /(^|[-_.])(docs?|site|website|blog|examples?|templates?|profile|notebook|learning|tutorial|interview|guide|manual)([-_.]|$)/.test(
       name,
-    ) || name.endsWith(".github.io")
+    ) ||
+    SITE_REPO_NAME.test(name) ||
+    name.endsWith(".github.io")
   );
+}
+
+const RESOURCE_REPO_TOPIC = /^(awesome|awesome-lists?|courses?|tutorials?|notes|docs|documentation)$/i;
+
+/** Docs/site repos by name, plus resource collections (awesome lists,
+ * courses, tutorials, notes) by GitHub topic. */
+export function isDocOrResourceRepo(repo: Pick<ContribRepoAgg, "repo" | "topics">): boolean {
+  return isDocLikeRepo(repo.repo) || (repo.topics ?? []).some((t) => RESOURCE_REPO_TOPIC.test(t));
 }
 
 function hasStrongLongTermOrgContribution(repo: ContribRepoAgg): boolean {
@@ -2392,6 +2418,33 @@ export function prestigeWorkMultiplier(commits: number, prs: number): number {
   return Math.log10(1 + workSignal * 9) / Math.log10(10);
 }
 
+/** Popularity + landed-work gates shared by impact scoring and the repo
+ * signal query (which must see every repo that could be scored). */
+function passesImpactRepoGates(r: ContribRepoAgg, loginLower: string): boolean {
+  if (r.is_private || r.is_fork) return false;
+  // A single merged entry can appear as both one PR and one contribution-graph
+  // commit. Do not let that personal registry/directory entry borrow the
+  // repository's star count, while preserving credit for actual maintainers.
+  if (isLowSignalEntryRepo(r.repo) && r.commits <= 1 && r.prs <= 1) return false;
+  const isExternal = r.owner_login.toLowerCase() !== loginLower;
+  const threshold = isExternal ? 200 : 1000;
+  if (r.stars < threshold) return false;
+  return r.commits >= defaultBranchCommitMin(r.repo) || r.prs >= 1;
+}
+
+/** Doc/resource repos below this many stars earn no ecosystem impact. */
+const DOC_RESOURCE_IMPACT_MIN_STARS = 5000;
+/** Popular doc/resource repos count at this weight. */
+const DOC_RESOURCE_IMPACT_WEIGHT = 0.5;
+/** The user's own repos already earn their stars in Original Project Quality;
+ * in ecosystem impact they add depth at this weight and never prestige. */
+const OWN_REPO_IMPACT_DEPTH_WEIGHT = 0.3;
+
+/** Commits that represent authored work: merge commits are excluded. */
+export function authoredCommits(r: Pick<ContribRepoAgg, "commits" | "merge_commits">): number {
+  return Math.max(0, r.commits - Math.max(0, r.merge_commits ?? 0));
+}
+
 /**
  * Compute Ecosystem & Maintainer Impact from all-time per-repo contribution
  * aggregates (commits + PRs), instead of the recent-PR window. A repo qualifies
@@ -2402,30 +2455,40 @@ export function prestigeWorkMultiplier(commits: number, prs: number): number {
  * a narrower repo-specific commit minimum. Private and fork repos are excluded
  * (a fork's star count is borrowed; pushing to it isn't impact).
  *
+ * Docs/site/resource repos (see {@link isDocOrResourceRepo}) need
+ * {@link DOC_RESOURCE_IMPACT_MIN_STARS} and then count at half weight. Own
+ * repos add damped depth only. Merge commits never count as work.
+ *
+ * TODO(content-repos): also treat a repo as content when its file tree is
+ * ≥70% md/pdf/png/mp3/html with fewer than 15 code files (e.g. prompt/skill
+ * collections without telling names or topics). The collector has no file
+ * listing for contribution repos today, and a recursive tree per impact repo
+ * is too expensive (multi-MB, truncated for monorepos) to add to every scan.
+ *
  * Pure so it can be unit-tested without network access.
  */
 export function computeImpactFromContribMap(
   repos: ContribRepoAgg[],
   loginLower: string,
 ): ImpactMetrics {
-  const qualifying = repos.filter((r) => {
-    if (r.is_private || r.is_fork) return false;
-    // A single merged entry can appear as both one PR and one contribution-graph
-    // commit. Do not let that personal registry/directory entry borrow the
-    // repository's star count, while preserving credit for actual maintainers.
-    if (isLowSignalEntryRepo(r.repo) && r.commits <= 1 && r.prs <= 1) return false;
-    const isExternal = r.owner_login.toLowerCase() !== loginLower;
-    const threshold = isExternal ? 200 : 1000;
-    if (r.stars < threshold) return false;
-    return r.commits >= defaultBranchCommitMin(r.repo) || r.prs >= 1;
-  });
+  const qualifying = repos.filter(
+    (r) =>
+      passesImpactRepoGates(r, loginLower) &&
+      (r.stars >= DOC_RESOURCE_IMPACT_MIN_STARS || !isDocOrResourceRepo(r)),
+  );
 
   const maxImpactRepoStars = qualifying.reduce((a, r) => Math.max(a, r.stars), 0);
+  const isOwn = (r: ContribRepoAgg) => r.owner_login.toLowerCase() === loginLower;
+  const docWeight = (r: ContribRepoAgg) =>
+    isDocOrResourceRepo(r) ? DOC_RESOURCE_IMPACT_WEIGHT : 1;
   const impactPrestigeScore =
     Math.round(
       qualifying.reduce((a, r) => {
+        if (isOwn(r)) return a;
         const repoPrestige =
-          logRatio(r.stars, 100_000) * prestigeWorkMultiplier(r.commits, r.prs);
+          logRatio(r.stars, 100_000) *
+          prestigeWorkMultiplier(authoredCommits(r), r.prs) *
+          docWeight(r);
         return Math.max(a, repoPrestige);
       }, 0) * 10_000,
     ) / 10_000;
@@ -2435,8 +2498,10 @@ export function computeImpactFromContribMap(
         // Weight a repo by how much work landed there, so "17 PRs + many
         // commits" beats a single PR (the per-repo aggregate would otherwise
         // flatten that signal). Bounded so one mega-repo can't dominate.
-        const weight = Math.min(1 + Math.log10(r.commits + r.prs), 2.5);
-        return a + logRatio(r.stars, 5000) * weight;
+        const work = authoredCommits(r) + r.prs;
+        const weight = work > 0 ? Math.min(1 + Math.log10(work), 2.5) : 0;
+        const ownWeight = isOwn(r) ? OWN_REPO_IMPACT_DEPTH_WEIGHT : 1;
+        return a + logRatio(r.stars, 5000) * weight * docWeight(r) * ownWeight;
       }, 0) * 100,
     ) / 100;
 
@@ -2714,6 +2779,107 @@ export function mergeContribRepoAggs(groups: ContribRepoAgg[][]): ContribRepoAgg
     }
   }
   return [...map.values()];
+}
+
+/** Repos (by stars) whose topics and merge-commit share are fetched per scan. */
+const IMPACT_SIGNAL_REPO_CAP = 20;
+/** Most recent commits by the user sampled per repo to estimate merge share. */
+const MERGE_COMMIT_SAMPLE = 100;
+
+export interface ImpactRepoSignal {
+  topics: string[];
+  sampled_commits: number;
+  merge_commits: number;
+}
+
+/** Attach topics and an estimated merge-commit count to each repo with a
+ * signal: the sampled merge share is applied to the contribution-graph total. */
+export function applyImpactRepoSignals(
+  repos: ContribRepoAgg[],
+  signals: Map<string, ImpactRepoSignal>,
+): ContribRepoAgg[] {
+  return repos.map((r) => {
+    const signal = signals.get(r.repo.toLowerCase());
+    if (!signal) return r;
+    const share = signal.sampled_commits > 0 ? signal.merge_commits / signal.sampled_commits : 0;
+    return { ...r, topics: signal.topics, merge_commits: Math.round(r.commits * share) };
+  });
+}
+
+interface ImpactRepoSignalNode {
+  repositoryTopics: { nodes: ({ topic: { name: string } | null } | null)[] | null } | null;
+  defaultBranchRef: {
+    target: {
+      history?: { nodes: ({ parents: { totalCount: number } | null } | null)[] | null } | null;
+    } | null;
+  } | null;
+}
+
+/**
+ * One aliased GraphQL request for the repos that can earn ecosystem impact:
+ * topics plus the user's latest {@link MERGE_COMMIT_SAMPLE} default-branch
+ * commits with parent counts. Best-effort: without signals, impact falls back
+ * to name-only doc detection and counts every commit as work.
+ */
+export async function fetchImpactRepoSignals(
+  repos: ContribRepoAgg[],
+  loginLower: string,
+  authorNodeId: string | undefined,
+): Promise<Map<string, ImpactRepoSignal>> {
+  const signals = new Map<string, ImpactRepoSignal>();
+  const candidates = repos
+    .filter((r) => passesImpactRepoGates(r, loginLower) && r.repo.includes("/"))
+    // Code-unit tie-break so Go (byte order) selects the same repos.
+    .sort((a, b) => b.stars - a.stars || (a.repo < b.repo ? -1 : a.repo > b.repo ? 1 : 0))
+    .slice(0, IMPACT_SIGNAL_REPO_CAP);
+  if (!authorNodeId || candidates.length === 0) return signals;
+
+  const varDecls = candidates.map((_, i) => `$o${i}: String!, $n${i}: String!`).join(", ");
+  const aliases = candidates
+    .map((_, i) => `r${i}: repository(owner: $o${i}, name: $n${i}) { ...ImpactRepoSignals }`)
+    .join("\n        ");
+  const query = `query($author: ID!, ${varDecls}) {
+        ${aliases}
+      }
+      fragment ImpactRepoSignals on Repository {
+        repositoryTopics(first: 20) { nodes { topic { name } } }
+        defaultBranchRef {
+          target {
+            ... on Commit {
+              history(first: ${MERGE_COMMIT_SAMPLE}, author: { id: $author }) {
+                nodes { parents(first: 2) { totalCount } }
+              }
+            }
+          }
+        }
+      }`;
+  const variables: Record<string, unknown> = { author: authorNodeId };
+  candidates.forEach((r, i) => {
+    const [owner, ...name] = r.repo.split("/");
+    variables[`o${i}`] = owner;
+    variables[`n${i}`] = name.join("/");
+  });
+
+  let data: Record<string, ImpactRepoSignalNode | null>;
+  try {
+    data = await graphql<Record<string, ImpactRepoSignalNode | null>>(query, variables);
+  } catch (error) {
+    if (error instanceof GitHubRateLimitError) throw error;
+    return signals;
+  }
+  candidates.forEach((r, i) => {
+    const node = data[`r${i}`];
+    if (!node) return;
+    const commits = node.defaultBranchRef?.target?.history?.nodes ?? [];
+    signals.set(r.repo.toLowerCase(), {
+      topics: (node.repositoryTopics?.nodes ?? [])
+        .map((n) => n?.topic?.name)
+        .filter((t): t is string => typeof t === "string"),
+      sampled_commits: commits.length,
+      merge_commits: commits.filter((c) => (c?.parents?.totalCount ?? 0) > 1).length,
+    });
+  });
+  return signals;
 }
 
 /** Stars at which a repo is popular enough for the engagement gate to apply. */
@@ -3117,11 +3283,15 @@ export async function collect(username: string): Promise<{
     prs: 1,
     active_years: 0,
   }));
-  const contribRepos = mergeContribRepoAggs([
+  const mergedContribRepos = mergeContribRepoAggs([
     commitContribRepos ?? [],
     mergedPrContribRepos,
     workflowLandedContribRepos,
   ]);
+  const contribRepos = applyImpactRepoSignals(
+    mergedContribRepos,
+    await fetchImpactRepoSignals(mergedContribRepos, loginLower, user.node_id),
+  );
   const organizations = await fetchOrganizations(login);
   const totalPrCount = overview.allPRs?.totalCount ?? 0;
   const closedPrBreakdown = computeClosedPrBreakdown(

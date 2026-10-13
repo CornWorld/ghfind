@@ -145,6 +145,130 @@ fragment RepoContribs on ContributionsCollection {
 	return pages, nil
 }
 
+const (
+	// impactSignalRepoCap bounds the repos (by stars) whose topics and merge
+	// share are fetched; mergeCommitSample is the per-repo commit sample.
+	impactSignalRepoCap = 20
+	mergeCommitSample   = 100
+)
+
+type ImpactRepoSignal struct {
+	Topics         []string
+	SampledCommits float64
+	MergeCommits   float64
+}
+
+// ApplyImpactRepoSignals mirrors applyImpactRepoSignals in src/lib/github.ts:
+// the sampled merge share is applied to the contribution-graph total.
+func ApplyImpactRepoSignals(repos []ContribRepoAgg, signals map[string]ImpactRepoSignal) []ContribRepoAgg {
+	result := make([]ContribRepoAgg, 0, len(repos))
+	for _, repo := range repos {
+		if signal, ok := signals[strings.ToLower(repo.Repo)]; ok {
+			share := 0.0
+			if signal.SampledCommits > 0 {
+				share = signal.MergeCommits / signal.SampledCommits
+			}
+			repo.Topics = signal.Topics
+			repo.MergeCommits = roundJS(repo.Commits * share)
+		}
+		result = append(result, repo)
+	}
+	return result
+}
+
+// fetchImpactRepoSignals mirrors the Node collector: one aliased GraphQL
+// request with topics and the user's latest default-branch commits (with
+// parent counts) for repos that can earn ecosystem impact. Best-effort: only a
+// rate limit fails the scan; other errors leave impact on name-only rules.
+func (c *GitHubClient) fetchImpactRepoSignals(ctx context.Context, repos []ContribRepoAgg, loginLower, authorNodeID string) (map[string]ImpactRepoSignal, error) {
+	signals := map[string]ImpactRepoSignal{}
+	candidates := []ContribRepoAgg{}
+	for _, repo := range repos {
+		if passesImpactRepoGates(repo, loginLower) && strings.Contains(repo.Repo, "/") {
+			candidates = append(candidates, repo)
+		}
+	}
+	sort.SliceStable(candidates, func(i, j int) bool {
+		if candidates[i].Stars != candidates[j].Stars {
+			return candidates[i].Stars > candidates[j].Stars
+		}
+		return candidates[i].Repo < candidates[j].Repo
+	})
+	if len(candidates) > impactSignalRepoCap {
+		candidates = candidates[:impactSignalRepoCap]
+	}
+	if authorNodeID == "" || len(candidates) == 0 {
+		return signals, nil
+	}
+	declarations := []string{"$author: ID!"}
+	aliases := []string{}
+	variables := map[string]any{"author": authorNodeID}
+	for index, repo := range candidates {
+		owner, name, _ := strings.Cut(repo.Repo, "/")
+		declarations = append(declarations, fmt.Sprintf("$o%d: String!, $n%d: String!", index, index))
+		aliases = append(aliases, fmt.Sprintf("r%d: repository(owner: $o%d, name: $n%d) { ...ImpactRepoSignals }", index, index, index))
+		variables[fmt.Sprintf("o%d", index)] = owner
+		variables[fmt.Sprintf("n%d", index)] = name
+	}
+	query := "query(" + strings.Join(declarations, ", ") + ") { " + strings.Join(aliases, " ") + ` }
+fragment ImpactRepoSignals on Repository {
+  repositoryTopics(first: 20) { nodes { topic { name } } }
+  defaultBranchRef { target { ... on Commit {
+    history(first: ` + fmt.Sprint(mergeCommitSample) + `, author: { id: $author }) { nodes { parents(first: 2) { totalCount } } }
+  } } }
+}`
+	var result map[string]*struct {
+		RepositoryTopics *struct {
+			Nodes []*struct {
+				Topic *struct {
+					Name string `json:"name"`
+				} `json:"topic"`
+			} `json:"nodes"`
+		} `json:"repositoryTopics"`
+		DefaultBranchRef *struct {
+			Target *struct {
+				History *struct {
+					Nodes []*struct {
+						Parents *struct {
+							TotalCount float64 `json:"totalCount"`
+						} `json:"parents"`
+					} `json:"nodes"`
+				} `json:"history"`
+			} `json:"target"`
+		} `json:"defaultBranchRef"`
+	}
+	if err := c.graphql(ctx, query, variables, &result); err != nil {
+		if errors.Is(err, ErrGitHubRateLimited) {
+			return nil, err
+		}
+		return signals, nil
+	}
+	for index, repo := range candidates {
+		node := result[fmt.Sprintf("r%d", index)]
+		if node == nil {
+			continue
+		}
+		signal := ImpactRepoSignal{Topics: []string{}}
+		if node.RepositoryTopics != nil {
+			for _, topic := range node.RepositoryTopics.Nodes {
+				if topic != nil && topic.Topic != nil {
+					signal.Topics = append(signal.Topics, topic.Topic.Name)
+				}
+			}
+		}
+		if node.DefaultBranchRef != nil && node.DefaultBranchRef.Target != nil && node.DefaultBranchRef.Target.History != nil {
+			for _, commit := range node.DefaultBranchRef.Target.History.Nodes {
+				signal.SampledCommits++
+				if commit != nil && commit.Parents != nil && commit.Parents.TotalCount > 1 {
+					signal.MergeCommits++
+				}
+			}
+		}
+		signals[strings.ToLower(repo.Repo)] = signal
+	}
+	return signals, nil
+}
+
 func (c *GitHubClient) fetchMergedPRContribRepos(ctx context.Context, username string, maxPRs int) ([]ContribRepoAgg, error) {
 	byRepo := map[string]ContribRepoAgg{}
 	yearsByRepo := map[string]map[int]bool{}

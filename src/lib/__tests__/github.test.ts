@@ -5,6 +5,7 @@ import {
   boundedContributionYearsActive,
   collect,
   fetchDurablePullRequestPage,
+  fetchImpactRepoSignals,
   firstCommitHistoryAfter,
   ghFetch,
   githubTokens,
@@ -1216,6 +1217,74 @@ ${"Useful project detail. ".repeat(50)}
 
     expect(result.organizations).toEqual([]);
     expect(result.metrics.username).toBe("alice");
+  });
+});
+
+describe("fetchImpactRepoSignals", () => {
+  beforeEach(() => {
+    process.env.GITHUB_TOKEN = "test-token";
+  });
+
+  afterEach(() => {
+    if (originalToken === undefined) delete process.env.GITHUB_TOKEN;
+    else process.env.GITHUB_TOKEN = originalToken;
+    vi.unstubAllGlobals();
+  });
+
+  const agg = (repo: string, stars: number, commits: number) => ({
+    repo,
+    stars,
+    is_private: false,
+    is_fork: false,
+    owner_login: repo.split("/")[0],
+    commits,
+    prs: 0,
+    active_years: 1,
+  });
+  const repos = [agg("org/engine", 9000, 40), agg("org/tiny", 50, 40), agg("me/own", 500, 40)];
+
+  it("queries only impact-eligible repos and counts multi-parent commits", async () => {
+    const fetchMock = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body)) as { query: string; variables: Record<string, string> };
+      expect(body.query).toContain("history(first: 100, author: { id: $author })");
+      expect(body.variables).toEqual({ author: "U_me", o0: "org", n0: "engine" });
+      return jsonResponse({
+        data: {
+          r0: {
+            repositoryTopics: { nodes: [{ topic: { name: "awesome" } }] },
+            defaultBranchRef: {
+              target: {
+                history: {
+                  nodes: [
+                    { parents: { totalCount: 2 } },
+                    { parents: { totalCount: 1 } },
+                    { parents: { totalCount: 1 } },
+                    { parents: { totalCount: 1 } },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const signals = await fetchImpactRepoSignals(repos, "me", "U_me");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(signals.get("org/engine")).toEqual({
+      topics: ["awesome"],
+      sampled_commits: 4,
+      merge_commits: 1,
+    });
+  });
+
+  it("degrades to no signals on query errors but surfaces rate limits", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({ errors: [{ message: "timeout" }] })));
+    expect((await fetchImpactRepoSignals(repos, "me", "U_me")).size).toBe(0);
+
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({ message: "rate limited" }, 429)));
+    await expect(fetchImpactRepoSignals(repos, "me", "U_me")).rejects.toThrow();
   });
 });
 

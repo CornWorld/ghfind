@@ -76,6 +76,11 @@ func (c *GitHubCollector) Collect(ctx context.Context, username string) (ScanRes
 		workflowContribs = append(workflowContribs, ContribRepoAgg{Repo: workflow.Repo, Stars: workflow.Stars, OwnerLogin: workflow.OwnerLogin, PRs: 1})
 	}
 	contributions := MergeContribRepoAggs(commitContribs, mergedContribs, workflowContribs)
+	signals, err := c.github.fetchImpactRepoSignals(ctx, contributions, loginLower, user.NodeID)
+	if err != nil {
+		return ScanResult{}, err
+	}
+	contributions = ApplyImpactRepoSignals(contributions, signals)
 	organizations, err := c.github.fetchOrganizations(ctx, login)
 	if err != nil {
 		return ScanResult{}, err

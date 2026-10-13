@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyImpactRepoSignals,
+  authoredCommits,
   bestOriginalRepoQuality,
   computeClosedPrBreakdown,
   computeFloodSignals,
@@ -9,6 +11,8 @@ import {
   prestigeWorkMultiplier,
   isWorkflowLandedPr,
   isDocLikeImpactPr,
+  isDocLikeRepo,
+  isDocOrResourceRepo,
   isEcosystemImpactPr,
   isExternalTrivialFarmPr,
   originalRepoQualityScore,
@@ -1163,6 +1167,98 @@ describe("computeImpactFromContribMap (all-time PR + commit impact)", () => {
     const m = computeImpactFromContribMap([agg({ repo: "someone/tiny", owner_login: "someone", stars: 100, commits: 50 })], me);
     expect(m.impact_repo_count).toBe(0);
   });
+
+  it("does not count merge commits as work in prestige or depth", () => {
+    const authored = computeImpactFromContribMap([agg({ commits: 6, prs: 0 })], me);
+    const withMerges = computeImpactFromContribMap(
+      [agg({ commits: 30, merge_commits: 24, prs: 0 })],
+      me,
+    );
+    expect(authoredCommits({ commits: 30, merge_commits: 24 })).toBe(6);
+    expect(withMerges.impact_prestige_score).toBe(authored.impact_prestige_score);
+    expect(withMerges.impact_depth_raw).toBe(authored.impact_depth_raw);
+    expect(withMerges.impact_prestige_score).toBeLessThan(
+      computeImpactFromContribMap([agg({ commits: 30, prs: 0 })], me).impact_prestige_score,
+    );
+
+    const mergesOnly = computeImpactFromContribMap([agg({ commits: 12, merge_commits: 12 })], me);
+    expect(mergesOnly.impact_prestige_score).toBe(0);
+    expect(mergesOnly.impact_depth_raw).toBe(0);
+  });
+
+  it("excludes doc/resource repos under 5k★ and halves popular ones", () => {
+    const code = agg({ repo: "org/engine", owner_login: "org", stars: 8000, commits: 40, prs: 10 });
+    const small = computeImpactFromContribMap(
+      [
+        agg({ repo: "org/engine-website", owner_login: "org", stars: 4999, commits: 40, prs: 10 }),
+        agg({ repo: "org/list", owner_login: "org", stars: 3000, commits: 40, topics: ["awesome"] }),
+      ],
+      me,
+    );
+    expect(small.impact_repo_count).toBe(0);
+    expect(small.impact_depth_raw).toBe(0);
+
+    const full = computeImpactFromContribMap([code], me);
+    const half = computeImpactFromContribMap([{ ...code, topics: ["course"] }], me);
+    expect(half.impact_repo_count).toBe(1);
+    expect(half.impact_prestige_score).toBeCloseTo(full.impact_prestige_score / 2, 3);
+    expect(half.impact_depth_raw).toBeCloseTo(full.impact_depth_raw / 2, 1);
+  });
+
+  it("gives own repos damped depth and no prestige", () => {
+    const own = agg({ repo: "contributor/tool", owner_login: "contributor", stars: 30000, commits: 200 });
+    const external = agg({ repo: "org/tool", owner_login: "org", stars: 30000, commits: 200 });
+    const ownOnly = computeImpactFromContribMap([own], me);
+    expect(ownOnly.impact_repo_count).toBe(1);
+    expect(ownOnly.impact_prestige_score).toBe(0);
+    expect(ownOnly.impact_depth_raw).toBeCloseTo(
+      computeImpactFromContribMap([external], me).impact_depth_raw * 0.3,
+      1,
+    );
+  });
+
+  it("estimates merge commits from the sampled share and attaches topics", () => {
+    const [enriched, untouched] = applyImpactRepoSignals(
+      [agg({ repo: "Org/Engine", commits: 50 }), agg({ repo: "org/other", commits: 9 })],
+      new Map([["org/engine", { topics: ["notes"], sampled_commits: 100, merge_commits: 30 }]]),
+    );
+    expect(enriched.merge_commits).toBe(15);
+    expect(enriched.topics).toEqual(["notes"]);
+    expect(untouched.merge_commits).toBeUndefined();
+  });
+});
+
+describe("doc/resource repo detection", () => {
+  it("does not treat .io/.org project names as doc sites", () => {
+    expect(isDocLikeRepo("socketio/socket.io")).toBe(false);
+    expect(isDocLikeRepo("socket.io")).toBe(false);
+    expect(isDocLikeRepo("foo/bar.org")).toBe(false);
+  });
+
+  it("matches GitHub Pages and site/website/homepage names", () => {
+    for (const repo of [
+      "someone/someone.github.io",
+      "bytedance/deerflow-website",
+      "org/project-site",
+      "org/project-homepage",
+      "org/website",
+      "org/site",
+      "org/mywebsite",
+    ]) {
+      expect(isDocLikeRepo(repo), repo).toBe(true);
+    }
+    for (const repo of ["org/composite", "org/parasite", "org/homepage-builder-sdk"]) {
+      expect(isDocLikeRepo(repo), repo).toBe(false);
+    }
+  });
+
+  it("matches resource collections by topic", () => {
+    for (const topic of ["awesome", "course", "tutorial", "notes", "docs", "Awesome-List"]) {
+      expect(isDocOrResourceRepo({ repo: "org/engine", topics: [topic] }), topic).toBe(true);
+    }
+    expect(isDocOrResourceRepo({ repo: "org/engine", topics: ["llm", "inference"] })).toBe(false);
+    expect(isDocOrResourceRepo({ repo: "org/engine" })).toBe(false);
+  });
 });
 
 describe("impact quality caps", () => {
@@ -1232,7 +1328,7 @@ describe("impact quality caps", () => {
     expect(s.sub_scores.ecosystem_impact).toBeGreaterThan(4);
   });
 
-  it("does not cap ecosystem impact from only five classified PRs", () => {
+  it("caps from five classified PRs, with less confidence than a larger sample", () => {
     const recentPrs = [
       pr({
         title: "fix(frontend): avoid stale chat route state",
@@ -1271,7 +1367,22 @@ describe("impact quality caps", () => {
     const signals = computeImpactQualitySignals(recentPrs, 5, "docsheavyuser");
     expect(signals.core_impact_pr_count).toBe(1);
     expect(signals.doc_like_impact_pr_count).toBe(4);
-    expect(signals.impact_quality_cap).toBeUndefined();
+    expect(signals.impact_quality_cap).toBe(5.7);
+
+    // Same doc/core mix, four times the evidence: confidence saturates at 20.
+    const larger = computeImpactQualitySignals(
+      [0, 1, 2, 3].flatMap((i) =>
+        recentPrs.map((p) => ({ ...p, repo: `${p.repo}-${i}` })),
+      ),
+      20,
+      "docsheavyuser",
+    );
+    expect(larger.impact_quality_cap).toBeLessThan(signals.impact_quality_cap!);
+
+    // Four PRs remain too few to extrapolate from.
+    expect(
+      computeImpactQualitySignals(recentPrs.slice(1), 4, "docsheavyuser").impact_quality_cap,
+    ).toBeUndefined();
   });
 
   it("does not cap old high-star code PRs just because they are outside the recent 50", () => {
