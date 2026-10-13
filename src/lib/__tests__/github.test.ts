@@ -4,7 +4,10 @@ import { score } from "../score";
 import {
   boundedContributionYearsActive,
   collect,
+  collectImpactCodeSamples,
   fetchDurablePullRequestPage,
+  fetchExternalMergedPrs,
+  fetchImpactRepoSignals,
   firstCommitHistoryAfter,
   ghFetch,
   githubTokens,
@@ -1219,6 +1222,98 @@ ${"Useful project detail. ".repeat(50)}
   });
 });
 
+describe("fetchImpactRepoSignals", () => {
+  beforeEach(() => {
+    process.env.GITHUB_TOKEN = "test-token";
+  });
+
+  afterEach(() => {
+    if (originalToken === undefined) delete process.env.GITHUB_TOKEN;
+    else process.env.GITHUB_TOKEN = originalToken;
+    vi.unstubAllGlobals();
+  });
+
+  const agg = (repo: string, stars: number, commits: number) => ({
+    repo,
+    stars,
+    is_private: false,
+    is_fork: false,
+    owner_login: repo.split("/")[0],
+    commits,
+    prs: 0,
+    active_years: 1,
+  });
+  const repos = [agg("org/engine", 9000, 40), agg("org/tiny", 50, 40), agg("me/own", 500, 40)];
+
+  it("queries only impact-eligible repos and counts multi-parent commits", async () => {
+    const fetchMock = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body)) as { query: string; variables: Record<string, string> };
+      expect(body.query).toContain("history(first: 100, author: { id: $author })");
+      expect(body.variables).toEqual({ author: "U_me", o0: "org", n0: "engine" });
+      return jsonResponse({
+        data: {
+          r0: {
+            repositoryTopics: { nodes: [{ topic: { name: "awesome" } }] },
+            defaultBranchRef: {
+              target: {
+                history: {
+                  nodes: [
+                    { parents: { totalCount: 2 } },
+                    { parents: { totalCount: 1 } },
+                    { parents: { totalCount: 1 } },
+                    { parents: { totalCount: 1 } },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const signals = await fetchImpactRepoSignals(repos, "me", "U_me");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(signals.get("org/engine")).toEqual({
+      topics: ["awesome"],
+      sampled_commits: 4,
+      merge_commits: 1,
+    });
+  });
+
+  it("measures community engagement alongside the merge sample", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        jsonResponse({
+          data: {
+            r0: {
+              repositoryTopics: { nodes: [] },
+              stargazerCount: 9000,
+              hasIssuesEnabled: true,
+              isMirror: false,
+              watchers: { totalCount: 30 },
+              issues: { totalCount: 40 },
+              pullRequests: { totalCount: 20 },
+              defaultBranchRef: null,
+            },
+          },
+        }),
+      ),
+    );
+    const signals = await fetchImpactRepoSignals(repos, "me", "U_me");
+    expect(signals.get("org/engine")?.engagement).toBe(0.01);
+  });
+
+  it("degrades to no signals on query errors but surfaces rate limits", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({ errors: [{ message: "timeout" }] })));
+    expect((await fetchImpactRepoSignals(repos, "me", "U_me")).size).toBe(0);
+
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({ message: "rate limited" }, 429)));
+    await expect(fetchImpactRepoSignals(repos, "me", "U_me")).rejects.toThrow();
+  });
+});
+
 describe("fetchDurablePullRequestPage", () => {
   beforeEach(() => {
     process.env.GITHUB_TOKEN = "test-token";
@@ -1407,5 +1502,106 @@ describe("ghFetch rotation + failover", () => {
 
     expect(res.status).toBe(404);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("external merged PRs and per-repo code samples", () => {
+  beforeEach(() => {
+    process.env.GITHUB_TOKEN = "test-token";
+  });
+
+  afterEach(() => {
+    if (originalToken === undefined) delete process.env.GITHUB_TOKEN;
+    else process.env.GITHUB_TOKEN = originalToken;
+    vi.unstubAllGlobals();
+  });
+
+  const repoNode = (nameWithOwner: string, stargazerCount: number) => ({
+    nameWithOwner,
+    stargazerCount,
+    isPrivate: false,
+    isFork: false,
+    owner: { login: nameWithOwner.split("/")[0] },
+  });
+
+  it("searches public merged PRs outside the user's repos", async () => {
+    const fetchMock = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body)) as { variables: { q: string } };
+      expect(body.variables.q).toBe("is:pr is:merged is:public author:alice -user:alice sort:created-desc");
+      return jsonResponse({
+        data: {
+          search: {
+            issueCount: 2,
+            nodes: [
+              { id: "PR_1", mergedAt: "2026-01-02T00:00:00Z", repository: repoNode("org/engine", 900) },
+              { id: "PR_2", mergedAt: "2026-02-02T00:00:00Z", repository: repoNode("bob/tiny", 3) },
+              {},
+            ],
+            pageInfo: { hasNextPage: false, endCursor: null },
+          },
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const result = await fetchExternalMergedPrs("alice");
+    expect(result?.total).toBe(2);
+    expect(result?.nodes.map((n) => n.id)).toEqual(["PR_1", "PR_2"]);
+
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({ errors: [{ message: "boom" }] })));
+    expect(await fetchExternalMergedPrs("alice")).toBeNull();
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({ message: "rate limited" }, 429)));
+    await expect(fetchExternalMergedPrs("alice")).rejects.toThrow();
+  });
+
+  it("fetches code samples only for impact repos the recent window under-covers", async () => {
+    const agg = (repo: string, stars: number, prs: number) => ({
+      repo,
+      stars,
+      is_private: false,
+      is_fork: false,
+      owner_login: repo.split("/")[0],
+      commits: 0,
+      prs,
+      active_years: 1,
+    });
+    const codePr = (repo: string) => ({
+      title: "fix scheduler",
+      repo,
+      repo_stars: 5000,
+      churn: 40,
+      changed_files: 1,
+      trivial: false,
+      files: ["src/scheduler.ts"],
+    });
+    const fetchMock = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body)) as { query: string; variables: Record<string, string> };
+      expect(body.variables).toEqual({ q0: "repo:org/docsy is:pr is:merged author:alice sort:created-desc" });
+      return jsonResponse({
+        data: {
+          s0: {
+            nodes: [
+              {
+                title: "docs: update guide",
+                additions: 10,
+                deletions: 0,
+                changedFiles: 1,
+                repository: { nameWithOwner: "org/docsy", stargazerCount: 5000, isPrivate: false },
+                files: { nodes: [{ path: "docs/guide.md" }] },
+              },
+            ],
+          },
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const samples = await collectImpactCodeSamples(
+      [agg("org/engine", 9000, 1), agg("org/docsy", 5000, 3), agg("org/tiny", 50, 9)],
+      "alice",
+      [codePr("org/engine")],
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(samples.get("org/engine")).toEqual({ pr_sample: 1, code_pr_sample: 1 });
+    expect(samples.get("org/docsy")).toEqual({ pr_sample: 1, code_pr_sample: 0 });
+    expect(samples.has("org/tiny")).toBe(false);
   });
 });

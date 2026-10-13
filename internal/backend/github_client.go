@@ -229,6 +229,7 @@ func (c *GitHubClient) graphql(ctx context.Context, query string, variables map[
 type githubUser struct {
 	Login       string  `json:"login"`
 	ID          float64 `json:"id"`
+	NodeID      string  `json:"node_id"`
 	HTMLURL     *string `json:"html_url"`
 	AvatarURL   *string `json:"avatar_url"`
 	Name        *string `json:"name"`

@@ -48,6 +48,10 @@ func TestGitHubCollectorBuildsGoNativeScanResult(t *testing.T) {
 		_ = json.NewDecoder(request.Body).Decode(&body)
 		var data string
 		switch {
+		case strings.Contains(body.Query, "type: ISSUE, first: $count"):
+			data = `{"search":{"issueCount":3,"nodes":[{"id":"PR_9","mergedAt":"2025-05-01T00:00:00Z","repository":{"nameWithOwner":"popular/project","stargazerCount":20000,"isPrivate":false,"isFork":false,"owner":{"login":"popular"}}}],"pageInfo":{"hasNextPage":false,"endCursor":null}}}`
+		case strings.Contains(body.Query, "CodeSamplePr"):
+			data = `{"s0":{"nodes":[{"title":"fix scheduler","additions":30,"deletions":2,"changedFiles":1,"repository":{"nameWithOwner":"popular/project","stargazerCount":20000,"isPrivate":false},"files":{"nodes":[{"path":"internal/scheduler.go"}]}}]}}`
 		case strings.Contains(body.Query, "commitContributionsByRepository"):
 			data = `{"user":{"y0":{"commitContributionsByRepository":[]}}}`
 		case strings.Contains(body.Query, "organizations(first: 20)"):
@@ -85,8 +89,13 @@ func TestGitHubCollectorBuildsGoNativeScanResult(t *testing.T) {
 	if scan.Metrics.Username != "alice" || scan.Metrics.MergedPRCount != 480 || scan.Metrics.RecentMergedPRSample != 1 || scan.Metrics.DaysSinceLastActivity == nil || *scan.Metrics.DaysSinceLastActivity != 2 {
 		t.Fatalf("unexpected metrics: %#v", scan.Metrics)
 	}
-	if !scan.Metrics.MergedPRContributionAggregationIncomplete || scan.Metrics.ImpactPRCount != 1 {
+	// The window PR (no id) and the external search PR both land in
+	// popular/project; the external count drives the contribution split.
+	if !scan.Metrics.MergedPRContributionAggregationIncomplete || scan.Metrics.ImpactPRCount != 2 {
 		t.Fatalf("bounded merged-PR evidence was not preserved: %#v", scan.Metrics)
+	}
+	if valueOrZero(scan.Metrics.ExternalMergedPRCount) != 3 || valueOrZero(scan.Metrics.ExternalHighStarPRShare) != 1 || valueOrZero(scan.Metrics.WeightedTotalStars) != 40 {
+		t.Fatalf("external PR / weighted star facts missing: %#v", scan.Metrics)
 	}
 	if valueOrString(scan.Metrics.Pronouns, "") != "she/her" {
 		t.Fatal("collector dropped profile pronouns")
