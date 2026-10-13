@@ -55,7 +55,12 @@
         { "binding": "GHFIND_D1", "database_name": "ghfind", "database_id": "60d45096-bfe7-4de1-8b85-c1b66a466b0d" },
         { "binding": "GHFIND_FEED_D1", "database_name": "ghfind-feed", "database_id": "9c4ac13a-4c90-40a8-9d56-d7141f864bbf" }
       ],
-      "vars": { "GHFIND_DEPLOY_ENV": "production" }
+      "vars": {
+        "GHFIND_DEPLOY_ENV": "production",
+        // src/lib/site.ts refuses to start in production without these.
+        "PUBLIC_SITE_URL": "https://ghfind.com",
+        "NEXT_PUBLIC_SITE_URL": "https://ghfind.com"
+      }
     }
   }
 }
