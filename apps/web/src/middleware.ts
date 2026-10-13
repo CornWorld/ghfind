@@ -1,6 +1,7 @@
 import { defineMiddleware } from "astro:middleware";
 import { decideLocale, LOCALE_COOKIE, LOCALE_COOKIE_MAX_AGE, splitLocale } from "@ghfind/i18n";
 import { AGENT_LINK_HEADER } from "@/lib/agent-docs";
+import { registerRequestProvider } from "@/lib/bot-user-agent";
 import { deployEnv } from "@/lib/deploy-env";
 import { requestStore } from "./shims/request-store";
 import { notFoundToLegacy } from "./lib/not-found";
@@ -10,6 +11,9 @@ import { notFoundToLegacy } from "./lib/not-found";
  * (both call `decideLocale` from @ghfind/i18n): cookie → Accept-Language →
  * zh root, zh served unprefixed via an internal rewrite to `/zh/...`.
  */
+// Shared caching code skips KV writes on crawler renders (lib/bot-user-agent).
+registerRequestProvider(() => requestStore.getStore());
+
 export const onRequest = defineMiddleware((ctx, next) => requestStore.run(ctx.request, () => route(ctx, next)));
 
 const route: Parameters<typeof defineMiddleware>[0] = async (ctx, next) => {
