@@ -2,16 +2,27 @@
   "loginDialog": {
     "entry": "登录",
     "title": "登录 ghfind",
-    "description": "保存你的关注与简历，换设备继续使用。",
+    "description": "选择一个账号，继续使用 ghfind。",
     "close": "关闭",
     "google": "使用 Google 登录",
     "github": "使用 GitHub 登录",
-    "emailDivider": "或使用邮箱",
-    "emailLabel": "邮箱地址",
-    "emailPlaceholder": "输入邮箱地址",
-    "sendCode": "发送验证码",
-    "githubUnavailable": "此环境暂未开启 GitHub 登录。",
-    "comingSoon": "Google 和邮箱登录即将开放。"
+    "apple": "使用 Apple 登录",
+    "redirecting": "正在前往 {provider}…",
+    "loading": "正在检查登录方式…",
+    "retry": "重试",
+    "loadFailed": "无法加载登录方式，请检查网络后重试。",
+    "unavailable": "登录暂时不可用，你可以继续浏览，稍后再试。",
+    "githubFeatures": "关注、云端简历和 API 令牌目前需要使用 GitHub 账号。",
+    "providerAccount": "{provider} 账号",
+    "switchToGitHub": "改用 GitHub 登录",
+    "errors": {
+      "denied": "登录已取消，请选择账号重试。",
+      "expired": "此次登录请求已过期，请重新登录。",
+      "failed": "未能完成登录，请重试。",
+      "unavailable": "此登录方式暂时不可用，请选择其他方式或稍后重试。"
+    },
+    "signingOut": "正在退出…",
+    "signOutFailed": "未能退出登录，请检查网络后重试。"
   },
   "meta": {
     "title": "ghfind | 毒舌 GitHub 评分 · 开发者自测成长 · 发现最佳开发者",
@@ -804,6 +815,10 @@
       {
         "h": "我们存储什么",
         "p": "对于被评分的账号，我们会缓存计算出的分数、段位和派生指标，以便分享的报告快速加载、排行榜保持流畅。只有 60 分及以上的账号会被索引并公开收录；更低分的页面可通过直链访问，但不进入搜索引擎。我们使用尊重隐私的聚合分析来了解流量，且不出售个人数据。"
+      },
+      {
+        "h": "Google 登录与账号 Cookie",
+        "p": "选择 Google 登录时，我们会接收你的 Google 账号标识（subject）、姓名和头像，用于建立 ghfind 登录会话。Google 在登录过程中也可能返回邮箱地址，我们不会持久保存邮箱。经过签名的 HttpOnly 会话 Cookie 会保存基本身份信息，最长有效期为 30 天。我们不保留 Google API 访问令牌或刷新令牌，退出登录会清除会话 Cookie。Google 登录不会授予 GitHub 权限，我们也不会根据邮箱地址自动关联账号。"
       },
       {
         "h": "自带 Key 的吐槽",

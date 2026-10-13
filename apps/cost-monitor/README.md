@@ -1,99 +1,227 @@
 # Cloudflare cost monitor
 
-An independent scheduled Worker polls closed five-minute analytics windows with
-10 minutes of ingestion allowance. D1 database and normalized SQL efficiency,
-Workers CPU, R2 operations/storage, KV operations, DO SQL rows and Queue operations
-are collected account-wide. R2/KV/DO/Queue operations are also normalized by
-Worker invocation volume to distinguish normal traffic growth from amplification. Every six hours, reported daily billable usage is
-reconciled across all products, including products without fast adapters.
+An independent Worker polls closed five-minute analytics windows with ten minutes
+of ingestion allowance. A bounded SQLite Durable Object owns observations,
+incidents and per-recipient delivery receipts; business requests do not pass
+through it. Aggregation delay does not guarantee final or complete analytics.
 
-Cost velocity extrapolates the latest five-minute window to one hour, including
-R2 storage. It uses published overage rates **before included allowance**, rather
-than an invoice prediction. R2 storage uses the peak of the last hour and a
-30-day conversion. DO compute, KV/D1 storage and Containers are currently covered
-by delayed billing reconciliation, not the fast burn-rate total. Billing data and
-analytics can arrive late; a closed window is not a guarantee of final completeness.
+## Read an alert
 
-Warnings require two consecutive windows. Critical absolute efficiency or spend
-breaches alert immediately on the next available window. Relative thresholds use
-a healthy EWMA baseline after 12 observations, with a minimum sample/volume gate;
-suspicious data cannot train the baseline. Default spend thresholds are $0.50/hour
-warning, $2/hour critical and $10/reported day warning. All thresholds live in the
-Worker configuration/policy and should be reviewed against normal workloads.
+The subject names the affected feature or account cost signal. Each compact
+section starts with the observed result and possible impact, followed by one
+suggested action. Trigger and time-window evidence stays below it. HTML expands at
+most three resources and three metrics per resource, then lists up to five other
+resources and a remaining count. Plain text preserves every selected metric's
+evidence once. Both use UTC+8 and support rolling upgrades from old text notices.
+HTML supports light/dark email clients, narrow screens and keyboard focus.
 
-Notifications are batched per recipient. Fast telemetry incidents repeat every
-30 minutes while abnormal; reported daily billing is rechecked/reminded every
-six hours. Recovery requires two valid normal observations. Failed recipients remain queued;
-successful recipients are not resent on ordinary retries. Sending is limited to
-8 attempts/hour and 120/day; pending messages remain queued on exhaustion. Native
-email acceptance is not proof of delivery. Check Email Service delivery logs;
-a crash between provider acceptance and persisting its receipt can cause a duplicate.
+- **Functional/runtime incident:** an observed operation failed or crossed a
+  runtime threshold. Check the feature, recent deployment and upstream logs.
+- **Account consumption/reported-cost incident:** complete account consumption
+  windows or reported daily cost crossed a threshold. An incomplete collection
+  can still prove extreme spending when its observed lower bound alone exceeds
+  the single-window threshold. Analytics estimates are not an invoice.
 
-## Storage bounds
+Customer mail excludes collection gaps and per-resource SQL/CPU/operation
+efficiency diagnostics. These remain in authenticated health, bounded metric
+state and structured logs. Missing telemetry does not prove overspending or a
+user outage, and cannot create a customer notification or a false recovery.
+Automatic public probes are described as checks, not observed customer failures.
+Runtime error ratios use counts and percentages, for example 3 of 12 calls failed.
 
-One SQLite Durable Object coordinates this account's low-frequency monitor only;
-no business/user request passes through it. A persisted lease prevents concurrent
-polls. Each time window is one aggregated JSON row. Raw SQL, parameters, user IDs,
-request bodies and raw billing line items are not retained.
+Only fixed sanitized failure classifications leave collectors. Raw upstream
+errors, SQL, parameters, user IDs, request bodies and keys are not retained or
+included in mail. Recipient addresses remain private configuration.
 
-- Windows: 24-hour logical TTL, at most 288 rows, at most 48 KiB per row.
-- State/baselines: 7-day TTL, at most 256 metrics and 192 KiB total; inactive baselines can be evicted earlier.
-- Outbox: at most 64 aggregate notices, 7-day TTL; delivery receipts: last 12,
-  at most 24 hours. Recipient addresses are private configuration.
-- Cleanup uses indexed expiry and the window primary key at every collection;
-  an alarm also reclaims expired rows when the cron stops (daily cleanup cadence).
-- Collection has a fixed eight bounded GraphQL calls per run, plus one billing
-  call per six hours. Responses are capped at 2 MiB. Truncation, unknown billing
-  operation types and unavailable sources are explicit failures, never zero usage.
+## Notification timing
 
-## Private configuration
+| Event | First notification | Unchanged reminder |
+| --- | --- | --- |
+| Severe key-feature failure, account consumption or reported daily cost | Next evaluation, bypassing digest wait | 6 hours for fast telemetry; 24 hours for reported daily cost |
+| Other runtime failure, slow feature or account-cost warning | Next hourly digest after confirmation | 6 hours; 24 hours for reported daily cost |
+| Collection gap or resource-efficiency diagnostic | No customer email; authenticated health/logs | None |
+| Monitor stopped or email sending failed | Hourly Actions check; optional separate ops recipients | 12 hours per ops recipient |
 
-Use `wrangler secret bulk` with `CF_MONITOR_API_TOKEN`, `MONITOR_ADMIN_TOKEN` and
-`ALERT_RECIPIENTS`. The latter is a JSON list: `["owner@example.org", ""]`;
-empty placeholders are ignored and additional recipients can be appended (max 20).
-Never commit live addresses, credentials or incident evidence.
+Escalation can notify sooner. Ordinary incidents that recover before their digest
+are withdrawn. Recovery needs two valid normal observations; missing source data
+is not recovery. Key-feature checks also require actual traffic or a new probe;
+a successfully collected Worker with no invocation errors can recover. Key-feature
+and collection recovery are silent. Other
+previously delivered incidents can appear as recovered in the next digest. Stale
+open/reminder messages are removed on confirmed recovery, including partial sends.
 
-The dedicated API token is restricted to the account: Account Analytics Read,
-Billing Read, and Email Sending Edit for the external watchdog's send API. Native
-Worker sends use the EMAIL binding and an already-onboarded sender domain.
+A collection gap is one persisted diagnostic incident even if its reason changes;
+two distinct complete windows close it. Upgrades discard old collection/efficiency
+mail and delivery receipts before evaluation, so stale diagnostics cannot occupy
+customer queue capacity or be retried to remaining recipients.
 
-GitHub private configuration mirrors these as `CF_MONITOR_API_TOKEN`,
-`COST_MONITOR_ADMIN_TOKEN`, `COST_MONITOR_RECIPIENTS` secrets, and `COST_MONITOR_URL`
-variable. Production deploys only after successful main CI with exact-SHA checks.
-A GitHub scheduled watchdog checks every 30 minutes independently of the Worker;
-GitHub scheduling can be delayed, and its native-email path still depends on
-Cloudflare Email Service. A platform-wide outage needs an additional external
-mail provider to guarantee email delivery.
+Each recipient receives at most one aggregate message per evaluation. Accepted
+recipients are not resent on ordinary retries; failures remain queued. Sending is
+limited to 8 attempts/hour and 120/day. Provider acceptance is not final delivery.
+Check Email Service delivery logs. A crash after provider acceptance but before
+recording its receipt can still duplicate a message.
 
-`/health` (GET) and `/run` (POST) require the admin bearer secret. The production
-configuration has no test routes. A separate e2e environment enables fixed
-synthetic scenarios; no arbitrary SQL or real resource writes are injected.
+## Sliding windows and cost meaning
+
+Account consumption retains twelve complete five-minute buckets at most:
+
+- Critical: both the latest **5-minute** and **15-minute** hourly rates exceed
+  the critical threshold.
+- Warning: both the **15-minute** and **1-hour** rates exceed the warning threshold.
+- Extreme spend: a single five-minute bucket already consumes the critical hourly
+  amount, so it alerts immediately without waiting for longer history.
+- Even with incomplete collection, an observed five-minute consumption lower
+  bound at or above that extreme threshold triggers a clearly marked notice.
+  It does not enter complete-window averages, train a low baseline or establish
+  recovery. Unknown costs remain unknown. A later correction of that same bucket
+  is conservatively skipped for account history and notification; the next
+  complete bucket resumes normal evaluation without counting consumption twice.
+- Missing buckets stay unknown, never zero. Replays do not add consumption or
+  train baselines twice. High current use with incomplete history cannot falsely
+  close a consumption incident.
+
+Default policies are $0.50/hour warning, $2/hour critical and $10/reported day
+warning ($30/reported day critical). These are operator choices, not universal
+SaaS limits; review them against the account's normal traffic and budget.
+
+Fast estimates use published overage unit prices **before included allowances**,
+not the amount actually charged. They cover D1 rows, Workers requests/CPU, R2
+operations/storage, KV operations, DO SQL rows and Queue operations. External LLM
+fees, DO compute, KV/D1 storage and products without adapters are outside this
+fast total. R2 storage uses the last hour's peak and a 30-day conversion. A known
+storage gauge missing from the current snapshot makes account cost coverage
+incomplete: old charges are neither copied forward as current data nor assumed
+zero. Deleted buckets can remain conservatively unknown until a new snapshot or
+the remembered gauge's original seven-day TTL expires. Observed Service failures,
+slow calls and application Worker errors continue to notify while account cost
+coverage is incomplete. Monitor Worker errors stay in operational diagnostics.
+
+Closed reported daily billable usage is reconciled every six hours across all
+products. Failed requests retry at most hourly and remain a collection gap until
+success; a skipped billing tick cannot erase that failure. Reported billing can
+be delayed or adjusted and stays separate from fast estimates.
+
+Ordinary per-metric warnings need two consecutive valid windows. Account cost
+warnings already require confirmed multiwindow history, so do not wait for two
+additional evaluations. Healthy EWMA baselines
+need twelve observations and minimum activity; suspicious data does not train
+them. Relative 3x/10x anomalies also require $0.05/$0.50 per-hour estimated use,
+including SQL fingerprints. SQL diagnostics require two windows even for absolute
+critical thresholds. Worker errors need at least three errors and twenty calls;
+separate key-feature signals retain immediate failure detection at low traffic.
+DO/KV/R2/Queues ratios use account-wide Worker calls as a reference denominator,
+not the actual number of operations on the individual resource.
+
+## Collection bounds and failure isolation
+
+Each collection makes eight bounded GraphQL calls, plus billing when due. API
+responses are capped at 2 MiB. Unknown billable operations, unavailable core
+sources and truncated core results are explicit gaps, never zero usage.
+
+SQL fingerprints are optional diagnostics, not extra billable consumption:
+
+- At most 48 diagnostic points, leaving 16 point slots and 8 KiB for later
+  business/probe/billing additions within the 192-point/48-KiB frame limit.
+- At most 96 diagnostic states within the overall limit of 256 metrics.
+  Diagnostic states do not enter the 64-notice customer queue. Old
+  fingerprint-heavy states are compacted; core observations take priority.
+- Limited/failed SQL breakdowns appear in `Frame.diagnostics`, not as failed core
+  collection. Missing fingerprints in incomplete breakdowns cannot prove recovery.
+
+Evaluation uses a candidate state. Late frame/cardinality/storage failures do not
+partially advance baselines, successful-collection times or billing freshness.
+Window and candidate-state writes share a SQLite transaction. Accepted frames
+leave 16 KiB for health and delivery state; sending preflights its recipient
+receipt with 8 KiB remaining, so capacity exhaustion pauses mail before sending
+and retains the outbox instead of losing an accepted receipt.
+Expected upstream gaps are persisted normally, without throwing an uncaught
+Worker exception that this monitor would ingest as another runtime incident.
+
+One aggregate JSON row is retained per window: 24-hour TTL, 288 rows, at most
+48 KiB per row. State has a seven-day TTL and 192-KiB cap. The outbox expires after
+seven days; the last twelve delivery receipts expire after 24 hours. Indexed
+cleanup runs per collection and through a daily alarm. A persisted lease prevents
+concurrent polls.
+
+## Key-feature checks
+
+The API Tail Worker saves five-minute counts for README large/mini cards, badges,
+homepage analysis and roast generation. It recognizes failed `roast.summary`
+results even after HTTP 200. User-supplied model configuration errors, ordinary
+4xx responses and client disconnects are excluded. Only fixed feature names,
+times and counts are retained; Tail can retry, so counts are observations, not
+financial accounting. No traffic does not establish recovery.
+
+Each cycle also GET-probes the homepage and torvalds large/mini cards for HTTP
+status and Content-Type. It does not start GitHub analysis or paid LLM generation.
+Probe failures need two windows. Passing probes do not prove correctness for every
+user's content. Tail arrives after streams finish; ingestion allowance also adds
+to detection latency.
+
+## Health and external watchdog
+
+Authenticated `GET /health` version 2 separates `heartbeatHealthy`,
+`collectionHealthy` and `deliveryHealthy`, with last attempted/completed ticks,
+billing attempt/success and sanitized incident metadata. `internalDiagnostics`
+counts active internal anomalies and includes at most 16 key/severity/lastSeen
+records. Recipient receipts with addresses are omitted. Legacy `healthy` remains
+the combined status.
+`POST /run` performs a real collection and can send due mail; it is not read-only.
+
+The GitHub Actions watchdog checks hourly. Missing/stale heartbeat or explicit
+delivery failure fails the workflow. Optional `MONITOR_OPS_RECIPIENTS` routes
+these faults to a separate operations mailbox; it never falls back to customer
+`ALERT_RECIPIENTS`. Without ops recipients there is no email, and sending
+credentials are not required. Upstream collection gaps remain in Worker health.
+For legacy responses it uses `lastAttempt`, falling back to `lastSuccess` only
+when the former field is absent.
+
+A serialized job restores/saves bounded state through Actions cache, including
+after partial send failure. State contains incident times and keyed HMACs of
+monitor/recipient identities, not raw addresses, URLs or credentials. File writes
+are atomic with mode 0600. Each recipient is retried independently; recovery is
+silent. Cache eviction or administrator-key rotation can trigger a fresh notice.
+Actions scheduling/cache retention are best-effort. The sending path still uses
+Cloudflare Email Service, so a platform-wide outage requires another provider for
+independent delivery.
+
+## Private configuration and rollout
+
+Use Wrangler secret input or a private bulk file for `CF_MONITOR_API_TOKEN`,
+`MONITOR_ADMIN_TOKEN` and `ALERT_RECIPIENTS`. The recipient JSON list supports empty
+placeholders, for example `["owner@example.org", ""]`, with up to twenty addresses.
+Never commit real recipients, credentials or private incident evidence.
+
+The dedicated token is account-restricted: Account Analytics Read, Billing Read
+and Email Sending Edit for the external watchdog. Native Worker mail uses the
+`EMAIL` binding and an already-onboarded sender domain.
+
+GitHub uses `CF_MONITOR_API_TOKEN`, `COST_MONITOR_ADMIN_TOKEN` and
+`COST_MONITOR_RECIPIENTS` secrets plus the `COST_MONITOR_URL` variable. Optional
+`COST_MONITOR_OPS_RECIPIENTS` is an independent JSON address list for the watchdog;
+absent, blank or `[]` disables only its email path, not health checks. The workflow
+provides `WATCHDOG_STATE_FILE`. Production requires successful main CI and source
+SHA checks. Deploy the Tail consumer before its API producer. Production has no
+synthetic routes or captured-mail mode.
 
 ## Validation
 
-`pnpm --filter @ghfind/cost-monitor typecheck`, `pnpm test`, and
-`node --test scripts/cost-monitor-watchdog.test.mjs` verify policy and collectors.
-`node scripts/cost-monitor-e2e.mjs` starts isolated real workerd/SQLite and verifies
-first alert, partial-recipient retry, duplicate suppression, reminders, recovery,
-storage limits, TTL purge and the scheduled failure path. CI runs this suite.
+Run `pnpm --filter @ghfind/cost-monitor typecheck`,
+`pnpm exec vitest run apps/cost-monitor/src/__tests__`,
+`node --test scripts/cost-monitor-watchdog.test.mjs` and
+`node scripts/cost-monitor-e2e.mjs`.
 
-For remote acceptance, set `COST_MONITOR_URL` to the isolated e2e Worker and
-`MONITOR_ADMIN_TOKEN` privately. The same suite first collects real Cloudflare
-analytics and sends clearly labelled rehearsal messages to the configured list.
-Optionally set `COST_MONITOR_EVIDENCE` to a **private, git-ignored** output file.
-Confirm those message IDs are delivered in Email Service logs, then clean up the
-e2e Worker. Never run synthetic scenarios against the production Worker.
+E2E uses isolated real workerd/SQLite with captured mail. It checks hourly batching,
+urgent bypass, partial-recipient retries, silent long-running collection gaps,
+legacy-outbox cleanup, recovery, storage limits, TTL cleanup and scheduled gaps. No live recipient is
+used locally. A remote `COST_MONITOR_URL` changes the suite into an explicit
+rehearsal that can send mail: only use an isolated E2E Worker with approved private
+recipients, never production. Evidence belongs in private git-ignored files.
 
-## 可读告警与关键功能
-
-邮件按严重程度排序，区分账单风险、运行错误、性能/用量异常、关键功能故障；显示北京时间、资源名称与持续同速的小时/日费用估算。估算未扣套餐额度，不等于最终账单。DO/KV/R2/Queues 的分母是整个账户 Worker 请求量，不能理解为单个资源的 SQL 查询次数。
-
-相对基线异常同时要求窗口套餐外估算达到 $0.05/小时才预警，$0.50/小时才允许按十倍放大升级严重告警，避免低基线、少量读写产生严重邮件。D1 查询放大、CPU、错误和功能故障独立阈值继续生效，不能因为费用小而被屏蔽。Workers 运行错误持续两个窗口预警，错误率至少 5% 且至少一次错误立即严重告警。
-
-API production 通过 Tail Worker 向监控写入固定功能名的五分钟聚合计数，覆盖 README 大卡/迷你卡/徽章、首页分析、锐评。锐评读取已有 `roast.summary` 结果，能识别 HTTP 200 后的生成失败；用户自带模型配置失败和正常 4xx 不计为网站故障。单次已观测关键功能服务端失败立即将该窗口判为严重；两次有真实成功调用的有效窗口后恢复。没有流量不代表恢复。流式请求结束后才能收到 Tail；加上指标等待上报，邮件通常延迟约 10–15 分钟。
-
-每五分钟额外 GET 首页及 torvalds 的大卡/迷你卡，检查 HTTP 和 Content-Type；连续两个窗口失败预警，连续两个有效正常窗口恢复。探测不执行新的 GitHub 分析或付费 LLM 生成。探测不证明每个用户卡片内容都正确，也不验证完整锐评内容质量。计数只保存功能、时间和数量，不存用户名、URL、请求体、原始日志或密钥；24 小时清理。Tail 可能重复投递，计数是观测数量，不是财务账单。
-
-发布顺序要求先部署监控 Tail consumer，再部署 API producer。两个生产 workflow 均仅在 main CI 成功后发布；API workflow 增加 consumer 先行部署以避免首次上线竞争。现有邮件收件人私密配置保持不变。
-
-普通用量、性能、运行错误、持续提醒及非业务恢复信息改为每小时聚合一封；关键功能严重错误、账户严重消耗速度和严重日费用首次发生或升级时绕过摘要等待。部分收件人失败保留重试，已接受的摘要收件人不重复发送。正常排队等待摘要不算监控故障；独立 GitHub 心跳检查每小时运行。关键功能恢复静默，客户端断开不计业务故障。
+Design references: [Alertmanager grouping and inhibition](https://prometheus.io/docs/alerting/latest/alertmanager/),
+[Google SRE symptom-based human alerts](https://sre.google/sre-book/monitoring-distributed-systems/),
+[Google SRE multiwindow alerting](https://sre.google/workbook/alerting-on-slos/),
+[Cloudflare Workers metrics](https://developers.cloudflare.com/workers/observability/metrics-and-analytics/),
+[D1 metric definitions](https://developers.cloudflare.com/d1/observability/metrics-analytics/).
+The windowing technique informs this policy; USD thresholds do not implement
+Google's SLO error-budget formula.

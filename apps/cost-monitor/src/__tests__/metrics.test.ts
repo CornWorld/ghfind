@@ -1,6 +1,6 @@
 import { describe,expect,it,vi } from "vitest";
 import { billable,collect } from "../metrics";
-import {validateFrame} from "../engine";
+import {emptyState,evaluate,validateFrame} from "../engine";
 const now=1_800_000_000_000;
 const config={account:"account",token:"private-token"};
 function api(rows:unknown[]){return Response.json({data:{viewer:{accounts:[{rows}]}}});}
@@ -46,7 +46,51 @@ describe("aggregate collection",()=>{
   });
   it("rejects a truncated result instead of silently dropping resources",async()=>{
     const fetcher=vi.fn(async()=>api(Array.from({length:128},()=>({dimensions:{},sum:{}}))));
-    const f=await collect(config,now,fetcher as typeof fetch);expect(f.healthy).toEqual([]);expect(f.errors.length).toBe(8);
+    const f=await collect(config,now,fetcher as typeof fetch);expect(f.healthy).toEqual([]);expect(f.errors.length).toBe(7);expect(f.diagnostics).toHaveLength(1);expect(f.costComplete).toBe(false);
+  });
+  it("retains complete core consumption when optional SQL diagnostics are unavailable",async()=>{
+    const fetcher=vi.fn(async(_url:unknown,init?:RequestInit)=>{
+      const q=JSON.parse(String(init?.body)).query;
+      return q.includes("d1Queries")?Response.json({errors:[{message:"cannot query private-query with private-token"}]}):api(fixture(q));
+    });
+    const f=await collect(config,now,fetcher as typeof fetch);
+    expect(f.errors).toEqual([]);expect(f.costComplete).toBe(true);expect(f.completeQueries).not.toBe(true);
+    expect(f.diagnostics).toEqual(["D1 SQL: dataset unavailable or unsupported"]);
+    expect(JSON.stringify(f)).not.toContain("private-");
+  });
+  it("bounds a large SQL breakdown without dropping core metrics or manufacturing recovery",async()=>{
+    const fetcher=vi.fn(async(_url:unknown,init?:RequestInit)=>{
+      const q=JSON.parse(String(init?.body)).query;
+      if(q.includes("d1Queries"))return api(Array.from({length:127},(_,i)=>({count:100,dimensions:{databaseId:"core",query:`SELECT * FROM table_${i}`},sum:{rowsRead:38_000_000+i,rowsWritten:1000+i,rowsReturned:1}})));
+      return api(fixture(q));
+    });
+    const f=await collect(config,now,fetcher as typeof fetch);
+    expect(()=>validateFrame(f)).not.toThrow();expect(f.costComplete).toBe(true);expect(f.errors).toEqual([]);
+    expect(f.completeQueries).toBe(false);expect(f.points.filter(p=>p.diagnostic)).toHaveLength(48);
+    expect(f.points.find(p=>p.key==="D1:core:read")?.amount).toBe(38_000_000);
+    expect(f.diagnostics?.join(" ")).toContain("breakdown limited");
+  });
+  it("distinguishes permission failures and throttling without exposing upstream payloads",async()=>{
+    const fetcher=vi.fn(async(_url:unknown,init?:RequestInit)=>{
+      const q=JSON.parse(String(init?.body)).query;
+      if(q.includes("workersInvocations"))return new Response("private-token",{status:403});
+      if(q.includes("r2Operations"))return Response.json({errors:[{message:"rate limit for private-account"}]});
+      return api(fixture(q));
+    });
+    const f=await collect(config,now,fetcher as typeof fetch);
+    expect(f.errors).toContain("Workers: access denied; check analytics token permissions");
+    expect(f.errors).toContain("R2 operations: rate limited; retry next scheduled window");
+    expect(JSON.stringify(f)).not.toContain("private-");
+  });
+  it("accepts an idle closed window and rejects one low-volume Worker error as an incident",async()=>{
+    const idle=await collect(config,now,vi.fn(async()=>api([])) as typeof fetch);
+    expect(idle.errors).toEqual([]);expect(idle.costComplete).toBe(true);
+    const fetcher=vi.fn(async(_url:unknown,init?:RequestInit)=>{
+      const q=JSON.parse(String(init?.body)).query;
+      return api(q.includes("workersInvocations")?[{dimensions:{scriptName:"app"},sum:{errors:1,requests:1,cpuTimeUs:1000}}]:[]);
+    });
+    const f=await collect(config,now,fetcher as typeof fetch),s=emptyState();evaluate(s,f,now);
+    expect(s.metrics["Workers:app:errors"].severity).toBe(0);expect(s.outbox).toEqual([]);
   });
   it("aggregates normalized SQL variants before calculating per-query amplification",async()=>{
     const fetcher=vi.fn(async(_url:unknown,init?:RequestInit)=>{

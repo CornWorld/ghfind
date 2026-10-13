@@ -2,16 +2,27 @@
   "loginDialog": {
     "entry": "Đăng nhập",
     "title": "Đăng nhập ghfind",
-    "description": "Lưu danh sách theo dõi và hồ sơ để tiếp tục trên thiết bị khác.",
+    "description": "Chọn tài khoản để tiếp tục.",
     "close": "Đóng",
     "google": "Tiếp tục với Google",
     "github": "Tiếp tục với GitHub",
-    "emailDivider": "Hoặc dùng email",
-    "emailLabel": "Địa chỉ email",
-    "emailPlaceholder": "Nhập email",
-    "sendCode": "Gửi mã xác minh",
-    "githubUnavailable": "Đăng nhập GitHub hiện không khả dụng ở đây.",
-    "comingSoon": "Đăng nhập bằng Google và email sẽ sớm ra mắt."
+    "apple": "Tiếp tục với Apple",
+    "redirecting": "Đang mở {provider}…",
+    "loading": "Đang kiểm tra cách đăng nhập…",
+    "retry": "Thử lại",
+    "loadFailed": "Không tải được các cách đăng nhập. Hãy kiểm tra kết nối và thử lại.",
+    "unavailable": "Tạm thời không thể đăng nhập. Bạn có thể tiếp tục duyệt và thử lại sau.",
+    "githubFeatures": "Tính năng theo dõi, hồ sơ đám mây và mã thông báo API hiện yêu cầu tài khoản GitHub.",
+    "providerAccount": "Tài khoản {provider}",
+    "switchToGitHub": "Chuyển sang đăng nhập GitHub",
+    "errors": {
+      "denied": "Đã hủy đăng nhập. Hãy chọn tài khoản để thử lại.",
+      "expired": "Yêu cầu đăng nhập đã hết hạn. Vui lòng bắt đầu lại.",
+      "failed": "Không thể hoàn tất đăng nhập. Vui lòng thử lại.",
+      "unavailable": "Cách đăng nhập này không khả dụng. Hãy chọn cách khác hoặc thử lại sau."
+    },
+    "signingOut": "Đang đăng xuất…",
+    "signOutFailed": "Không thể đăng xuất. Hãy kiểm tra kết nối và thử lại."
   },
   "meta": {
     "title": "ghfind | Chấm điểm GitHub cực gắt, tự soi bản thân & khám phá dev xịn",
@@ -797,6 +808,10 @@
       {
         "h": "Chúng tôi lưu gì",
         "p": "Với các tài khoản đã được chấm, chúng tôi cache điểm số, hạng và các số liệu dẫn xuất để báo cáo chia sẻ tải nhanh và bảng xếp hạng luôn mượt. Chỉ tài khoản đạt 60 điểm trở lên mới được lập chỉ mục và liệt kê công khai; trang của tài khoản điểm thấp hơn vẫn truy cập được qua liên kết trực tiếp nhưng bị chặn khỏi công cụ tìm kiếm. Chúng tôi dùng phân tích tổng hợp tôn trọng quyền riêng tư để hiểu lưu lượng và không bán dữ liệu cá nhân."
+      },
+      {
+        "h": "Đăng nhập Google và cookie tài khoản",
+        "p": "Nếu chọn đăng nhập Google, chúng tôi nhận mã định danh tài khoản Google (subject), tên và ảnh hồ sơ để tạo phiên ghfind. Google cũng có thể trả về địa chỉ email trong quá trình đăng nhập; chúng tôi không lưu trữ lâu dài địa chỉ này. Cookie phiên được ký và có thuộc tính HttpOnly lưu thông tin định danh cơ bản tối đa 30 ngày. Chúng tôi không giữ mã truy cập API Google hoặc mã làm mới. Đăng xuất sẽ xóa cookie phiên. Đăng nhập Google không cấp quyền GitHub và chúng tôi không tự động liên kết tài khoản theo địa chỉ email."
       },
       {
         "h": "Cà khịa bằng key riêng",

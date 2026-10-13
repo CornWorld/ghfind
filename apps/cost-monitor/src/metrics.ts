@@ -1,8 +1,21 @@
-import { WINDOW_MS, type Frame, type Point, type Product } from "./engine";
+import { MAX_POINTS, MAX_WINDOW_BYTES, WINDOW_MS, type Frame, type Point, type Product } from "./engine";
 export interface CollectorConfig { account: string; token: string }
 interface Row { dimensions: Record<string,string>; sum?: Record<string,number>; max?: Record<string,number>; count?: number }
 const LIMIT = 128;
 const MAX_RESPONSE = 2 * 1024 * 1024;
+const INGESTION_LAG_MS = 2 * WINDOW_MS;
+// Only fixed categories leave this module: upstream messages can include query
+// text, credentials or account details and must never enter state or mail.
+function unavailable(error: unknown): string {
+  const message = error instanceof Error ? error.message : "";
+  if (/^HTTP (401|403)$/.test(message) || message === "GraphQL access denied") return "access denied; check analytics token permissions";
+  if (message === "HTTP 429" || message === "GraphQL rate limited") return "rate limited; retry next scheduled window";
+  if (message === "GraphQL dataset unavailable") return "dataset unavailable or unsupported";
+  if (message === "Metric result truncated") return "result limit reached; coverage incomplete";
+  if (message === "API response exceeds limit") return "response size limit reached; coverage incomplete";
+  if (error instanceof Error && ["AbortError", "TimeoutError"].includes(error.name)) return "request timed out";
+  return "collection unavailable";
+}
 export async function boundedJson(response: Response): Promise<unknown> {
   if (!response.ok) { await response.body?.cancel(); throw new Error(`HTTP ${response.status}`); }
   const reader = response.body?.getReader();
@@ -28,11 +41,18 @@ async function graphql(config: CollectorConfig, selection: string, fetcher: type
     body: JSON.stringify({query:`{viewer{accounts(filter:{accountTag:${JSON.stringify(config.account)}}){rows:${selection}}}}`}), signal:AbortSignal.timeout(20_000),
   });
   const payload = object(await boundedJson(response));
-  if (Array.isArray(payload.errors) && payload.errors.length) throw new Error("GraphQL collection failed");
+  if (Array.isArray(payload.errors) && payload.errors.length) {
+    const messages = payload.errors.map(e => typeof e === "object" && e !== null && "message" in e ? String(e.message) : "").join(" ");
+    if (/rate.?limit|too many requests/i.test(messages)) throw new Error("GraphQL rate limited");
+    if (/unauthori[sz]ed|permission|access denied|not allowed/i.test(messages)) throw new Error("GraphQL access denied");
+    if (/unknown (field|argument)|cannot query|not available|not supported|not entitled/i.test(messages)) throw new Error("GraphQL dataset unavailable");
+    throw new Error("GraphQL collection failed");
+  }
   const accounts = object(object(payload.data).viewer).accounts;
   if (!Array.isArray(accounts) || accounts.length !== 1) throw new Error("Account metrics unavailable");
   const rows = object(accounts[0]).rows;
-  if (!Array.isArray(rows) || rows.length >= LIMIT) throw new Error("Metric result truncated or unavailable");
+  if (!Array.isArray(rows)) throw new Error("Metric result unavailable");
+  if (rows.length >= LIMIT) throw new Error("Metric result truncated");
   return rows.map(value => {
     const row = object(value); const dimensions = object(row.dimensions);
     if (Object.values(dimensions).some(v => typeof v !== "string")) throw new Error("Invalid metric dimensions");
@@ -40,6 +60,7 @@ async function graphql(config: CollectorConfig, selection: string, fetcher: type
   });
 }
 function metric(product: Product, resource: string, label: string, amount: number, operations: number, unit: string, price: number, suffix: string, extra: Partial<Point> = {}): Point {
+  if (typeof resource !== "string" || !resource || resource.length > 100 || !Number.isFinite(amount) || !Number.isFinite(operations) || amount < 0 || operations < 0) throw new Error("Invalid metric dimensions or values");
   return {key:`${product}:${resource}:${suffix}`, product, resource, label, amount, operations, unit, usd:amount*price, ...extra};
 }
 async function fingerprint(sql: string): Promise<string> {
@@ -52,10 +73,10 @@ const CLASS_B = new Set(["HeadBucket","HeadObject","GetObject","GetBucketEncrypt
 const FREE = new Set(["DeleteObject","DeleteObjects","DeleteBucket","AbortMultipartUpload","DeleteBucketLifecycle","DeleteBucketLifecycleConfiguration","DeleteBucketCors","DeleteBucketEncryption"]);
 export async function collect(config: CollectorConfig, now = Date.now(), fetcher = fetch): Promise<Frame> {
   // Read a closed window behind ingestion lag; dedupe by window timestamp in storage.
-  const end = Math.floor(now/WINDOW_MS)*WINDOW_MS - 2*WINDOW_MS;
+  const end = Math.floor(now/WINDOW_MS)*WINDOW_MS - INGESTION_LAG_MS;
   const at = end - WINDOW_MS;
   const filter = `filter:{datetime_geq:${JSON.stringify(new Date(at).toISOString())},datetime_lt:${JSON.stringify(new Date(end).toISOString())}}`;
-  const frame: Frame = {at, points:[], healthy:[], errors:[]};
+  const frame: Frame = {at, points:[], healthy:[], errors:[], diagnostics:[]};
   const sources: {product:Product; name:string; selection:string; convert:(rows:Row[])=>Promise<Point[]> | Point[]}[] = [
     {product:"D1",name:"D1",selection:`d1AnalyticsAdaptiveGroups(limit:${LIMIT},${filter}){dimensions{databaseId} sum{rowsRead rowsWritten readQueries writeQueries}}`,convert: rows=>rows.flatMap(r=> {
       const reads=number(r,"rowsRead"),writes=number(r,"rowsWritten"),rq=number(r,"readQueries"),wq=number(r,"writeQueries");
@@ -65,7 +86,7 @@ export async function collect(config: CollectorConfig, now = Date.now(), fetcher
       // Adaptive invocation rows can repeat a script name (including __unknown__).
       const scripts=new Map<string,{requests:number;cpu:number;errors:number}>();
       for(const r of rows){const name=r.dimensions.scriptName,previous=scripts.get(name)??{requests:0,cpu:0,errors:0};previous.requests+=number(r,"requests");previous.errors+=number(r,"errors");previous.cpu+=number(r,"cpuTimeUs")/1000;scripts.set(name,previous);}
-      return [...scripts].flatMap(([name,{requests,cpu,errors}])=>[metric("Workers",name,"请求",requests,requests,"requests",0.3e-6,"requests",{efficiency:1}),metric("Workers",name,"CPU",cpu,requests,"CPU ms",0.02e-6,"cpu",{efficiency:requests?cpu/requests:0,efficiencyWarning:1000,efficiencyCritical:5000,minAmount:10_000}),metric("Workers",name,"Worker 运行错误",errors,requests,"errors",0,"errors",{relative:false,minAmount:1,minOperations:1,efficiency:requests?errors/requests:0,efficiencyWarning:0,efficiencyCritical:0.05})]);
+      return [...scripts].flatMap(([name,{requests,cpu,errors}])=>[metric("Workers",name,"请求",requests,requests,"requests",0.3e-6,"requests",{efficiency:1}),metric("Workers",name,"CPU",cpu,requests,"CPU ms",0.02e-6,"cpu",{efficiency:requests?cpu/requests:0,efficiencyWarning:1000,efficiencyCritical:5000,minAmount:10_000}),metric("Workers",name,"Worker 运行错误",errors,requests,"errors",0,"errors",{relative:false,minAmount:3,minOperations:20,efficiency:requests?errors/requests:0,efficiencyWarning:0.01,efficiencyCritical:0.05})]);
     }},
     {product:"R2",name:"R2 operations",selection:`r2OperationsAdaptiveGroups(limit:${LIMIT},${filter}){dimensions{bucketName actionType storageClass} sum{requests responseObjectSize}}`,convert:rows=>rows.flatMap(r=>{
       const action=r.dimensions.actionType,ia=r.dimensions.storageClass==="InfrequentAccess"; const amount=number(r,"requests");
@@ -86,7 +107,7 @@ export async function collect(config: CollectorConfig, now = Date.now(), fetcher
   // Fixed six calls, not one call per user/resource. Partial failures never imply zero usage.
   const outcomes = await Promise.all(sources.map(async source=>{
     try {const rows=await graphql(config,source.selection,fetcher); return {source,points:await source.convert(rows)};}
-    catch { return {source,error:`${source.name}: collection unavailable`}; }
+    catch (error) { return {source,error:`${source.name}: ${unavailable(error)}`}; }
   }));
   for(const o of outcomes) {if(o.error)frame.errors.push(o.error);else {frame.points.push(...o.points!);frame.healthy.push(o.source.product);}}
   // Query insights are a bounded diagnostic breakdown, not additional billable usage.
@@ -104,17 +125,34 @@ export async function collect(config: CollectorConfig, now = Date.now(), fetcher
     }
     for(const p of grouped.values()) {p.efficiency=p.operations?p.amount/p.operations:0;frame.points.push(p);}
     frame.completeQueries=true;
-  } catch {frame.errors.push("D1 SQL: collection unavailable");}
+  } catch (error) {frame.diagnostics!.push(`D1 SQL: ${unavailable(error)}`);}
   // Storage snapshots have lower cadence than operation counters; preserve gauges on absence.
   try {
     const storageFilter=`filter:{datetime_geq:${JSON.stringify(new Date(end-3600_000).toISOString())},datetime_lt:${JSON.stringify(new Date(end).toISOString())}}`;
     const rows=await graphql(config,`r2StorageAdaptiveGroups(limit:${LIMIT},${storageFilter}){dimensions{bucketName storageClass} max{payloadSize metadataSize}}`,fetcher);
     for(const r of rows){const bytes=number(r,"payloadSize","max")+number(r,"metadataSize","max"),ia=r.dimensions.storageClass==="InfrequentAccess";frame.points.push(metric("R2",r.dimensions.bucketName,`存储量（近一小时峰值，${r.dimensions.storageClass}）`,bytes,1,"bytes",(ia?0.01:0.015)/1e9/30/24/12,`storage:${r.dimensions.storageClass}`,{gauge:true,minAmount:1e9,efficiencyWarning:1e12,efficiencyCritical:5e12}));}
-  } catch {frame.errors.push("R2 storage: collection unavailable");}
+  } catch (error) {frame.errors.push(`R2 storage: ${unavailable(error)}`);}
   const workerRequests=frame.points.filter(p=>p.product==="Workers" && p.key.endsWith(":requests")).reduce((s,p)=>s+p.amount,0);
   for(const p of frame.points)if(["R2","KV","DO","Queues"].includes(p.product) && !p.gauge){
     p.relative=workerRequests>0 && frame.healthy.includes("Workers");
     if(p.relative){p.efficiency=p.amount/workerRequests;p.operations=workerRequests;p.denominator="账户 Worker 调用（归一化参考）";}
+  }
+  frame.costComplete = frame.errors.length === 0 && sources.every(source => frame.healthy.includes(source.product));
+  // A large query-fingerprint breakdown must not discard the six core sources.
+  // Keep the most expensive bounded diagnostics; an incomplete breakdown cannot
+  // establish that a missing fingerprint recovered.
+  const core = frame.points.filter(p => !p.diagnostic);
+  const diagnostics = frame.points.filter(p => p.diagnostic).sort((a, b) => b.usd - a.usd);
+  // The caller still appends bounded service probes, business counters and billing.
+  frame.points = [...core, ...diagnostics.slice(0, Math.max(0, Math.min(48, MAX_POINTS - 16 - core.length)))];
+  const truncated = () => {
+    frame.completeQueries = false;
+    const message = "D1 SQL: diagnostic breakdown limited; core usage remains covered";
+    if (!frame.diagnostics!.includes(message)) frame.diagnostics!.push(message);
+  };
+  if (frame.points.length - core.length < diagnostics.length) truncated();
+  while (frame.points.length > core.length && new TextEncoder().encode(JSON.stringify(frame)).byteLength > MAX_WINDOW_BYTES - 8 * 1024) {
+    frame.points.pop(); truncated();
   }
   return frame;
 }

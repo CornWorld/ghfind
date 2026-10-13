@@ -16,7 +16,7 @@ jobs:
   deploy:
     if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     concurrency:
       group: cost-monitor-deploy
       cancel-in-progress: false
@@ -62,25 +62,9 @@ jobs:
       - name: Verify deployed monitor collects live metrics
         env:
           COST_MONITOR_URL: ${{ vars.COST_MONITOR_URL }}
-        run: |
-          node --input-type=module <<'JS'
-          const base=process.env.COST_MONITOR_URL;
-          if(!base)throw new Error('Monitor URL not configured');
-          // A fresh deploy's workers.dev route can briefly answer with an HTML
-          // error page, so retry before judging the collection unhealthy.
-          let response, result;
-          for(let attempt=1;;attempt++){
-            response=await fetch(`${base}/run`,{method:'POST',headers:{authorization:`Bearer ${process.env.MONITOR_ADMIN_TOKEN}`},signal:AbortSignal.timeout(120000)});
-            result=await response.json().catch(()=>null);
-            if(result || attempt===6)break;
-            console.log(`attempt ${attempt}: monitor not live yet (HTTP ${response.status})`);
-            await new Promise(r=>setTimeout(r,15000));
-          }
-          if(!response.ok || result?.status!=='ok' || !(result?.points>0))throw new Error('Live cost collection not healthy');
-          console.log('Live cost collection verified');
-          JS
+        run: node scripts/cost-monitor-verify.mjs
   watchdog:
-    if: github.event_name != 'workflow_run'
+    if: github.event_name != 'workflow_run' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     concurrency:
@@ -91,7 +75,7 @@ jobs:
       MONITOR_ADMIN_TOKEN: ${{ secrets.COST_MONITOR_ADMIN_TOKEN }}
       CF_MONITOR_API_TOKEN: ${{ secrets.CF_MONITOR_API_TOKEN }}
       CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-      ALERT_RECIPIENTS: ${{ secrets.COST_MONITOR_RECIPIENTS }}
+      MONITOR_OPS_RECIPIENTS: ${{ secrets.COST_MONITOR_OPS_RECIPIENTS }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -99,5 +83,23 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Check freshness and email on missing heartbeat
+      # Cache contains only incident timestamps and keyed recipient hashes. The
+      # serialized job restores the latest snapshot; unused snapshots expire
+      # under Actions' seven-day cache eviction policy, without extra permissions.
+      - name: Restore watchdog notification state
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ runner.temp }}/cost-monitor-watchdog/state.json
+          key: cost-monitor-watchdog-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: cost-monitor-watchdog-v1-
+      - name: Check monitor heartbeat and notify configured operators
+        id: watchdog
+        env:
+          WATCHDOG_STATE_FILE: ${{ runner.temp }}/cost-monitor-watchdog/state.json
         run: node scripts/cost-monitor-watchdog.mjs
+      - name: Preserve accepted notifications even when the monitor is unhealthy
+        if: always() && steps.watchdog.outcome != 'skipped'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ runner.temp }}/cost-monitor-watchdog/state.json
+          key: cost-monitor-watchdog-v1-${{ github.run_id }}-${{ github.run_attempt }}

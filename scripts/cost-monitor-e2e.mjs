@@ -28,6 +28,9 @@ try {
   assert.equal((await request("/health","GET",false)).status,401);
   assert.equal((await request("/arbitrary-route")).status,404);
   assert.equal((await request("/test/reset")).status,200);
+  assert.deepEqual((await request("/test/atomic")).body,{cardinality:{rejected:true,stateUnchanged:true,windowsUnchanged:true,billingUnchanged:true},storageSize:{rejected:true,stateUnchanged:true,persistedStateUnchanged:true,windowsUnchanged:true,billingUnchanged:true},deliveryCapacity:{noSend:true,noAttempt:true,pendingRetained:true,reported:true}});
+  result.steps.push({name:"atomic cardinality/state-byte rejection and pre-send receipt capacity protection"});
+  await request("/test/reset");
   if(result.kind==="remote"){
     const live=await request("/run");assert.equal(live.status,200);assert.equal(live.body.status,"ok");assert.ok(live.body.points>0);assert.deepEqual(live.body.errors,[]);result.steps.push({name:"real Cloudflare collection",...live.body});
     await request("/test/reset");
@@ -35,6 +38,10 @@ try {
   const hourly=(await request("/test/hourly")).body;
   assert.deepEqual(hourly,{before:0,digest:2,critical:4,quiet:4,partial:5,retry:6,pending:0});
   result.steps.push({name:"hourly digest, urgent bypass and partial-recipient digest retry"});
+  await request("/test/reset");
+  const collection=(await request("/test/collection")).body;
+  assert.deepEqual(collection,{transient:0,legacyRetired:true,sustained:0,stillIncomplete:true,mixed:2,customerOnly:true,recovery:2,pending:0,resolved:true});
+  result.steps.push({name:"internal collection gaps stay silent; legacy partial mail retires and real business failures still send"});
   await request("/test/reset");
   const business=(await request("/test/business")).body;
   assert.equal(business.rows[0].total,5);assert.equal(business.rows[0].failed,1);assert.equal(business.rows[0].slow,1);assert.equal(business.severity,2);assert.equal(business.remaining,0);
@@ -49,13 +56,13 @@ try {
   const recovered=(await request("/test/recovery")).body;assert.equal(recovered.deliveries.length,3);assert.equal(recovered.deliveries[2].kind,"recovery");
   const health=(await request("/health","GET")).body;assert.equal(health.pending,0);assert.equal(health.mailReceipts.length,6,"Exactly one accepted message per recipient per transition");result.steps.push({name:"incident, partial-recipient retry, dedupe, reminder, recovery",deliveries:recovered.deliveries,mailReceipts:health.mailReceipts});
   const limited=(await request("/test/rate-limit")).body;assert.equal(limited.pending,1);
-  const capped=(await request("/health","GET")).body;assert.equal(capped.mailReceipts.length,6);assert.match(capped.lastError,/rate budget/);result.steps.push({name:"global mail rate limit retains pending notifications"});
+  const capped=(await request("/health","GET")).body;assert.equal(capped.mailReceipts.length,6);assert.match(capped.lastDeliveryError,/rate budget/);assert.equal(capped.deliveryHealthy,false);result.steps.push({name:"global mail rate limit retains pending notifications"});
   const retention=(await request("/test/retention")).body;assert.equal(retention.before,288);assert.equal(retention.after,0);result.steps.push({name:"workerd storage cap and TTL purge",...retention});
   if(result.kind==="local-workerd"){
     // Invoke the real scheduled event and alarm-capable storage handler, not only pure policy code.
     await request("/test/reset");
-    const scheduled=await fetch(`${base}/__scheduled?cron=${encodeURIComponent("*/5 * * * *")}`,{signal:AbortSignal.timeout(120_000)});assert.equal(scheduled.status,500,"Missing live analytics is detected as degraded");
-    const after=(await request("/health","GET")).body;assert.ok(after.lastAttempt>0);assert.ok(after.lastError);result.steps.push({name:"real scheduled entry detects collection failure"});
+    const scheduled=await fetch(`${base}/__scheduled?cron=${encodeURIComponent("*/5 * * * *")}`,{signal:AbortSignal.timeout(120_000)});assert.equal(scheduled.status,200,"Expected upstream gaps must not manufacture Worker execution failures");
+    const after=(await request("/health","GET")).body;assert.ok(after.lastAttempt>0);assert.ok(after.lastError);assert.equal(after.heartbeatHealthy,true);assert.equal(after.collectionHealthy,false);assert.equal(after.pending,0);result.steps.push({name:"real scheduled entry separates a transient telemetry gap from monitor failure"});
   }
   result.completed=true;console.log(JSON.stringify({kind:result.kind,completed:true,steps:result.steps.map(x=>x.name)}));
 } finally {

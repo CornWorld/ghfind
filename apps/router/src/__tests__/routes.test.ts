@@ -69,10 +69,10 @@ describe("pickTarget", () => {
   });
 
   it("serves the auth and account routes from api, by whole path only", () => {
-    for (const p of ["/api/auth/github", "/api/auth/callback/github", "/api/auth/signout", "/api/me", "/api/account/tokens", "/api/account/tokens/0b1c2d3e-0000-4000-8000-000000000000"]) {
+    for (const p of ["/api/auth/github", "/api/auth/callback/github", "/api/auth/google", "/api/auth/callback/google", "/api/auth/signout", "/api/me", "/api/account/tokens", "/api/account/tokens/0b1c2d3e-0000-4000-8000-000000000000"]) {
       expect(pickTarget(p)).toBe("api");
     }
-    for (const p of ["/api/auth", "/api/auth/gitlab", "/api/auth/callback/gitlab", "/api/me/x", "/api/account", "/api/account/tokens/a/b"]) {
+    for (const p of ["/api/auth", "/api/auth/gitlab", "/api/auth/callback/gitlab", "/api/auth/google/x", "/api/auth/callback/google/x", "/api/auth/apple", "/api/me/x", "/api/account", "/api/account/tokens/a/b"]) {
       expect(pickTarget(p)).toBe("legacy");
     }
   });

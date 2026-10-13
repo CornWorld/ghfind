@@ -179,3 +179,82 @@ test("restart RPC failures answer a fixed code, never the platform message",asyn
     assert.deepEqual(await response.json(), { error: code });
   }
 });
+
+// Production invokes runtimeRestart over a DO RPC boundary, which strips custom
+// Error prototypes. The result envelope must survive that boundary unchanged.
+test("stale DO validation is returned as a typed failure without a lifecycle retry", async () => {
+  const { captureTransitionResult, readTransitionResult } = await import("../src/transition-rpc");
+  const f = fixture(); let calls = 0;
+  const dispatch = { fetch: (_target: string, request: Request) => f.hooks.fetch(request), stop: f.hooks.stop,
+    restart: async (target: string, data: TransitionRequest) => {
+      calls++;
+      const encoded = await captureTransitionResult(() => new ModeTransition(limits).run(
+        target as "api-0", { ...env, FEED_MODE: "off" }, data, f.hooks));
+      return readTransitionResult(structuredClone(encoded));
+    },
+  };
+  const response = await handleRequest(new Request("https://runtime/internal/runtime/api-0/restart", {
+    method: "POST", headers: { authorization: `Bearer ${env.FEED_RUNTIME_ADMIN_SECRET}` }, body: JSON.stringify(input),
+  }), env, dispatch);
+  assert.equal(response.status, 400);
+  assert.deepEqual(await response.json(), { error: "invalid_transition" });
+  assert.equal(calls, 1); assert.equal(f.state.stops, 0); assert.equal(f.state.starts, 0);
+});
+
+test("transition RPC carries only allowlisted local errors and no messages or stack", async () => {
+  const { captureTransitionResult, readTransitionResult } = await import("../src/transition-rpc");
+  const { HTTPError } = await import("../src/security");
+  for (const [code, status] of Object.entries({ invalid_transition: 400, transition_in_progress: 409,
+    transition_timeout: 503, transition_stop_timeout: 503, container_version_or_contract_mismatch: 503,
+    container_dependency_not_ready: 503, container_not_ready: 503, body_too_large: 413, body_timeout: 408 })) {
+    const error = new HTTPError(status, code); error.message = "private diagnostic"; error.stack = "private stack";
+    const encoded = await captureTransitionResult(async () => { throw error; });
+    assert.deepEqual(encoded, { kind: "http-error", code, status });
+    assert.throws(() => readTransitionResult(structuredClone(encoded)),
+      (received: unknown) => received instanceof HTTPError && received.code === code && received.status === status && received.message === code);
+  }
+  for (const error of [Object.assign(new Error("provider failure"), { code: "invalid_transition", status: 400 }),
+    new HTTPError(503, "invalid_transition"), new HTTPError(503, "private_provider_error")])
+    await assert.rejects(captureTransitionResult(async () => { throw error; }), (received: unknown) => received === error);
+});
+
+test("malformed transition RPC replies fail closed and successful receipts retain their exact shape", async () => {
+  const { captureTransitionResult, readTransitionResult } = await import("../src/transition-rpc");
+  const success = { restarted: true, target: "api-0", ...input };
+  assert.deepEqual(readTransitionResult(structuredClone(await captureTransitionResult(async () => success))), success);
+  for (const reply of [null, [], {}, { kind: "http-error", code: "toString", status: 503 },
+    { kind: "http-error", code: "invalid_transition", status: 503 },
+    { kind: "http-error", code: "invalid_transition", status: 400, message: "private data" },
+    { kind: "http-error", code: "transition_environment_not_ready", status: 409 },
+    { kind: "result" }, { kind: "result", value: success, extra: true }])
+    assert.throws(() => readTransitionResult(reply as never), /^Error: invalid transition RPC result$/);
+});
+
+
+test("mixed-version DO and edge replies keep the successful receipt accepted by release identity checks", async () => {
+  const { captureTransitionResult, readTransitionResult } = await import("../src/transition-rpc");
+  const { transitionActors } = await import(new URL("../../../scripts/feed-production-transition.mjs", import.meta.url).href);
+  const anchor = { status: "passed", mode: "paused", sourceSha: input.sourceSha, backend: "go", store: "cf_d1_r2",
+    workerVersionId: env.WORKER_VERSION.id };
+  for (const newDO of [false, true]) for (const newEdge of [false, true]) {
+    let calls = 0;
+    const evidence = await transitionActors(input, { paused: async () => anchor,
+      send: async (target: string) => {
+        calls++;
+        const receipt = { restarted: true, target, ...input };
+        const wire = structuredClone(newDO ? await captureTransitionResult(async () => receipt) : receipt);
+        assert.deepEqual(wire, receipt);
+        return newEdge ? readTransitionResult(wire) : wire;
+      },
+    });
+    assert.equal(calls, 3); assert.equal(evidence.status, "passed");
+  }
+  for (const reply of [{ rejectedWithoutMutation: true }, { restarted: true, target: "api-0", ...input, extra: true },
+    { restarted: true, target: "api-0", ...input, sourceSha: "b".repeat(40) }]) {
+    let calls = 0;
+    await assert.rejects(transitionActors(input, { paused: async () => anchor, preflight: async () => {},
+      send: async () => { calls++; return readTransitionResult(structuredClone(reply)); },
+    }));
+    assert.equal(calls, 1);
+  }
+});
