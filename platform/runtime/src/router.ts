@@ -85,6 +85,25 @@ export function checkConfiguration(env: RuntimeSettings): void {
 // substring (dist/lib/container.js); unknown errors remain failures on upgrades.
 const NO_INSTANCE_ERROR = "there is no container instance that can be provided to this durable object";
 
+/**
+ * Name an exception from a Container lifecycle call or the Durable Object RPC
+ * carrying it. Untyped errors used to fall through to the generic
+ * `feed_unavailable`, which is all every failed production mode transition
+ * since 2026-10-01 reported. Only a fixed code leaves the Worker — never the
+ * message — and classification never makes an error retryable.
+ */
+export function classifyLifecycleError(error: unknown, phase: "probe" | "stop" | "start" | "rpc"): HTTPError {
+  if (error instanceof HTTPError) return error;
+  const message = error instanceof Error ? error.message.toLowerCase() : "";
+  const flags = (error ?? {}) as { durableObjectReset?: unknown; retryable?: unknown; overloaded?: unknown };
+  if (message.includes(NO_INSTANCE_ERROR)) return new HTTPError(503, "container_no_instance");
+  if (flags.durableObjectReset === true || message.includes("reset because its code was updated"))
+    return new HTTPError(503, "actor_reset_by_deploy");
+  if (flags.overloaded === true) return new HTTPError(503, "actor_overloaded");
+  if (flags.retryable === true) return new HTTPError(503, `actor_${phase}_retryable_error`);
+  return new HTTPError(503, `container_${phase}_failed`);
+}
+
 // The binding-only same-DO operation has one deadline for preparation, HTTP and
 // body consumption. Native observations do not claim readiness without real Go.
 export async function captureNativeProbe(
@@ -200,9 +219,15 @@ export async function probe(
     status = response.status;
     body = await readBounded(response, 4096);
   }
-  const data: Record<string, unknown> = JSON.parse(
-    new TextDecoder().decode(body),
-  );
+  let data: Record<string, unknown>;
+  try {
+    data = JSON.parse(new TextDecoder().decode(body));
+  } catch {
+    // The Go binaries always answer JSON; a text body is the Containers SDK's
+    // own error page ("There is no Container instance available...",
+    // "Failed to start container: ...", "Container suddenly disconnected").
+    throw new HTTPError(503, "container_response_not_json");
+  }
   if (
     !data || typeof data !== "object" || Array.isArray(data) ||
     data.version !== env.FEED_RELEASE_SHA ||
@@ -321,7 +346,13 @@ export async function handleRequest(
         }
         validateTransition(input, env);
         if (!dispatch.restart) throw new HTTPError(503, "transition_unavailable");
-        return json(await dispatch.restart(target, input));
+        let restarted: unknown;
+        try {
+          restarted = await dispatch.restart(target, input);
+        } catch (error) {
+          throw classifyLifecycleError(error, "rpc");
+        }
+        return json(restarted);
       }
       if (match[2] === "ready" && request.method === "GET")
         return json(await probe(target, env, dispatch));
