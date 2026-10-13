@@ -1,26 +1,10 @@
-import type { CandidateReport, CompanyReport } from "./types";
+import type { CandidateReport } from "./types";
 
 /**
- * Prototype fixtures for /talent-match. Every value is invented sample data
- * (people, scores, matches); repo star counts are rounded placeholders. The
- * backend replaces these with /api/talent-match/* responses of the same shape.
+ * The sample candidate report behind /talent-match's "View a sample report".
+ * Every value is invented (people, scores, matches); repo star counts are
+ * rounded placeholders. Real reports come from /api/talent-match/*.
  */
-
-export const SAMPLE_JD = `Training & Inference Engineer — LLM infrastructure (Beijing / Hangzhou)
-
-Responsibilities
-- Optimize large-scale distributed training and high-throughput inference for frontier LLMs
-- Build and tune kernels, parallelism strategies and serving systems
-
-Requirements
-- 3+ years of systems or ML infrastructure experience
-- Strong Python and C++/CUDA; deep knowledge of PyTorch internals
-- Hands-on experience with distributed training (Megatron, DeepSpeed, FSDP)
-- Experience with inference engines such as vLLM, SGLang or TensorRT-LLM
-
-Nice to have
-- Publications at top ML/systems venues (NeurIPS, ICML, OSDI, MLSys)
-- Contributions to major open-source ML infrastructure projects`;
 
 export const MOCK_CANDIDATE_REPORT: CandidateReport = {
   id: "demo-report",
@@ -167,81 +151,6 @@ export const MOCK_CANDIDATE_REPORT: CandidateReport = {
       detail: { zh: "按 DP → TP → PP → ZeRO 的顺序，配合小规模多卡实验，每一步留下可公开的笔记或代码。", en: "Work through DP → TP → PP → ZeRO with small multi-GPU experiments, leaving public notes or code at every step." },
       closes: [{ zh: "千卡级分布式训练（Megatron / DeepSpeed）", en: "Large-scale distributed training (Megatron / DeepSpeed)" }],
       horizon: { zh: "持续", en: "Ongoing" },
-    },
-  ],
-};
-
-export const MOCK_COMPANY_REPORT: CompanyReport = {
-  requirement: {
-    title: { zh: "训练与推理工程师 · LLM 基础设施", en: "Training & Inference Engineer · LLM infrastructure" },
-    direction: { zh: "AI 基础设施", en: "AI infrastructure" },
-    years: { zh: "3 年以上", en: "3+ years" },
-    location: { zh: "北京 / 杭州", en: "Beijing / Hangzhou" },
-    mustHave: [
-      { label: "Python", level: 3 },
-      { label: "C++", level: 3 },
-      { label: "CUDA", level: 3 },
-      { label: "PyTorch", level: 4 },
-      { label: "Distributed training", level: 3 },
-      { label: "LLM inference", level: 3 },
-    ],
-    niceToHave: [
-      { label: "Top-venue papers", level: 2 },
-      { label: "OSS ML infra contributions", level: 2 },
-    ],
-    conditions: [
-      { zh: "3 年以上系统或 ML 基础设施经验", en: "3+ years of systems or ML infrastructure" },
-    ],
-  },
-  poolSize: 1284,
-  candidates: [
-    {
-      login: "demo-kernel",
-      name: "Zhao Min",
-      headline: { zh: "CUDA / Triton kernel 工程师", en: "CUDA / Triton kernel engineer" },
-      location: { zh: "北京", en: "Beijing" },
-      fit: 91,
-      breakdown: { mustHave: 94, niceToHave: 85, conditions: 90 },
-      verifiedShare: 0.83,
-      matched: ["Python", "C++", "CUDA", "PyTorch", "Distributed training", "OSS ML infra contributions"],
-      missing: ["Top-venue papers"],
-      explain: { zh: "FlashAttention 与 DeepSpeed 均有合并 PR，CUDA 能力有公开 kernel 仓库验证；唯一缺口是论文。", en: "Merged PRs in FlashAttention and DeepSpeed, with CUDA proven by public kernel repos; papers are the only gap." },
-    },
-    {
-      login: "demo-research",
-      name: "Chen Yu",
-      headline: { zh: "MLSys 方向博士，研究推理调度", en: "MLSys PhD researching inference scheduling" },
-      location: { zh: "杭州", en: "Hangzhou" },
-      fit: 86,
-      breakdown: { mustHave: 80, niceToHave: 100, conditions: 85 },
-      verifiedShare: 0.5,
-      matched: ["Python", "PyTorch", "LLM inference", "Distributed training", "Top-venue papers"],
-      missing: ["C++"],
-      explain: { zh: "OSDI 一作 + SGLang 核心贡献者；C++ 工程经验仅为自述，建议面试重点考察。", en: "First-author OSDI paper and an SGLang core contributor; C++ experience is claimed only — probe it in interviews." },
-    },
-    {
-      login: "demo-dev",
-      name: "Lin Wei",
-      headline: { zh: "LLM 推理与后端工程师", en: "LLM inference & backend engineer" },
-      location: { zh: "北京 / 杭州", en: "Beijing / Hangzhou" },
-      fit: 68,
-      breakdown: { mustHave: 66, niceToHave: 40, conditions: 90 },
-      verifiedShare: 0.6,
-      matched: ["Python", "PyTorch", "LLM inference", "C++"],
-      missing: ["CUDA", "Distributed training"],
-      explain: { zh: "推理侧有 vLLM 合并 PR，训练侧证据不足；适合推理方向岗位。", en: "Merged vLLM PRs on the inference side, thin training evidence; better suited to inference roles." },
-    },
-    {
-      login: "demo-platform",
-      name: "Wang Jie",
-      headline: { zh: "GPU 集群平台工程师", en: "GPU cluster platform engineer" },
-      location: { zh: "上海（可迁）", en: "Shanghai (open to relocate)" },
-      fit: 61,
-      breakdown: { mustHave: 58, niceToHave: 50, conditions: 80 },
-      verifiedShare: 0.7,
-      matched: ["Python", "Distributed training", "OSS ML infra contributions"],
-      missing: ["CUDA", "PyTorch", "LLM inference"],
-      explain: { zh: "擅长训练集群调度与容错，模型层能力偏弱。", en: "Strong on training-cluster scheduling and fault tolerance, weaker at the model layer." },
     },
   ],
 };

@@ -294,12 +294,15 @@ describe("PDF résumés", () => {
 });
 
 describe("report, quota and profile routes", () => {
-  it("returns the caller's latest report so the page can resume it", async () => {
-    expect(await (await getLatest()).json()).toEqual({ latest: null });
+  it("returns the caller's latest report and history so the page can resume and reopen them", async () => {
+    expect(await (await getLatest()).json()).toEqual({ latest: null, history: [] });
     const { id } = await (await post(validBody)).json();
-    expect(await (await getLatest()).json()).toMatchObject({ latest: { id, status: "queued", report: null } });
+    expect(await (await getLatest()).json()).toMatchObject({
+      latest: { id, status: "queued", report: null },
+      history: [{ id, status: "queued", error: null, headline: null, matchCount: 0, topFit: null }],
+    });
     mocks.user = { githubId: 8, login: "other" };
-    expect(await (await getLatest()).json()).toEqual({ latest: null });
+    expect(await (await getLatest()).json()).toEqual({ latest: null, history: [] });
   });
 
   it("shows reports to their owner only, and deletes all talent data", async () => {

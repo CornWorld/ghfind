@@ -1663,5 +1663,68 @@
     "applyByEmail": "メールで応募",
     "emailNote": "履歴書の送付先：{email}",
     "detailNote": "ghfind は求人情報を掲載するのみで、採用の判断は企業が行います。"
+  },
+  "talentMatch": {
+    "source": {
+      "legend": "履歴書の読み込み方法を選択",
+      "existingTitle": "ghfind の履歴書を使う",
+      "existingHint": "「マイ履歴書」に保存したものから選択",
+      "uploadTitle": "自分の履歴書をアップロード",
+      "uploadHint": "PDF、最大 {max} MB",
+      "loading": "履歴書を読み込み中…",
+      "loadFailed": "保存済みの履歴書を読み込めませんでした。後でもう一度試すか、PDF をアップロードしてください。",
+      "listLabel": "あなたの履歴書",
+      "profileOption": "プロフィール（再利用できる情報）",
+      "profileHint": "複数の履歴書で再利用するために保存した情報",
+      "updated": "{date} に更新",
+      "manage": "履歴書を管理",
+      "emptyTitle": "ghfind にはまだ履歴書がありません",
+      "emptyBody": "履歴書ビルダーなら数分で作成できます。クラウドに保存したら、ここに戻って分析しましょう。",
+      "emptyCta": "履歴書を作成",
+      "emptyUpload": "代わりに PDF をアップロード"
+    },
+    "drop": {
+      "label": "PDF の履歴書をアップロード",
+      "title": "ここに PDF をドラッグ＆ドロップ",
+      "or": "または",
+      "browse": "ファイルを選択",
+      "rules": "PDF のみ · 最大 {max} MB",
+      "dragging": "ドロップして履歴書を読み込む",
+      "reading": "{name} を読み込み中…",
+      "readingHint": "ブラウザ内で処理され、数秒で終わります。",
+      "readyTitle": "履歴書の準備ができました",
+      "readyMeta": "{pages, plural, other {# ページ}} · {chars} 文字",
+      "replace": "差し替え",
+      "remove": "削除",
+      "errorTitle": "このファイルは使えません",
+      "retry": "別のファイルを選択",
+      "privacy": "PDF はブラウザ内で読み取られ、アップロードされません。送信されるのはテキストのみ（メールと電話番号は除去）で、テキスト自体も保存されません。",
+      "errors": {
+        "type": "PDF ではありません。.pdf ファイルを選んでください。",
+        "size": "ファイルサイズは {size} MB です。上限は {max} MB です。",
+        "empty": "ファイルが空です。",
+        "multiple": "ファイルは一度に 1 つだけドロップしてください。",
+        "unreadable": "この PDF からテキストを読み取れません（スキャンや画像の可能性があります）。テキストを選択できる PDF を使ってください。",
+        "parse": "この PDF を開けませんでした。破損しているか、パスワードで保護されている可能性があります。"
+      }
+    },
+    "history": {
+      "title": "過去の分析",
+      "empty": "レポートを生成すると、ここに表示されます。",
+      "untitled": "人材レポート",
+      "viewing": "表示中",
+      "opening": "開いています…",
+      "running": "生成中",
+      "failed": "失敗",
+      "matches": "{count, plural, other {マッチした職種 # 件}}",
+      "topFit": "最高マッチ {fit}",
+      "openFailed": "この分析を開けませんでした。もう一度お試しください。"
+    },
+    "company": {
+      "badge": "近日公開",
+      "title": "採用向け機能は近日公開",
+      "body": "まもなく、求人票を貼り付けるだけで、機会を探している開発者を GitHub で検証されたスキル順に確認できるようになります。",
+      "cta": "求人を掲載"
+    }
   }
 }

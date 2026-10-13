@@ -1663,5 +1663,68 @@
     "applyByEmail": "Postularme por email",
     "emailNote": "Envía tu CV a {email}",
     "detailNote": "ghfind solo publica esta oferta; la empresa toma todas las decisiones de contratación."
+  },
+  "talentMatch": {
+    "source": {
+      "legend": "¿Cómo quieres compartir tu currículum?",
+      "existingTitle": "Usar un currículum de ghfind",
+      "existingHint": "Elige uno guardado en Mi currículum",
+      "uploadTitle": "Subir el tuyo",
+      "uploadHint": "PDF, hasta {max} MB",
+      "loading": "Cargando tus currículums…",
+      "loadFailed": "No pudimos cargar tus currículums guardados. Inténtalo más tarde o sube un PDF.",
+      "listLabel": "Tus currículums",
+      "profileOption": "Perfil (datos reutilizables)",
+      "profileHint": "Datos que guardaste para reutilizar en tus currículums",
+      "updated": "Actualizado el {date}",
+      "manage": "Gestionar currículums",
+      "emptyTitle": "Aún no tienes un currículum en ghfind",
+      "emptyBody": "Crea uno en pocos minutos con el editor de currículums, guárdalo en la nube y vuelve para analizarlo.",
+      "emptyCta": "Crear un currículum",
+      "emptyUpload": "Subir un PDF"
+    },
+    "drop": {
+      "label": "Subir un currículum en PDF",
+      "title": "Arrastra y suelta tu PDF aquí",
+      "or": "o",
+      "browse": "Elegir archivo",
+      "rules": "Solo PDF · hasta {max} MB",
+      "dragging": "Suéltalo para leer tu currículum",
+      "reading": "Leyendo {name}…",
+      "readingHint": "Se procesa en tu navegador y tarda unos segundos.",
+      "readyTitle": "Currículum listo",
+      "readyMeta": "{pages, plural, one {# página} other {# páginas}} · {chars} caracteres",
+      "replace": "Cambiar",
+      "remove": "Quitar",
+      "errorTitle": "Ese archivo no sirvió",
+      "retry": "Elegir otro archivo",
+      "privacy": "El PDF se lee en tu navegador y nunca se sube. Solo se envía su texto (sin correo ni teléfono) y el texto nunca se guarda.",
+      "errors": {
+        "type": "No es un PDF. Elige un archivo .pdf.",
+        "size": "El archivo pesa {size} MB. El límite es {max} MB.",
+        "empty": "El archivo está vacío.",
+        "multiple": "Suelta un solo archivo a la vez.",
+        "unreadable": "No se pudo leer texto de este PDF (puede ser un escaneo o una imagen). Usa un PDF con texto seleccionable.",
+        "parse": "No se pudo abrir este PDF; puede estar dañado o protegido con contraseña."
+      }
+    },
+    "history": {
+      "title": "Análisis anteriores",
+      "empty": "Tus análisis aparecerán aquí cuando generes uno.",
+      "untitled": "Informe de talento",
+      "viewing": "Viendo",
+      "opening": "Abriendo…",
+      "running": "En curso",
+      "failed": "Falló",
+      "matches": "{count, plural, one {# puesto compatible} other {# puestos compatibles}}",
+      "topFit": "Mejor ajuste {fit}",
+      "openFailed": "No se pudo abrir ese análisis. Inténtalo de nuevo."
+    },
+    "company": {
+      "badge": "Próximamente",
+      "title": "Las herramientas de contratación llegan pronto",
+      "body": "Pronto podrás pegar una descripción de puesto y ver desarrolladores abiertos a oportunidades, ordenados por habilidades verificadas en GitHub.",
+      "cta": "Publicar una oferta"
+    }
   }
 }

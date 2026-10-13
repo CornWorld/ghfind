@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Building2, FlaskConical, UserRound } from "lucide-react";
+import { Building2, UserRound } from "lucide-react";
 import { fetchMe } from "@/lib/me-client";
 import { signInWithGitHub } from "@/lib/oauth-client";
 import { getQuota } from "@/lib/talent-match/client";
@@ -13,9 +13,8 @@ import { makeCopy } from "./parts";
 type Tab = "candidate" | "company";
 
 /**
- * /talent-match: candidate talent reports from /api/talent-match (phase 1)
- * and the company JD-matching prototype, which still renders fixtures from
- * `@/lib/talent-match/mock` until phase 3
+ * /talent-match: candidate talent reports from /api/talent-match (phase 1).
+ * The company side shows a coming-soon state until phase 3
  * (docs/plans/2026-10-12-talent-match-report.md).
  */
 export function TalentMatch({ zh }: { zh: boolean }) {
@@ -96,13 +95,7 @@ export function TalentMatch({ zh }: { zh: boolean }) {
         {tab === "candidate" ? (
           <CandidatePanel copy={copy} login={login} handoff={handoff} canGenerate={remaining === null || remaining > 0} onQuotaChange={refreshQuota} onSignIn={onSignIn} />
         ) : (
-          <>
-            <p className="mb-5 flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-2.5 text-xs text-zinc-400">
-              <FlaskConical className="h-4 w-4 shrink-0 text-amber-300" aria-hidden="true" />
-              {c("原型预览：企业端展示的是示例数据，生成流程为模拟，即将上线。", "Prototype preview: the company side shows sample data with simulated generation, and is coming soon.")}
-            </p>
-            <CompanyPanel copy={copy} login={login} onSignIn={onSignIn} />
-          </>
+          <CompanyPanel />
         )}
       </div>
     </main>

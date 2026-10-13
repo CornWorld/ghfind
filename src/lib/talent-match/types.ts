@@ -2,8 +2,8 @@ import type { SubScoreKey } from "@/lib/types";
 
 /**
  * Talent Match data contract (docs/plans/2026-10-12-talent-match-report.md).
- * The frontend prototype renders these shapes from `mock.ts`; the backend
- * returns the same shapes from /api/talent-match/*.
+ * The backend returns these shapes from /api/talent-match/*; `mock.ts` holds a
+ * sample report of the same shape. Company-side shapes arrive with phase 3.
  */
 
 /** Bilingual copy. The prototype ships zh + en; other locales fall back to en. */
@@ -87,41 +87,7 @@ export type CandidateReport = {
   growth: GrowthItem[];
 };
 
-export type RequirementSkill = { label: string; level: SkillLevel };
-
-export type JobRequirement = {
-  title: Text;
-  direction: Text;
-  years: Text;
-  location: Text;
-  mustHave: RequirementSkill[];
-  niceToHave: RequirementSkill[];
-  conditions: Text[];
-};
-
-export type CandidateMatch = {
-  login: string;
-  name: string;
-  headline: Text;
-  location: Text;
-  fit: number;
-  breakdown: MatchBreakdown;
-  /** Share of matched requirements backed by verified evidence, 0-1. */
-  verifiedShare: number;
-  matched: string[];
-  missing: string[];
-  explain: Text;
-};
-
-export type CompanyReport = {
-  requirement: JobRequirement;
-  /** Opt-in talents searched. */
-  poolSize: number;
-  candidates: CandidateMatch[];
-};
-
 export type Quota = { used: number; limit: number; resetsAt: string };
 
 /** Pipeline stages, in order, shown while a report is generated. */
 export const CANDIDATE_STAGES = ["normalize", "extract", "verify", "match", "advise"] as const;
-export const COMPANY_STAGES = ["extract", "recall", "score"] as const;

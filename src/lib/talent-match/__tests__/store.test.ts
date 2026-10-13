@@ -13,6 +13,7 @@ import {
   listGrowthProjects,
   listJobSources,
   listMatchableJobs,
+  listOwnReports,
   loadDimensions,
   loadVerifiedEvidence,
   monthFreeTokens,
@@ -116,6 +117,28 @@ describe("report ledger", () => {
     const own = await getOwnReport(core, done.id, 7);
     expect(own).toMatchObject({ status: "done", result: { ok: 1 }, error: null });
     expect(await getOwnReport(core, done.id, 8)).toBeNull();
+  });
+});
+
+describe("report history", () => {
+  it("lists the owner's reports newest first with summaries of finished ones", async () => {
+    const older = report({ now: NOW - 60_000 });
+    await insertQueuedReport(core, older);
+    await updateReport(core, older.id, { status: "failed", now: NOW - 60_000, error: "model_output_invalid" });
+    const done = report();
+    await insertQueuedReport(core, done);
+    await updateReport(core, done.id, {
+      status: "done",
+      now: NOW,
+      result: { profile: { headline: { zh: "工程师", en: "Engineer" } }, matches: [{ fit: 61 }, { fit: 82 }, { fit: 40 }] },
+    });
+    await insertQueuedReport(core, report({ githubId: 8 }));
+
+    const history = await listOwnReports(core, 7);
+    expect(history.map((h) => h.id)).toEqual([done.id, older.id]);
+    expect(history[0]).toMatchObject({ status: "done", headline: { zh: "工程师", en: "Engineer" }, matchCount: 3, topFit: 82, error: null });
+    expect(history[1]).toMatchObject({ status: "failed", headline: null, matchCount: 0, topFit: null, error: "model_output_invalid" });
+    expect(await listOwnReports(core, 7, 1)).toHaveLength(1);
   });
 });
 

@@ -1,17 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ArrowUpRight, BookOpen, Code2, FileText, FlaskConical, GitPullRequest, GraduationCap, Hammer, RefreshCw, Sparkles, Star, Trash2, Upload } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { ArrowUpRight, BookOpen, Code2, FlaskConical, GitPullRequest, GraduationCap, Hammer, RefreshCw, Sparkles, Star, Trash2 } from "lucide-react";
 import { Turnstile, turnstileEnabled } from "@/components/Turnstile";
 import { Link } from "@/i18n/navigation";
 import { DIMENSIONS } from "@/lib/dimensions";
 import type { EmploymentType } from "@/lib/jobs";
 import { SUBSCORE_MAX } from "@/lib/score-presentation";
-import { createReport, deleteTalentProfile, getLatestReport, getReport, listResumeSources, readPdfText, type ResumeSourceOption } from "@/lib/talent-match/client";
+import { createReport, deleteTalentProfile, getReport, getReports, listResumeSources, type ReportSummary, type ResumeSourceOption } from "@/lib/talent-match/client";
 import { MOCK_CANDIDATE_REPORT } from "@/lib/talent-match/mock";
 import { CANDIDATE_STAGES, type CandidateReport, type Cost, type GrowthKind, type JobMatch, type ProfileItem } from "@/lib/talent-match/types";
 import type { SubScoreKey } from "@/lib/types";
 import { Bar, Breakdown, Card, Chip, FitScore, SourceBadge, StageProgress, fieldClass, primaryButton, secondaryButton, type Copy } from "./parts";
+import { ReportHistory } from "./ReportHistory";
+import type { PdfResume } from "./ResumeDropzone";
+import { ResumeSourcePicker, sourceKeyOf, type SourceMode } from "./ResumeSourcePicker";
 
 const DIMENSION_LABELS: Record<SubScoreKey, [string, string]> = {
   account_maturity: ["账号成熟度", "Account maturity"],
@@ -53,9 +56,6 @@ const ERROR_COPY: Record<string, [string, string]> = {
   stale: ["生成中断了，额度未扣除，请重试。", "Generation stopped; no quota was used. Please try again."],
   sign_in_required: ["请先登录。", "Please sign in first."],
   pdf_unreadable: ["这个 PDF 里读不到文字（可能是扫描件或图片），请换一份可复制文字的 PDF。", "No text could be read from this PDF (it may be a scan or an image). Use a PDF with selectable text."],
-  pdf_too_large: ["PDF 不能超过 10 MB。", "The PDF must be 10 MB or smaller."],
-  pdf_type: ["请选择 PDF 文件。", "Choose a PDF file."],
-  pdf_parse_failed: ["无法打开这个 PDF，文件可能已损坏或加密。", "This PDF couldn't be opened; it may be damaged or password-protected."],
 };
 const GENERIC_ERROR: [string, string] = ["生成失败，额度未扣除，请稍后重试。", "Something went wrong; no quota was used. Please try again later."];
 
@@ -92,7 +92,8 @@ export function CandidatePanel({
 }) {
   const { c } = copy;
   const [phase, setPhase] = useState<Phase>({ kind: "loading" });
-  const [sources, setSources] = useState<ResumeSourceOption[] | null>(null);
+  const [mode, setMode] = useState<SourceMode>("existing");
+  const [sources, setSources] = useState<ResumeSourceOption[] | null | "error">(null);
   const [sourceKey, setSourceKey] = useState("");
   const [location, setLocation] = useState("");
   const [remote, setRemote] = useState(false);
@@ -101,8 +102,14 @@ export function CandidatePanel({
   const [submitting, setSubmitting] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   /** Text read from an uploaded PDF in this browser; the file never leaves it. */
-  const [pdf, setPdf] = useState<{ name: string; text: string; pages: number } | null>(null);
-  const [pdfState, setPdfState] = useState<"idle" | "reading" | string>("idle");
+  const [pdf, setPdf] = useState<PdfResume | null>(null);
+  const [history, setHistory] = useState<ReportSummary[]>([]);
+  const [openingId, setOpeningId] = useState<string | null>(null);
+  const [historyError, setHistoryError] = useState(false);
+
+  const refreshHistory = useCallback(() => {
+    getReports().then((result) => { if (result.ok) setHistory(result.value.history); });
+  }, []);
 
   // Signed in: resume a report in flight, or show the latest finished one.
   useEffect(() => {
@@ -111,18 +118,22 @@ export function CandidatePanel({
       return;
     }
     let live = true;
-    getLatestReport().then((result) => {
+    getReports().then((result) => {
       if (!live) return;
       const latest = result.ok ? result.value.latest : null;
+      setHistory(result.ok ? result.value.history : []);
       if (latest && (latest.status === "queued" || latest.status === "running")) setPhase({ kind: "running", id: latest.id, startedAt: Date.now() });
       else if (latest?.status === "done" && latest.report) setPhase({ kind: "report", report: latest.report });
       else setPhase({ kind: "form" });
     });
     listResumeSources().then((result) => {
       if (!live) return;
-      const list = result.ok ? result.value : [];
-      setSources(list);
-      setSourceKey(list[0] ? sourceKeyOf(list[0]) : PDF_KEY);
+      if (!result.ok) {
+        setSources("error");
+        return;
+      }
+      setSources(result.value);
+      if (result.value[0]) setSourceKey(sourceKeyOf(result.value[0]));
     });
     return () => { live = false; };
   }, [login]);
@@ -138,32 +149,34 @@ export function CandidatePanel({
       if (result.value.status === "done" && result.value.report) {
         setPhase({ kind: "report", report: result.value.report });
         onQuotaChange();
+        refreshHistory();
       } else if (result.value.status === "failed") {
         setPhase({ kind: "form", error: result.value.error ?? "generation_failed" });
         onQuotaChange();
+        refreshHistory();
       }
     }, POLL_MS);
     return () => { live = false; clearInterval(tick); clearInterval(poll); };
-  }, [phase, onQuotaChange]);
+  }, [phase, onQuotaChange, refreshHistory]);
 
-  const usingPdf = sourceKey === PDF_KEY;
-  const source = sources?.find((s) => sourceKeyOf(s) === sourceKey) ?? null;
+  const usingPdf = mode === "upload";
+  const source = Array.isArray(sources) ? sources.find((s) => sourceKeyOf(s) === sourceKey) ?? null : null;
   const hasInput = usingPdf ? pdf !== null : source !== null;
 
-  const pickPdf = async (file: File | undefined) => {
-    setPdf(null);
-    if (!file) {
-      setPdfState("idle");
-      return;
-    }
-    setPdfState("reading");
-    const result = await readPdfText(file);
-    if (result.ok) {
-      setPdf({ name: file.name, ...result.value });
-      setPdfState("idle");
+  const openReport = async (summary: ReportSummary) => {
+    setOpeningId(summary.id);
+    setHistoryError(false);
+    const result = await getReport(summary.id);
+    setOpeningId(null);
+    if (result.ok && result.value.status === "done" && result.value.report) {
+      setPhase({ kind: "report", report: result.value.report });
+    } else if (result.ok && (result.value.status === "queued" || result.value.status === "running")) {
+      setPhase({ kind: "running", id: summary.id, startedAt: Date.parse(summary.createdAt) || Date.now() });
     } else {
-      setPdfState(result.error);
+      setHistoryError(true);
+      refreshHistory();
     }
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const submit = async () => {
@@ -188,6 +201,7 @@ export function CandidatePanel({
     }
     setPhase({ kind: "running", id: result.value.id, startedAt: Date.now() });
     onQuotaChange();
+    refreshHistory();
   };
 
   const deleteProfile = async () => {
@@ -195,6 +209,7 @@ export function CandidatePanel({
     const result = await deleteTalentProfile();
     if (result.ok) {
       setPhase({ kind: "form" });
+      setHistory([]);
       onQuotaChange();
     } else {
       window.alert(c("删除失败，请稍后重试。", "Couldn't delete. Please try again later."));
@@ -215,25 +230,41 @@ export function CandidatePanel({
     );
   }
 
+  const historyCard = login && (
+    <ReportHistory
+      history={history}
+      currentId={phase.kind === "report" && !phase.sample ? phase.report.id : phase.kind === "running" ? phase.id : null}
+      openingId={openingId}
+      error={historyError}
+      onOpen={openReport}
+    />
+  );
+
   if (phase.kind === "running") {
     const stage = Math.min(CANDIDATE_STAGES.length - 1, Math.floor((now - phase.startedAt) / STAGE_ESTIMATE_MS));
     return (
-      <Card title={c("正在生成报告", "Generating your report")}>
-        <StageProgress stages={CANDIDATE_STAGES.map((s) => c(...STAGE_LABELS[s]))} current={stage} />
-        <p className="mt-5 text-xs text-zinc-500">{c("通常需要 30–60 秒，可以离开页面，回来后会在这里显示。", "Usually 30–60 seconds. You can leave; it will be here when you come back.")}</p>
-      </Card>
+      <div className="space-y-5">
+        <Card title={c("正在生成报告", "Generating your report")}>
+          <StageProgress stages={CANDIDATE_STAGES.map((s) => c(...STAGE_LABELS[s]))} current={stage} />
+          <p className="mt-5 text-xs text-zinc-500">{c("通常需要 30–60 秒，可以离开页面，回来后会在这里显示。", "Usually 30–60 seconds. You can leave; it will be here when you come back.")}</p>
+        </Card>
+        {historyCard}
+      </div>
     );
   }
 
   if (phase.kind === "report") {
     return (
-      <CandidateReportView
-        report={phase.report}
-        copy={copy}
-        sample={phase.sample === true}
-        onReset={() => setPhase({ kind: "form" })}
-        onDelete={phase.sample ? undefined : deleteProfile}
-      />
+      <div className="space-y-5">
+        <CandidateReportView
+          report={phase.report}
+          copy={copy}
+          sample={phase.sample === true}
+          onReset={() => setPhase({ kind: "form" })}
+          onDelete={phase.sample ? undefined : deleteProfile}
+        />
+        {!phase.sample && historyCard}
+      </div>
     );
   }
 
@@ -242,65 +273,20 @@ export function CandidatePanel({
 
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_18rem]">
-      <Card title={c("你的资料", "Your material")}>
+      <Card title={c("你的资料", "Your material")} className="min-w-0">
         {!login ? (
           <p className="text-sm text-zinc-400">{c("登录 GitHub 后，用你的简历（云端简历或 PDF）和 GitHub 数据生成报告。", "Sign in with GitHub to generate a report from your résumé (cloud-saved or a PDF) and your GitHub evidence.")}</p>
         ) : (
           <div className="space-y-4">
-            <div>
-              <label htmlFor="tm-source" className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-zinc-200"><FileText className="h-4 w-4" aria-hidden="true" />{c("简历", "Résumé")}</label>
-              {sources === null ? (
-                <p className="text-xs text-zinc-500">{c("正在读取云端简历…", "Reading your cloud résumés…")}</p>
-              ) : (
-                <>
-                  <select id="tm-source" className={fieldClass} value={sourceKey} onChange={(e) => setSourceKey(e.target.value)}>
-                    {sources.map((s) => (
-                      <option key={sourceKeyOf(s)} value={sourceKeyOf(s)}>
-                        {s.kind === "profile" ? c("资料库（可复用的个人资料）", "Profile (reusable details)") : s.label}
-                      </option>
-                    ))}
-                    <option value={PDF_KEY}>{c("上传 PDF 简历", "Upload a PDF résumé")}</option>
-                  </select>
-                  {sources.length === 0 && (
-                    <p className="mt-1.5 text-xs text-zinc-500">
-                      {c("还没有云端简历，可以上传 PDF，或", "No cloud-saved résumé yet. Upload a PDF, or ")}
-                      <Link href="/resume" prefetch={false} className="underline underline-offset-2 hover:text-zinc-300">{c("在「我的简历」创建并保存", "create and save one in My résumé")}</Link>
-                      {c("。", ".")}
-                    </p>
-                  )}
-                  {usingPdf && (
-                    <div className="mt-3">
-                      <div className="flex flex-wrap items-center gap-3">
-                        {/* Styled label instead of ::file-selector-button, which has no light-theme mapping. */}
-                        <label htmlFor="tm-pdf" className={`${secondaryButton} cursor-pointer`}>
-                          <Upload className="h-3.5 w-3.5" aria-hidden="true" />{pdf ? c("换一个文件", "Choose another file") : c("选择 PDF", "Choose a PDF")}
-                        </label>
-                        <span className="min-w-0 truncate text-sm text-zinc-400" aria-live="polite">
-                          {pdfState === "reading"
-                            ? c("正在读取…", "Reading…")
-                            : pdf
-                              ? c(`${pdf.name} · ${pdf.pages} 页 · ${pdf.text.length.toLocaleString()} 字`, `${pdf.name} · ${pdf.pages} page${pdf.pages === 1 ? "" : "s"} · ${pdf.text.length.toLocaleString()} characters`)
-                              : c("未选择文件", "No file chosen")}
-                        </span>
-                        <input
-                          id="tm-pdf"
-                          type="file"
-                          accept="application/pdf"
-                          className="sr-only"
-                          onChange={(e) => void pickPdf(e.target.files?.[0])}
-                        />
-                      </div>
-                      {pdfState !== "idle" && pdfState !== "reading" && (
-                        <p role="alert" className="mt-2 rounded-xl bg-red-500/10 px-3 py-2 text-xs text-rose-400">{c(...(ERROR_COPY[pdfState] ?? GENERIC_ERROR))}</p>
-                      )}
-                      <p className="mt-1.5 text-xs text-zinc-500">
-                        {c("PDF 只在你的浏览器里解析，文件不会上传；只发送文字（已去掉邮箱和电话），且不会保存原文。", "The PDF is read in your browser and never uploaded. Only its text is sent (email and phone removed), and the text itself is never stored.")}
-                      </p>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+            <ResumeSourcePicker
+              mode={mode}
+              onMode={setMode}
+              sources={sources}
+              sourceKey={sourceKey}
+              onSourceKey={setSourceKey}
+              pdf={pdf}
+              onPdf={setPdf}
+            />
 
             <div>
               <p className="mb-1.5 text-sm font-medium text-zinc-200">GitHub</p>
@@ -343,7 +329,7 @@ export function CandidatePanel({
         )}
       </Card>
 
-      <Card title={c("会得到什么", "What you get")}>
+      <Card title={c("会得到什么", "What you get")} className="min-w-0">
         <ul className="space-y-2.5 text-sm text-zinc-300">
           <li>{c("· 多维人才画像，区分「已验证」与「自述」", "· A multi-dimension profile, verified vs claimed")}</li>
           <li>{c("· 匹配岗位与匹配度拆解", "· Matching roles with a score breakdown")}</li>
@@ -366,14 +352,9 @@ export function CandidatePanel({
           <button type="button" className={`${secondaryButton} mt-2 w-full`} onClick={() => setPhase({ kind: "report", report: MOCK_CANDIDATE_REPORT, sample: true })}>{c("查看示例报告", "View a sample report")}</button>
         </div>
       </Card>
+      {historyCard && <div className="min-w-0 lg:col-span-2">{historyCard}</div>}
     </div>
   );
-}
-
-const PDF_KEY = "pdf";
-
-function sourceKeyOf(source: ResumeSourceOption): string {
-  return source.kind === "profile" ? "profile" : `resume:${source.id}`;
 }
 
 function formatStars(stars: number): string {
