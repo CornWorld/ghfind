@@ -37,6 +37,7 @@ beforeEach(async () => {
   vi.stubEnv("PUBLIC_SITE_URL", "https://ghfind.com");
   vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://ghfind.com");
   limiter.check.mockReset().mockResolvedValue({ success: true });
+  vi.spyOn(console, "warn").mockImplementation(() => {});
   [oauth, begin, callback] = await Promise.all([
     import("@/lib/google-oauth"),
     import("@/app/api/auth/google/route"),
@@ -48,6 +49,7 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
 });
@@ -74,7 +76,7 @@ function providerFixture(token: string) {
   const fetch = vi.fn(async (input: string | URL | Request, options?: RequestInit) => {
     const url = String(input);
     if (url === TOKEN_URL) {
-      expect(options?.redirect).toBe("error");
+      expect(options?.redirect).toBe("manual");
       expect(options?.signal).toBeInstanceOf(AbortSignal);
       return Response.json({ id_token: token, access_token: "not-persisted", refresh_token: "not-requested-or-persisted" });
     }
@@ -307,5 +309,55 @@ describe("Google signed identity validation", () => {
     expectError(await callback.GET(callbackRequest(cookie, state.state)), "google_failed");
     vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("secret-provider-response"); }));
     expectError(await callback.GET(callbackRequest(cookie, state.state)), "google_failed");
+  });
+});
+
+describe("safe Google failure diagnostics", () => {
+  it("does not serialize an unknown error or attacker-controlled classification fields", async () => {
+    const malicious = Object.assign(new Error("secret-token-and-personal-data"), {
+      stage: "secret-stage", reason: "secret-reason", code: "secret-code", status: 12345,
+    });
+    expect(oauth.googleOAuthFailureDetails(malicious)).toEqual({ stage: "unknown", reason: "unexpected_error" });
+    limiter.check.mockRejectedValue(malicious);
+    const { state, cookie } = oauth.newGoogleOAuthState("/");
+    expectError(await callback.GET(callbackRequest(cookie, state.state)), "google_failed");
+    expect(console.warn).toHaveBeenCalledExactlyOnceWith("oauth_google_failed", { stage: "rate_limit", reason: "unexpected_error" });
+    expect(JSON.stringify(vi.mocked(console.warn).mock.calls)).not.toContain("secret");
+  });
+
+  it("classifies token HTTP failures without reading or forwarding provider errors", async () => {
+    const { state, cookie } = oauth.newGoogleOAuthState("/");
+    vi.stubGlobal("fetch", vi.fn(async () => Response.json({ error: "secret-provider-body" }, { status: 400 })));
+    expectError(await callback.GET(callbackRequest(cookie, state.state)), "google_failed");
+    expect(console.warn).toHaveBeenCalledExactlyOnceWith("oauth_google_failed", {
+      stage: "token_exchange", reason: "http_error", status: 400,
+    });
+  });
+
+  it("distinguishes token response parsing and identity verification failures safely", async () => {
+    const { state } = oauth.newGoogleOAuthState("/");
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("not-json-secret")));
+    const parseError = await oauth.exchangeGoogleCode("code", state).catch(error => error);
+    expect(oauth.googleOAuthFailureDetails(parseError)).toEqual({ stage: "token_response", reason: "invalid_json" });
+    providerFixture(await signedToken(state, { nonce: "incorrect" }));
+    const identityError = await oauth.exchangeGoogleCode("different-code", state).catch(error => error);
+    expect(oauth.googleOAuthFailureDetails(identityError)).toEqual({ stage: "identity", reason: "nonce_mismatch" });
+  });
+
+  it.each(["token", "jwks"])("rejects %s redirects without following them", async endpoint => {
+    const { state } = oauth.newGoogleOAuthState("/");
+    const token = await signedToken(state);
+    const fetch = vi.fn(async (url, options) => {
+      expect(options.redirect).toBe("manual");
+      if (endpoint === "jwks" && String(url) === TOKEN_URL) return Response.json({ id_token: token });
+      return new Response("provider-body-must-not-appear", { status: 302, headers: { Location: "https://untrusted.example/" } });
+    });
+    vi.stubGlobal("fetch", fetch);
+    const error = await oauth.exchangeGoogleCode("code", state).catch(error => error);
+    expect(oauth.googleOAuthFailureDetails(error)).toEqual({
+      stage: endpoint === "token" ? "token_exchange" : "jwks_fetch", reason: "http_error", status: 302,
+    });
+    expect(fetch).toHaveBeenCalledTimes(endpoint === "token" ? 1 : 2);
+    expect(fetch.mock.calls.every(([url]) => !String(url).includes("untrusted"))).toBe(true);
   });
 });

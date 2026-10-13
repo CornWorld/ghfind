@@ -26,19 +26,38 @@ export type GoogleOAuthState = {
 
 export type GoogleIdentity = { subject: string; name: string; image: string | null };
 
-function fail(): never {
-  // Provider responses can contain credentials. Callers only render a fixed
-  // error code and must never log raw tokens, responses, or upstream errors.
-  throw new Error("google_oauth_failed");
+type FailureStage = "configuration" | "token_exchange" | "token_response" | "jwks_fetch" | "id_token" | "identity" | "unknown";
+type FailureReason = "missing_credentials" | "invalid_code" | "request_failed" | "http_error" |
+  "response_too_large" | "missing_response_body" | "response_read_failed" | "invalid_json" |
+  "missing_id_token" | "signature_invalid" | "token_expired" | "claims_invalid" |
+  "no_matching_key" | "invalid_keys" | "verification_failed" | "audience_mismatch" |
+  "presenter_mismatch" | "nonce_mismatch" | "invalid_subject" | "unexpected_error";
+export type GoogleOAuthFailureDetails = { stage: FailureStage; reason: FailureReason; status?: number };
+
+class GoogleOAuthFailure extends Error {
+  constructor(readonly details: GoogleOAuthFailureDetails) {
+    super("google_oauth_failed");
+  }
 }
 
-async function boundedBody(response: Response): Promise<string> {
+/** Only values constructed here may enter logs; never forward an upstream error. */
+export function googleOAuthFailureDetails(error: unknown): GoogleOAuthFailureDetails {
+  return error instanceof GoogleOAuthFailure
+    ? { ...error.details }
+    : { stage: "unknown", reason: "unexpected_error" };
+}
+
+function fail(stage: FailureStage, reason: FailureReason, status?: number): never {
+  throw new GoogleOAuthFailure({ stage, reason, ...(status !== undefined ? { status } : {}) });
+}
+
+async function boundedBody(response: Response, stage: "token_response" | "jwks_fetch"): Promise<string> {
   const declared = response.headers.get("content-length");
   if (declared && (!/^\d+$/.test(declared) || Number(declared) > RESPONSE_LIMIT)) {
-    await response.body?.cancel();
-    fail();
+    await response.body?.cancel().catch(() => {});
+    fail(stage, "response_too_large");
   }
-  if (!response.body) fail();
+  if (!response.body) fail(stage, "missing_response_body");
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
   let size = 0;
@@ -48,11 +67,14 @@ async function boundedBody(response: Response): Promise<string> {
       if (done) break;
       size += value.byteLength;
       if (size > RESPONSE_LIMIT) {
-        await reader.cancel();
-        fail();
+        await reader.cancel().catch(() => {});
+        fail(stage, "response_too_large");
       }
       chunks.push(value);
     }
+  } catch (error) {
+    if (error instanceof GoogleOAuthFailure) throw error;
+    fail(stage, "response_read_failed");
   } finally {
     reader.releaseLock();
   }
@@ -67,12 +89,19 @@ const googleKeys = createRemoteJWKSet(new URL(GOOGLE_JWKS_URL), {
   cooldownDuration: 30_000,
   cacheMaxAge: 10 * 60_000,
   [customFetch]: async (url, options) => {
-    const response = await fetch(url, { ...options, redirect: "error" });
-    if (!response.ok) {
-      await response.body?.cancel();
-      fail();
+    let response: Response;
+    try {
+      // workerd rejects redirect:"error" while constructing the Request.
+      // Manual mode plus the exact status check also prevents key redirects.
+      response = await fetch(url, { ...options, redirect: "manual" });
+    } catch {
+      fail("jwks_fetch", "request_failed");
     }
-    return new Response(await boundedBody(response), {
+    if (response.status !== 200) {
+      await response.body?.cancel().catch(() => {});
+      fail("jwks_fetch", "http_error", response.status);
+    }
+    return new Response(await boundedBody(response, "jwks_fetch"), {
       status: response.status,
       headers: { "Content-Type": "application/json" },
     });
@@ -81,7 +110,7 @@ const googleKeys = createRemoteJWKSet(new URL(GOOGLE_JWKS_URL), {
 
 function clientId(): string {
   const value = process.env.AUTH_GOOGLE_ID?.trim();
-  if (!value) fail();
+  if (!value) fail("configuration", "missing_credentials");
   return value;
 }
 
@@ -156,40 +185,63 @@ function profileImage(value: unknown): string | null {
 export async function exchangeGoogleCode(code: string, state: GoogleOAuthState): Promise<GoogleIdentity> {
   const id = clientId();
   const secret = process.env.AUTH_GOOGLE_SECRET?.trim();
-  if (!secret || !code || code.length > 4_096) fail();
-  const response = await fetch(GOOGLE_TOKEN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
-    body: new URLSearchParams({
-      client_id: id,
-      client_secret: secret,
-      grant_type: "authorization_code",
-      code,
-      redirect_uri: `${SITE_URL}/api/auth/callback/google`,
-      code_verifier: state.verifier,
-    }),
-    redirect: "error",
-    signal: AbortSignal.timeout(10_000),
-  });
-  if (!response.ok) {
-    await response.body?.cancel();
-    fail();
+  if (!secret) fail("configuration", "missing_credentials");
+  if (!code || code.length > 4_096) fail("token_exchange", "invalid_code");
+  let response: Response;
+  try {
+    response = await fetch(GOOGLE_TOKEN_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
+      body: new URLSearchParams({
+        client_id: id,
+        client_secret: secret,
+        grant_type: "authorization_code",
+        code,
+        redirect_uri: `${SITE_URL}/api/auth/callback/google`,
+        code_verifier: state.verifier,
+      }),
+      // Never forward the client secret to a redirect target. Cloudflare supports
+      // manual redirect handling even when its Request rejects "error" mode.
+      redirect: "manual",
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch {
+    fail("token_exchange", "request_failed");
   }
-  const token: unknown = JSON.parse(await boundedBody(response));
-  if (!token || typeof token !== "object" || !("id_token" in token) || typeof token.id_token !== "string" || token.id_token.length > 16_384) fail();
-  const { payload } = await jwtVerify(token.id_token, googleKeys, {
-    algorithms: ["RS256"],
-    issuer: ["https://accounts.google.com", "accounts.google.com"],
-    audience: id,
-    requiredClaims: ["iss", "aud", "exp", "iat", "sub", "nonce"],
-    maxTokenAge: "10 minutes",
-    clockTolerance: 5,
-  });
-  if (
-    payload.aud !== id ||
-    (payload.azp !== undefined && payload.azp !== id) ||
-    payload.nonce !== state.nonce ||
-    typeof payload.sub !== "string" || !/^[\x21-\x7e]{1,255}$/.test(payload.sub)
-  ) fail();
+  if (response.status !== 200) {
+    await response.body?.cancel().catch(() => {});
+    fail("token_exchange", "http_error", response.status);
+  }
+  const body = await boundedBody(response, "token_response");
+  let token: unknown;
+  try { token = JSON.parse(body); } catch { fail("token_response", "invalid_json"); }
+  if (!token || typeof token !== "object" || !("id_token" in token) || typeof token.id_token !== "string" || token.id_token.length > 16_384) fail("token_response", "missing_id_token");
+  let payload;
+  try {
+    ({ payload } = await jwtVerify(token.id_token, googleKeys, {
+      algorithms: ["RS256"],
+      issuer: ["https://accounts.google.com", "accounts.google.com"],
+      audience: id,
+      requiredClaims: ["iss", "aud", "exp", "iat", "sub", "nonce"],
+      maxTokenAge: "10 minutes",
+      clockTolerance: 5,
+    }));
+  } catch (error) {
+    if (error instanceof GoogleOAuthFailure) throw error;
+    const reasonByCode: Record<string, FailureReason> = {
+      ERR_JWS_SIGNATURE_VERIFICATION_FAILED: "signature_invalid",
+      ERR_JWT_EXPIRED: "token_expired",
+      ERR_JWT_CLAIM_VALIDATION_FAILED: "claims_invalid",
+      ERR_JWKS_NO_MATCHING_KEY: "no_matching_key",
+      ERR_JWKS_INVALID: "invalid_keys",
+    };
+    const code = error && typeof error === "object" && "code" in error && typeof error.code === "string" ? error.code : "";
+    const reason = Object.hasOwn(reasonByCode, code) ? reasonByCode[code] : "verification_failed";
+    fail("id_token", reason);
+  }
+  if (payload.aud !== id) fail("identity", "audience_mismatch");
+  if (payload.azp !== undefined && payload.azp !== id) fail("identity", "presenter_mismatch");
+  if (payload.nonce !== state.nonce) fail("identity", "nonce_mismatch");
+  if (typeof payload.sub !== "string" || !/^[\x21-\x7e]{1,255}$/.test(payload.sub)) fail("identity", "invalid_subject");
   return { subject: payload.sub, name: displayName(payload.name), image: profileImage(payload.picture) };
 }

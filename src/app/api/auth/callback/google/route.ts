@@ -3,6 +3,7 @@ import { commentClientIp } from "@/lib/comments";
 import {
   GOOGLE_STATE_COOKIE,
   exchangeGoogleCode,
+  googleOAuthFailureDetails,
   googleStateMatches,
   readGoogleOAuthState,
 } from "@/lib/google-oauth";
@@ -40,10 +41,13 @@ export async function GET(request: NextRequest) {
   const code = query.get("code");
   if (!code || code.length > 4_096 || query.getAll("code").length !== 1) return redirect("google_failed");
 
+  let stage: "rate_limit" | "exchange" | "session" = "rate_limit";
   try {
     const limit = await checkOAuthCallbackRateLimit(commentClientIp(request.headers));
     if (!limit.success) return redirect(limit.unavailable ? "auth_unavailable" : "google_failed");
+    stage = "exchange";
     const identity = await exchangeGoogleCode(code, state);
+    stage = "session";
     const response = redirect();
     setOAuthCookie(response, request, OAUTH_SESSION_COOKIE, encodeSocialSession({
       provider: "google",
@@ -51,8 +55,14 @@ export async function GET(request: NextRequest) {
       expires_at: Date.now() + OAUTH_SESSION_TTL_SECONDS * 1_000,
     }), OAUTH_SESSION_TTL_SECONDS);
     return response;
-  } catch {
-    // A fixed public code is enough for a retry; never expose provider bodies.
+  } catch (error) {
+    // Only explicitly classified fields are logged; never serialize the error,
+    // request URL, provider response, authorization code or identity.
+    const details = googleOAuthFailureDetails(error);
+    console.warn("oauth_google_failed", {
+      ...details,
+      stage: details.stage === "unknown" ? stage : details.stage,
+    });
     return redirect("google_failed");
   }
 }

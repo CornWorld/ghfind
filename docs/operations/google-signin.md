@@ -96,3 +96,12 @@ Sources:
 
 Callback failures return fixed, non-sensitive `auth_error` codes. Raw provider
 responses, authorization codes and tokens must never be added to application logs.
+The `oauth_google_failed` application event contains only an allowlisted failure
+stage, reason and optional upstream HTTP status. Use it to distinguish token
+exchange, Google key retrieval, token validation and session creation failures;
+do not export request URLs from callback traces because they contain one-use codes.
+
+Verify provider fetches in the deployed Worker runtime as well as Node tests.
+The project's Worker runtime rejects `redirect: "error"`; both Google endpoints
+use `redirect: "manual"` and reject non-200 responses so credentials are never
+forwarded to a redirected endpoint.
