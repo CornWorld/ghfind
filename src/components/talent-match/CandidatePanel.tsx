@@ -17,6 +17,7 @@ import { trackEvent } from "@/lib/track";
 import { ReportHistory } from "./ReportHistory";
 import type { PdfResume } from "./ResumeDropzone";
 import { ResumeSourcePicker, sourceKeyOf, type SourceMode } from "./ResumeSourcePicker";
+import { OpenToOpportunities } from "./OpenToOpportunities";
 
 const DIMENSION_LABELS: Record<SubScoreKey, [string, string]> = {
   account_maturity: ["账号成熟度", "Account maturity"],
@@ -416,6 +417,8 @@ function CandidateReportView({ report, copy, sample, onReset, onDelete, onShare 
         </ul>
         {sample && <p className="mt-4 text-xs text-amber-300">{c("这是示例报告，数据均为虚构。", "This is a sample report; all data is invented.")}</p>}
       </Card>
+
+      {!sample && <OpenToOpportunities />}
 
       <div className="grid gap-5 lg:grid-cols-2">
         <Card title={c("GitHub 证据强度", "GitHub evidence")} aside={<SourceBadge source="verified" copy={copy} />}>

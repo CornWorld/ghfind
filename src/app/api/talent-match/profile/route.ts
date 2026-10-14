@@ -1,14 +1,51 @@
-import { coreDb, sessionUser, signInRequired, unavailable } from "@/lib/talent-match/http";
-import { deleteTalentData } from "@/lib/talent-match/store";
+import { NextRequest } from "next/server";
+import { z } from "zod";
+import { coreDb, jsonNoStore, sessionUser, signInRequired, unavailable } from "@/lib/talent-match/http";
+import { deleteTalentData, getProfile, setOptIn } from "@/lib/talent-match/store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+/** Whether the account has a Talent Match profile, and whether it is open to opportunities. */
+export async function GET() {
+  const user = await sessionUser();
+  if (!user) return signInRequired();
+  const db = coreDb();
+  if (!db) return unavailable();
+  const stored = await getProfile(db, user.githubId);
+  return jsonNoStore({ profile: stored ? { optedIn: stored.optedIn } : null });
+}
+
+const optInSchema = z.object({ optedIn: z.boolean() });
+
 /**
- * Delete the account's Talent Match profile and every report. Phase 1 stores
- * no talent vectors, so there is nothing to remove from Vectorize yet; once
- * opted-in profiles are indexed (phase 2) their ids come back from
- * deleteTalentData and must be deleted there too.
+ * Open to opportunities: consent for the account's current profile to join
+ * the talent pool companies match against (phase 3). Companies would see the
+ * extracted profile and match score, never résumé text. A profile exists only
+ * after a report has run, so there is nothing to opt in before that.
+ */
+export async function PUT(request: NextRequest) {
+  const user = await sessionUser();
+  if (!user) return signInRequired();
+  let body;
+  try {
+    body = optInSchema.parse(await request.json());
+  } catch {
+    return jsonNoStore({ error: "invalid_body" }, { status: 400 });
+  }
+  const db = coreDb();
+  if (!db) return unavailable();
+  if (!(await setOptIn(db, user.githubId, body.optedIn, Date.now()))) {
+    return jsonNoStore({ error: "profile_missing" }, { status: 409 });
+  }
+  return jsonNoStore({ optedIn: body.optedIn });
+}
+
+/**
+ * Delete the account's Talent Match profile and every report, which also
+ * withdraws it from the talent pool. No talent vectors are stored yet; once
+ * opted-in profiles are indexed their ids come back from deleteTalentData
+ * and must be deleted there too.
  */
 export async function DELETE() {
   const user = await sessionUser();

@@ -1,12 +1,12 @@
 {
   "LofiSu": {
     "description": "Real snapshot. 71 authored commits to bytedance/deer-flow landed via a maintainer fork (one sampled PR, so code share stays near the prior); most other external PRs are docs/site work in repos under 200 stars. Target: below 60.",
-    "before_final_score": 56.4,
+    "before_final_score": 59.3,
     "expected_final_range": [
-      58,
+      57,
       59.9
     ],
-    "recorded_at": "2026-10-13T12:00:00.000Z",
+    "recorded_at": "2026-10-14T00:00:00.000Z",
     "metrics": {
       "username": "LofiSu",
       "profile_url": "https://github.com/LofiSu",
@@ -15,9 +15,9 @@
       "bio": "Learning is a Lifelong Journey.\r\n\r\n\r\n",
       "pronouns": "she/her",
       "company": "@ByteDance",
-      "account_age_years": 2.57,
+      "account_age_years": 2.58,
       "created_at": "2024-03-17T06:54:52Z",
-      "followers": 1459,
+      "followers": 1460,
       "following": 43,
       "public_repos": 74,
       "fetched_repo_count": 74,
@@ -27,8 +27,8 @@
       "empty_original_repo_count": 2,
       "total_stars": 88,
       "max_stars": 18,
-      "weighted_total_stars": 75.35,
-      "weighted_max_stars": 17.12,
+      "weighted_total_stars": 75.33,
+      "weighted_max_stars": 17.11,
       "attributed_original_repo_count": 0,
       "attributed_original_repo_stars": 0,
       "attributed_original_repos": [],
@@ -39,6 +39,7 @@
       "merged_pr_count": 39,
       "external_merged_pr_count": 37,
       "external_high_star_pr_share": 0.1351,
+      "own_pr_community": 0,
       "workflow_landed_pr_count": 0,
       "total_pr_count": 70,
       "issues_created": 65,
@@ -53,7 +54,7 @@
       "recent_external_pr_sample": 37,
       "recent_external_doc_like_pr_count": 23,
       "recent_external_doc_like_pr_ratio": 0.62,
-      "max_impact_repo_stars": 83778,
+      "max_impact_repo_stars": 83816,
       "impact_prestige_score": 0.6788,
       "impact_pr_count": 4,
       "workflow_landed_impact_pr_count": 0,
@@ -83,7 +84,7 @@
     "contrib_repos": [
       {
         "repo": "bytedance/deer-flow",
-        "stars": 83778,
+        "stars": 83816,
         "is_private": false,
         "is_fork": false,
         "owner_login": "bytedance",
@@ -116,7 +117,7 @@
           "superagent"
         ],
         "merge_commits": 29,
-        "engagement": 0.0824,
+        "engagement": 0.0826,
         "pr_sample": 1,
         "code_pr_sample": 1
       },
@@ -140,7 +141,7 @@
           "react"
         ],
         "merge_commits": 0,
-        "engagement": 0.4043,
+        "engagement": 0.4051,
         "pr_sample": 1,
         "code_pr_sample": 0
       },
@@ -169,7 +170,7 @@
       },
       {
         "repo": "Tencent/omi",
-        "stars": 13275,
+        "stars": 13276,
         "is_private": false,
         "is_fork": false,
         "owner_login": "Tencent",
@@ -208,7 +209,7 @@
       },
       {
         "repo": "alibaba/spring-ai-alibaba",
-        "stars": 11004,
+        "stars": 11006,
         "is_private": false,
         "is_fork": false,
         "owner_login": "alibaba",
@@ -239,7 +240,7 @@
       {
         "title": "fix(frontend): fix new-chat navigation stale state issue",
         "repo": "bytedance/deer-flow",
-        "repo_stars": 83778,
+        "repo_stars": 83816,
         "churn": 29,
         "changed_files": 2,
         "trivial": false,
@@ -291,7 +292,7 @@
       {
         "title": "Doc : Added contribution guidelines document",
         "repo": "alibaba/spring-ai-alibaba",
-        "repo_stars": 11004,
+        "repo_stars": 11006,
         "churn": 129,
         "changed_files": 3,
         "trivial": false,
@@ -304,7 +305,7 @@
       {
         "title": "feat(omi-tempaltes): add the company template",
         "repo": "Tencent/omi",
-        "repo_stars": 13275,
+        "repo_stars": 13276,
         "churn": 227,
         "changed_files": 3,
         "trivial": false,
@@ -547,13 +548,13 @@
     }
   },
   "ccch1mneyyy": {
-    "description": "Real snapshot. 7-month-old account: 213 of 274 merged PRs are self-merged into dsh-TUI; voyager work is one month of half-docs PRs. Strong newcomer, not top tier.",
-    "before_final_score": 90.7,
+    "description": "Real snapshot. 7-month-old account: most merged PRs are self-merged into dsh-TUI, which has a real outside community (~0.68), so own PRs and maintainer prestige earn community credit; voyager work is one month of half-docs PRs. Target ≈83.",
+    "before_final_score": 77.4,
     "expected_final_range": [
-      76,
-      79.9
+      81,
+      85
     ],
-    "recorded_at": "2026-10-13T12:00:00.000Z",
+    "recorded_at": "2026-10-14T00:00:00.000Z",
     "metrics": {
       "username": "ccch1mneyyy",
       "profile_url": "https://github.com/ccch1mneyyy",
@@ -564,7 +565,7 @@
       "company": null,
       "account_age_years": 0.58,
       "created_at": "2026-03-14T10:37:13Z",
-      "followers": 51,
+      "followers": 52,
       "following": 8,
       "public_repos": 19,
       "fetched_repo_count": 19,
@@ -572,11 +573,11 @@
       "nonempty_original_repo_count": 8,
       "fork_repo_count": 11,
       "empty_original_repo_count": 0,
-      "total_stars": 5205,
-      "max_stars": 4518,
-      "weighted_total_stars": 5205,
-      "weighted_max_stars": 4518,
-      "top_repo_engagement_ratio": 0.3198,
+      "total_stars": 5239,
+      "max_stars": 4551,
+      "weighted_total_stars": 5239,
+      "weighted_max_stars": 4551,
+      "top_repo_engagement_ratio": 0.3191,
       "attributed_original_repo_count": 0,
       "attributed_original_repo_stars": 0,
       "attributed_original_repos": [],
@@ -587,6 +588,7 @@
       "merged_pr_count": 274,
       "external_merged_pr_count": 61,
       "external_high_star_pr_share": 0.8525,
+      "own_pr_community": 0.6812,
       "workflow_landed_pr_count": 0,
       "total_pr_count": 293,
       "issues_created": 95,
@@ -601,17 +603,17 @@
       "recent_external_pr_sample": 9,
       "recent_external_doc_like_pr_count": 4,
       "recent_external_doc_like_pr_ratio": 0.44,
-      "max_impact_repo_stars": 20365,
-      "impact_prestige_score": 0.4201,
+      "max_impact_repo_stars": 20368,
+      "impact_prestige_score": 0.5385,
       "impact_pr_count": 265,
       "workflow_landed_impact_pr_count": 0,
-      "impact_depth_raw": 5.17,
+      "impact_depth_raw": 6.58,
       "verified_impact_pr_count": 5,
       "core_impact_pr_count": 5,
       "doc_like_impact_pr_count": 0,
       "unverified_impact_pr_count": 260,
-      "impact_repo_count": 7,
-      "impact_commit_count": 1697,
+      "impact_repo_count": 8,
+      "impact_commit_count": 1769,
       "commit_contribution_aggregation_unavailable": false,
       "merged_pr_contribution_aggregation_incomplete": false,
       "external_trivial_pr_count": 1,
@@ -631,7 +633,7 @@
     "contrib_repos": [
       {
         "repo": "ccch1mneyyy/dsh-TUI",
-        "stars": 4518,
+        "stars": 4551,
         "is_private": false,
         "is_fork": false,
         "owner_login": "ccch1mneyyy",
@@ -655,13 +657,25 @@
           "tui"
         ],
         "merge_commits": 293,
-        "engagement": 0.3198,
+        "engagement": 0.3191,
+        "community_facts": {
+          "weighted_contributors": 11.2243,
+          "sustained_contributors": 7,
+          "outside_demand": 816.6,
+          "merge_latency_days": 0.0792,
+          "owner_response_share": 0,
+          "outside_acceptance": 0.6968,
+          "forks": 254,
+          "days_since_outside_merge": 0.438,
+          "lead_share": 1
+        },
+        "community": 0.6812,
         "pr_sample": 10,
         "code_pr_sample": 9
       },
       {
         "repo": "ccch1mneyyy/working-activity",
-        "stars": 662,
+        "stars": 663,
         "is_private": false,
         "is_fork": false,
         "owner_login": "ccch1mneyyy",
@@ -672,11 +686,33 @@
           "2026-07",
           "2026-08",
           "2026-09"
-        ]
+        ],
+        "community_facts": {
+          "weighted_contributors": 0.5181,
+          "sustained_contributors": 1,
+          "outside_demand": 4,
+          "merge_latency_days": null,
+          "owner_response_share": 0,
+          "outside_acceptance": 1,
+          "forks": 236,
+          "days_since_outside_merge": null,
+          "lead_share": 1
+        },
+        "community": 0.037,
+        "topics": [
+          "deepseek-harness",
+          "dsh-plugin",
+          "pi-coding-agent",
+          "pi-plugin",
+          "statusline",
+          "working-line"
+        ],
+        "merge_commits": 3,
+        "engagement": 0.0965
       },
       {
         "repo": "oh-my-dsh/dsh-plugin-upgrade-skill",
-        "stars": 283,
+        "stars": 284,
         "is_private": false,
         "is_fork": false,
         "owner_login": "oh-my-dsh",
@@ -689,13 +725,13 @@
         ],
         "topics": [],
         "merge_commits": 0,
-        "engagement": 0.9823,
+        "engagement": 0.9789,
         "pr_sample": 10,
         "code_pr_sample": 1
       },
       {
         "repo": "voyager-crew/voyager",
-        "stars": 20365,
+        "stars": 20368,
         "is_private": false,
         "is_fork": false,
         "owner_login": "voyager-crew",
@@ -727,7 +763,7 @@
       },
       {
         "repo": "liguobao/ds-harness-remote",
-        "stars": 321,
+        "stars": 327,
         "is_private": false,
         "is_fork": false,
         "owner_login": "liguobao",
@@ -742,7 +778,7 @@
           "deepseek"
         ],
         "merge_commits": 0,
-        "engagement": 0.3271,
+        "engagement": 0.3303,
         "pr_sample": 2,
         "code_pr_sample": 2
       },
@@ -773,13 +809,13 @@
           "trust-score"
         ],
         "merge_commits": 0,
-        "engagement": 1.872,
+        "engagement": 1.908,
         "pr_sample": 1,
         "code_pr_sample": 1
       },
       {
         "repo": "dsh-tauri/deepseek-harness-desktop",
-        "stars": 3003,
+        "stars": 2816,
         "is_private": false,
         "is_fork": false,
         "owner_login": "dsh-tauri",
@@ -799,13 +835,13 @@
           "dsh-desktop"
         ],
         "merge_commits": 0,
-        "engagement": 0.351,
+        "engagement": 0.3754,
         "pr_sample": 2,
         "code_pr_sample": 2
       },
       {
         "repo": "metasequoiaime/msime",
-        "stars": 691,
+        "stars": 709,
         "is_private": false,
         "is_fork": false,
         "owner_login": "metasequoiaime",
@@ -831,7 +867,7 @@
           "windows"
         ],
         "merge_commits": 0,
-        "engagement": 11.0289,
+        "engagement": 10.9182,
         "pr_sample": 1,
         "code_pr_sample": 0
       }
@@ -868,7 +904,7 @@
       {
         "title": "fix(worktree): 修复切换工作树丢失会话历史",
         "repo": "dsh-tauri/deepseek-harness-desktop",
-        "repo_stars": 3003,
+        "repo_stars": 2816,
         "churn": 338,
         "changed_files": 9,
         "trivial": false,
@@ -887,7 +923,7 @@
       {
         "title": "feat(compat): adapt desktop plugins to DSH 0.2.1-alpha.1",
         "repo": "dsh-tauri/deepseek-harness-desktop",
-        "repo_stars": 3003,
+        "repo_stars": 2816,
         "churn": 2784,
         "changed_files": 28,
         "trivial": false,
@@ -925,7 +961,7 @@
       {
         "title": "feat(android): add bounded read-only image, PDF and Office previews",
         "repo": "liguobao/ds-harness-remote",
-        "repo_stars": 321,
+        "repo_stars": 327,
         "churn": 2374,
         "changed_files": 28,
         "trivial": false,
@@ -963,7 +999,7 @@
       {
         "title": "feat(android): move session tools and terminal creation into headers",
         "repo": "liguobao/ds-harness-remote",
-        "repo_stars": 321,
+        "repo_stars": 327,
         "churn": 108,
         "changed_files": 9,
         "trivial": false,
@@ -985,13 +1021,13 @@
         "name": "dsh-TUI",
         "owner_login": "ccch1mneyyy",
         "name_with_owner": "ccch1mneyyy/dsh-TUI",
-        "stars": 4518,
-        "forks": 253,
+        "stars": 4551,
+        "forks": 254,
         "open_issues": 93,
-        "size": 45037,
+        "size": 45433,
         "language": "TypeScript",
         "description": "DSH's officially top-recommended TUI plugin — high performance, low overhead, cute pixel whale, smooth mouse interaction. One-command install via npm. / DSH 官方首推的 TUI 插件，高性能低占用，可爱像素鲸鱼，流畅鼠标交互，npm 一键安装",
-        "pushed_at": "2026-10-13T07:47:49Z",
+        "pushed_at": "2026-10-13T20:45:10Z",
         "topics": [
           "claude-code",
           "coding-agent",
@@ -1006,11 +1042,11 @@
         "languages": [
           {
             "name": "TypeScript",
-            "size": 17501108
+            "size": 17614373
           },
           {
             "name": "JavaScript",
-            "size": 2300326
+            "size": 2302324
           },
           {
             "name": "Shell",
@@ -1026,7 +1062,7 @@
         "name": "working-activity",
         "owner_login": "ccch1mneyyy",
         "name_with_owner": "ccch1mneyyy/working-activity",
-        "stars": 662,
+        "stars": 663,
         "forks": 236,
         "open_issues": 7,
         "size": 433,
@@ -1214,28 +1250,28 @@
       }
     ],
     "expected": {
-      "impact_prestige_score": 0.4201,
-      "impact_depth_raw": 5.17,
-      "impact_repo_count": 7,
+      "impact_prestige_score": 0.5385,
+      "impact_depth_raw": 6.58,
+      "impact_repo_count": 8,
       "sub_scores": {
         "account_maturity": 4.3,
         "original_project_quality": 18,
-        "contribution_quality": 24.1,
-        "ecosystem_impact": 9.5,
+        "contribution_quality": 27,
+        "ecosystem_impact": 12.1,
         "community_influence": 4.5,
         "activity_authenticity": 17
       },
-      "final_score": 77.4
+      "final_score": 82.9
     }
   },
   "hikariming": {
     "description": "Real snapshot. 10-year builder: 383 of 420 merged PRs are own-repo; 37 external, real QwenPaw/dify code plus DSH badge/docs PRs; top-starred repo is a stale dataset.",
-    "before_final_score": 93.9,
+    "before_final_score": 83.5,
     "expected_final_range": [
       82,
       86
     ],
-    "recorded_at": "2026-10-13T12:00:00.000Z",
+    "recorded_at": "2026-10-14T00:00:00.000Z",
     "metrics": {
       "username": "hikariming",
       "profile_url": "https://github.com/hikariming",
@@ -1244,7 +1280,7 @@
       "bio": "love ai,love agent~",
       "pronouns": "he/him",
       "company": "Tsinghua University",
-      "account_age_years": 9.96,
+      "account_age_years": 9.97,
       "created_at": "2016-10-25T22:58:49Z",
       "followers": 135,
       "following": 7,
@@ -1254,13 +1290,13 @@
       "nonempty_original_repo_count": 27,
       "fork_repo_count": 26,
       "empty_original_repo_count": 1,
-      "total_stars": 2744,
-      "max_stars": 1190,
-      "weighted_total_stars": 2102.23,
-      "weighted_max_stars": 634.27,
-      "top_repo_engagement_ratio": 0.0849,
+      "total_stars": 2748,
+      "max_stars": 1191,
+      "weighted_total_stars": 2105.5,
+      "weighted_max_stars": 634.56,
+      "top_repo_engagement_ratio": 0.0848,
       "attributed_original_repo_count": 1,
-      "attributed_original_repo_stars": 283,
+      "attributed_original_repo_stars": 284,
       "attributed_original_repos": [
         "oh-my-dsh/dsh-plugin-upgrade-skill"
       ],
@@ -1268,34 +1304,35 @@
       "best_original_repo_quality_repo": "hikariming/dshfind",
       "top_starred_original_repo_quality_score": 0.84,
       "top_starred_original_repo_quality_repo": "hikariming/chat-dataset-baseline",
-      "merged_pr_count": 420,
+      "merged_pr_count": 428,
       "external_merged_pr_count": 37,
       "external_high_star_pr_share": 1,
+      "own_pr_community": 0.1798,
       "workflow_landed_pr_count": 0,
-      "total_pr_count": 456,
+      "total_pr_count": 463,
       "issues_created": 52,
-      "last_year_contributions": 2614,
+      "last_year_contributions": 2655,
       "activity_type_count": 4,
       "contribution_years_active": 11,
       "days_since_last_activity": 0,
       "recent_merged_pr_sample": 50,
       "recent_trivial_pr_count": 1,
-      "recent_doc_like_pr_count": 4,
-      "recent_doc_like_pr_ratio": 0.08,
+      "recent_doc_like_pr_count": 6,
+      "recent_doc_like_pr_ratio": 0.12,
       "recent_external_pr_sample": 0,
       "recent_external_doc_like_pr_count": 0,
       "recent_external_doc_like_pr_ratio": 0,
-      "max_impact_repo_stars": 158321,
+      "max_impact_repo_stars": 158383,
       "impact_prestige_score": 0.5392,
-      "impact_pr_count": 24,
+      "impact_pr_count": 172,
       "workflow_landed_impact_pr_count": 0,
-      "impact_depth_raw": 8.8,
-      "verified_impact_pr_count": 7,
+      "impact_depth_raw": 10.02,
+      "verified_impact_pr_count": 4,
       "core_impact_pr_count": 1,
-      "doc_like_impact_pr_count": 6,
-      "unverified_impact_pr_count": 17,
-      "impact_repo_count": 11,
-      "impact_commit_count": 41,
+      "doc_like_impact_pr_count": 3,
+      "unverified_impact_pr_count": 168,
+      "impact_repo_count": 13,
+      "impact_commit_count": 826,
       "commit_contribution_aggregation_unavailable": false,
       "merged_pr_contribution_aggregation_incomplete": true,
       "external_trivial_pr_count": 0,
@@ -1308,7 +1345,7 @@
       "pr_rejection_rate": 0.03,
       "recent_pr_sample": 30,
       "top_repo_pr_target": "hikariming/ghfind",
-      "top_repo_pr_share": 0.53,
+      "top_repo_pr_share": 0.57,
       "templated_pr_ratio": 0.27,
       "pr_flood_suspect": false
     },
@@ -1319,8 +1356,8 @@
         "is_private": false,
         "is_fork": false,
         "owner_login": "hikariming",
-        "commits": 493,
-        "prs": 127,
+        "commits": 527,
+        "prs": 135,
         "active_years": 1,
         "months": [
           "2026-06",
@@ -1329,12 +1366,40 @@
           "2026-09",
           "2026-10"
         ],
+        "community_facts": {
+          "weighted_contributors": 6.5781,
+          "sustained_contributors": 3,
+          "outside_demand": 261.8333,
+          "merge_latency_days": 0.0052,
+          "owner_response_share": 0,
+          "outside_acceptance": 0.8889,
+          "forks": 45,
+          "days_since_outside_merge": 0.5714,
+          "lead_share": 1
+        },
+        "community": 0.5208,
+        "topics": [
+          "ai",
+          "code-quality",
+          "developer-tools",
+          "github",
+          "leaderboard",
+          "nextjs",
+          "openai",
+          "roast",
+          "developer-discovery",
+          "developer-score",
+          "github-profile",
+          "trust-score"
+        ],
+        "merge_commits": 163,
+        "engagement": 1.908,
         "pr_sample": 10,
         "code_pr_sample": 8
       },
       {
         "repo": "hikariming/openkoto",
-        "stars": 457,
+        "stars": 458,
         "is_private": false,
         "is_fork": false,
         "owner_login": "hikariming",
@@ -1361,7 +1426,7 @@
       },
       {
         "repo": "oh-my-dsh/dsh-plugin-upgrade-skill",
-        "stars": 283,
+        "stars": 284,
         "is_private": false,
         "is_fork": false,
         "owner_login": "oh-my-dsh",
@@ -1375,14 +1440,26 @@
         ],
         "topics": [],
         "merge_commits": 152,
-        "engagement": 0.9823,
+        "engagement": 0.9789,
         "attributed_original": true,
-        "pr_sample": 8,
+        "community_facts": {
+          "weighted_contributors": 0.6345,
+          "sustained_contributors": 1,
+          "outside_demand": 5,
+          "merge_latency_days": 3.2042,
+          "owner_response_share": 0,
+          "outside_acceptance": 0.8798,
+          "forks": 34,
+          "days_since_outside_merge": 8.6413,
+          "lead_share": 1
+        },
+        "community": 0.1101,
+        "pr_sample": 10,
         "code_pr_sample": 2
       },
       {
         "repo": "hikariming/dshfind",
-        "stars": 304,
+        "stars": 305,
         "is_private": false,
         "is_fork": false,
         "owner_login": "hikariming",
@@ -1393,13 +1470,11 @@
           "2026-08",
           "2026-09",
           "2026-10"
-        ],
-        "pr_sample": 1,
-        "code_pr_sample": 1
+        ]
       },
       {
         "repo": "agentscope-ai/QwenPaw",
-        "stars": 35640,
+        "stars": 35651,
         "is_private": false,
         "is_fork": false,
         "owner_login": "agentscope-ai",
@@ -1429,13 +1504,13 @@
           "mcp"
         ],
         "merge_commits": 0,
-        "engagement": 0.2278,
+        "engagement": 0.2281,
         "pr_sample": 6,
         "code_pr_sample": 6
       },
       {
         "repo": "langgenius/dify",
-        "stars": 158321,
+        "stars": 158383,
         "is_private": false,
         "is_fork": false,
         "owner_login": "langgenius",
@@ -1470,13 +1545,13 @@
           "deepseek"
         ],
         "merge_commits": 0,
-        "engagement": 0.2504,
+        "engagement": 0.2505,
         "pr_sample": 4,
         "code_pr_sample": 3
       },
       {
         "repo": "AdamPlatin123/dsh-plugin-radar",
-        "stars": 1468,
+        "stars": 1471,
         "is_private": false,
         "is_fork": false,
         "owner_login": "AdamPlatin123",
@@ -1502,7 +1577,7 @@
       },
       {
         "repo": "EvoScientist/EvoScientist",
-        "stars": 4980,
+        "stars": 4972,
         "is_private": false,
         "is_fork": false,
         "owner_login": "EvoScientist",
@@ -1519,13 +1594,13 @@
           "vibe-research"
         ],
         "merge_commits": 0,
-        "engagement": 0.1307,
+        "engagement": 0.1329,
         "pr_sample": 1,
         "code_pr_sample": 1
       },
       {
         "repo": "anywhere-labs/dsh-desktop",
-        "stars": 30616,
+        "stars": 30686,
         "is_private": false,
         "is_fork": false,
         "owner_login": "anywhere-labs",
@@ -1546,13 +1621,13 @@
           "cordis-plugin"
         ],
         "merge_commits": 0,
-        "engagement": 0.0455,
+        "engagement": 0.0456,
         "pr_sample": 2,
         "code_pr_sample": 1
       },
       {
         "repo": "bowenliang123/dsh-context",
-        "stars": 2055,
+        "stars": 2073,
         "is_private": false,
         "is_fork": false,
         "owner_login": "bowenliang123",
@@ -1571,13 +1646,13 @@
           "deepseek-harness-plugin"
         ],
         "merge_commits": 0,
-        "engagement": 0.0735,
+        "engagement": 0.0743,
         "pr_sample": 1,
         "code_pr_sample": 0
       },
       {
         "repo": "hikariming/chat-dataset-baseline",
-        "stars": 1190,
+        "stars": 1191,
         "is_private": false,
         "is_fork": false,
         "owner_login": "hikariming",
@@ -1595,7 +1670,19 @@
           "dataset"
         ],
         "merge_commits": 0,
-        "engagement": 0.0849
+        "engagement": 0.0848,
+        "community_facts": {
+          "weighted_contributors": 0.4336,
+          "sustained_contributors": 0,
+          "outside_demand": 6.8,
+          "merge_latency_days": null,
+          "owner_response_share": 0.6667,
+          "outside_acceptance": 0.9811,
+          "forks": 98,
+          "days_since_outside_merge": null,
+          "lead_share": 1
+        },
+        "community": 0.0312
       },
       {
         "repo": "langgenius/dify-official-plugins",
@@ -1611,13 +1698,13 @@
         ],
         "topics": [],
         "merge_commits": 0,
-        "engagement": 6.377,
+        "engagement": 6.3849,
         "pr_sample": 1,
         "code_pr_sample": 1
       },
       {
         "repo": "Huanshere/VideoLingo",
-        "stars": 18776,
+        "stars": 18784,
         "is_private": false,
         "is_fork": false,
         "owner_login": "Huanshere",
@@ -1635,13 +1722,13 @@
           "voice-cloning"
         ],
         "merge_commits": 1,
-        "engagement": 0.039,
+        "engagement": 0.0391,
         "pr_sample": 5,
         "code_pr_sample": 2
       },
       {
         "repo": "chatchat-space/Langchain-Chatchat",
-        "stars": 38680,
+        "stars": 38682,
         "is_private": false,
         "is_fork": false,
         "owner_login": "chatchat-space",
@@ -1708,7 +1795,7 @@
       {
         "title": "docs(readme): link the arXiv paper and refresh repository facts",
         "repo": "oh-my-dsh/dsh-plugin-upgrade-skill",
-        "repo_stars": 283,
+        "repo_stars": 284,
         "churn": 110,
         "changed_files": 2,
         "trivial": false,
@@ -1720,7 +1807,7 @@
       {
         "title": "paper: retrospective study and evidence behind arXiv:2609.30120",
         "repo": "oh-my-dsh/dsh-plugin-upgrade-skill",
-        "repo_stars": 283,
+        "repo_stars": 284,
         "churn": 19769,
         "changed_files": 294,
         "trivial": false,
@@ -1780,7 +1867,7 @@
       {
         "title": "feat(benchmark): unified GLM-5.3-Flash 64-trial two-arm run (workplan §5 middle-config cell) + frozen GLM-5.2 kit",
         "repo": "oh-my-dsh/dsh-plugin-upgrade-skill",
-        "repo_stars": 283,
+        "repo_stars": 284,
         "churn": 27941,
         "changed_files": 302,
         "trivial": false,
@@ -1840,7 +1927,7 @@
       {
         "title": "feat(paper): reviewer-perspective revision (framing, disclosure, 16 refs, retitle)",
         "repo": "oh-my-dsh/dsh-plugin-upgrade-skill",
-        "repo_stars": 283,
+        "repo_stars": 284,
         "churn": 356,
         "changed_files": 5,
         "trivial": false,
@@ -1851,88 +1938,6 @@
           "paper/latex/custom.bib",
           "paper/scripts/generate-paired-effect-table.mjs"
         ]
-      },
-      {
-        "title": "feat(paper): extend paired analysis to five model points (inverted-U)",
-        "repo": "oh-my-dsh/dsh-plugin-upgrade-skill",
-        "repo_stars": 283,
-        "churn": 2373,
-        "changed_files": 18,
-        "trivial": false,
-        "files": [
-          "benchmark/results/artifacts/2026-09-01-codex-gpt-5.6-luna/PROVENANCE.md",
-          "benchmark/results/artifacts/2026-09-01-codex-gpt-5.6-luna/paired-scores.json",
-          "benchmark/results/artifacts/2026-09-01-codex-gpt-5.6-terra/PROVENANCE.md",
-          "benchmark/results/artifacts/2026-09-01-codex-gpt-5.6-terra/paired-scores.json",
-          "benchmark/results/artifacts/2026-09-01-terminus2-deepseek-v4-flash/PROVENANCE.md",
-          "benchmark/results/artifacts/2026-09-01-terminus2-deepseek-v4-flash/paired-scores.json",
-          "benchmark/results/artifacts/2026-09-13-glm-5.2-s1-s22-round3/PROVENANCE.md",
-          "benchmark/results/paired-effect-stats.json",
-          "benchmark/scripts/measure-paired-effect.mjs",
-          "benchmark/scripts/measure-paired-effect.test.mjs",
-          "paper/GAP-ANALYSIS.zh.md",
-          "paper/NEXT-STEPS.zh.md",
-          "paper/README.md",
-          "paper/README.zh.md",
-          "paper/generated/paired-effect-sensitivity-table.tex",
-          "paper/generated/paired-effect-table.tex",
-          "paper/latex/acl_latex.tex",
-          "paper/scripts/generate-paired-effect-table.mjs"
-        ]
-      },
-      {
-        "title": "feat(paper): switch main line to capability-contingent skill effect",
-        "repo": "oh-my-dsh/dsh-plugin-upgrade-skill",
-        "repo_stars": 283,
-        "churn": 1990,
-        "changed_files": 17,
-        "trivial": false,
-        "files": [
-          "benchmark/results/artifacts/2026-09-13-glm-5.2-s1-s22-round2/aggregate.json",
-          "benchmark/results/artifacts/2026-09-13-glm-5.2-s1-s22-round3/PROVENANCE.md",
-          "benchmark/results/artifacts/2026-09-13-glm-5.2-s1-s22-round3/aggregate.json",
-          "benchmark/results/artifacts/2026-09-13-glm-5.2-s1-s22/aggregate.json",
-          "benchmark/results/paired-effect-stats.json",
-          "benchmark/results/validation-report-2026-09-13-glm-5.2-s1-s22-round3.md",
-          "benchmark/scripts/measure-paired-effect.mjs",
-          "benchmark/scripts/measure-paired-effect.test.mjs",
-          "package.json",
-          "paper/GAP-ANALYSIS.zh.md",
-          "paper/NEXT-STEPS.zh.md",
-          "paper/README.md",
-          "paper/README.zh.md",
-          "paper/generated/paired-effect-table.tex",
-          "paper/latex/acl_latex.tex",
-          "paper/scripts/generate-paired-effect-table.mjs",
-          "paper/study-v1/README.zh.md"
-        ]
-      },
-      {
-        "title": "feat(skill): generic-migration control skill (T1a) + S1-S10 generic-arm pilot",
-        "repo": "oh-my-dsh/dsh-plugin-upgrade-skill",
-        "repo_stars": 283,
-        "churn": 1860,
-        "changed_files": 17,
-        "trivial": false,
-        "files": [
-          "benchmark/results/generic-arm-s1-s10/S1-static-scan/report.md",
-          "benchmark/results/generic-arm-s1-s10/S10-paste-rename-and-version-chip/report.md",
-          "benchmark/results/generic-arm-s1-s10/S2-negative-scan/report.md",
-          "benchmark/results/generic-arm-s1-s10/S3-snapshot-migration/report.md",
-          "benchmark/results/generic-arm-s1-s10/S4-legacy-client-imports/report.md",
-          "benchmark/results/generic-arm-s1-s10/S5-negative-naming/report.md",
-          "benchmark/results/generic-arm-s1-s10/S6-corridor-net-state/report.md",
-          "benchmark/results/generic-arm-s1-s10/S7-unpublished-cohort/report.md",
-          "benchmark/results/generic-arm-s1-s10/S8-release-routing-trap/report.md",
-          "benchmark/results/generic-arm-s1-s10/S9-composer-coordinate-trap/report.md",
-          "benchmark/results/generic-arm-s1-s10/comparison.json",
-          "benchmark/results/generic-arm-s1-s10/judge-output.jsonl",
-          "benchmark/results/validation-report-2026-09-07-generic-skill-s1-s10-kimi.md",
-          "benchmark/scripts/skill-composition.test.mjs",
-          "skills/README.en.md",
-          "skills/README.md",
-          "skills/generic-migration/SKILL.md"
-        ]
       }
     ],
     "star_repos": [
@@ -1940,7 +1945,7 @@
         "name": "chat-dataset-baseline",
         "owner_login": "hikariming",
         "name_with_owner": "hikariming/chat-dataset-baseline",
-        "stars": 1190,
+        "stars": 1191,
         "forks": 98,
         "open_issues": 29,
         "size": 18702,
@@ -1971,7 +1976,7 @@
         "name": "openkoto",
         "owner_login": "hikariming",
         "name_with_owner": "hikariming/openkoto",
-        "stars": 457,
+        "stars": 458,
         "forks": 38,
         "open_issues": 2,
         "size": 111628,
@@ -2018,13 +2023,13 @@
         "name": "dshfind",
         "owner_login": "hikariming",
         "name_with_owner": "hikariming/dshfind",
-        "stars": 304,
+        "stars": 305,
         "forks": 21,
-        "open_issues": 39,
-        "size": 20888,
+        "open_issues": 38,
+        "size": 21059,
         "language": "TypeScript",
         "description": "DSH (DeepSeek Harness) 原理学习、插件市场与最佳实践 · Learn DSH principles, plugin marketplace & best practices",
-        "pushed_at": "2026-10-12T09:43:19Z",
+        "pushed_at": "2026-10-13T09:55:54Z",
         "topics": [
           "deepseek-harness",
           "dsh",
@@ -2033,7 +2038,7 @@
         "languages": [
           {
             "name": "TypeScript",
-            "size": 785102
+            "size": 785075
           },
           {
             "name": "JavaScript",
@@ -2053,7 +2058,7 @@
         "name": "dsh-plugin-upgrade-skill",
         "owner_login": "oh-my-dsh",
         "name_with_owner": "oh-my-dsh/dsh-plugin-upgrade-skill",
-        "stars": 283,
+        "stars": 284,
         "forks": 34,
         "open_issues": 19,
         "size": 23633,
@@ -2107,11 +2112,11 @@
         "name_with_owner": "hikariming/ghfind",
         "stars": 250,
         "forks": 45,
-        "open_issues": 37,
-        "size": 16458,
+        "open_issues": 36,
+        "size": 17211,
         "language": "TypeScript",
         "description": "Discover the best developers — and become one. Drop a GitHub handle for a 0–100 value & trust score in 30s: see your gaps, discover top devs, get found. Exposes PR farmers, AI bots & fork-hoarders. Deterministic scoring, self-hostable.",
-        "pushed_at": "2026-10-13T06:40:06Z",
+        "pushed_at": "2026-10-13T16:39:58Z",
         "topics": [
           "ai",
           "code-quality",
@@ -2129,15 +2134,15 @@
         "languages": [
           {
             "name": "TypeScript",
-            "size": 5107906
+            "size": 5550810
           },
           {
             "name": "Go",
-            "size": 2200573
+            "size": 2246760
           },
           {
             "name": "JavaScript",
-            "size": 1098593
+            "size": 1103724
           },
           {
             "name": "Python",
@@ -2145,11 +2150,11 @@
           },
           {
             "name": "CSS",
-            "size": 99216
+            "size": 100472
           },
           {
             "name": "Astro",
-            "size": 53230
+            "size": 54163
           },
           {
             "name": "Shell",
@@ -2347,27 +2352,27 @@
     ],
     "expected": {
       "impact_prestige_score": 0.5392,
-      "impact_depth_raw": 8.8,
-      "impact_repo_count": 11,
+      "impact_depth_raw": 10.02,
+      "impact_repo_count": 13,
       "sub_scores": {
         "account_maturity": 10,
         "original_project_quality": 14.8,
-        "contribution_quality": 21.6,
-        "ecosystem_impact": 14.5,
+        "contribution_quality": 22.7,
+        "ecosystem_impact": 15.9,
         "community_influence": 5.6,
         "activity_authenticity": 17
       },
-      "final_score": 83.5
+      "final_score": 86
     }
   },
   "zhaochenyang20": {
     "description": "Real snapshot. Control: 369 external merged PRs across sglang/verl/slime/prompt2model over many months. Must stay at or above 92.",
-    "before_final_score": 95.9,
+    "before_final_score": 94.5,
     "expected_final_range": [
       92,
       97
     ],
-    "recorded_at": "2026-10-13T12:00:00.000Z",
+    "recorded_at": "2026-10-14T00:00:00.000Z",
     "metrics": {
       "username": "zhaochenyang20",
       "profile_url": "https://github.com/zhaochenyang20",
@@ -2378,7 +2383,7 @@
       "company": "RadixArk, Inc.",
       "account_age_years": 5.89,
       "created_at": "2020-11-22T01:44:56Z",
-      "followers": 2948,
+      "followers": 2952,
       "following": 70,
       "public_repos": 60,
       "fetched_repo_count": 60,
@@ -2386,10 +2391,10 @@
       "nonempty_original_repo_count": 24,
       "fork_repo_count": 36,
       "empty_original_repo_count": 0,
-      "total_stars": 7908,
-      "max_stars": 7487,
-      "weighted_total_stars": 4742.64,
-      "weighted_max_stars": 4492.2,
+      "total_stars": 7920,
+      "max_stars": 7499,
+      "weighted_total_stars": 4749.79,
+      "weighted_max_stars": 4499.4,
       "top_repo_engagement_ratio": 0.0493,
       "attributed_original_repo_count": 0,
       "attributed_original_repo_stars": 0,
@@ -2398,59 +2403,60 @@
       "best_original_repo_quality_repo": "zhaochenyang20/sglang-diffusion-routing",
       "top_starred_original_repo_quality_score": 0.75,
       "top_starred_original_repo_quality_repo": "zhaochenyang20/Awesome-ML-SYS-Tutorial",
-      "merged_pr_count": 426,
-      "external_merged_pr_count": 369,
+      "merged_pr_count": 431,
+      "external_merged_pr_count": 374,
       "external_high_star_pr_share": 0.8467,
+      "own_pr_community": 0,
       "workflow_landed_pr_count": 0,
-      "total_pr_count": 520,
+      "total_pr_count": 524,
       "issues_created": 384,
-      "last_year_contributions": 2644,
+      "last_year_contributions": 2658,
       "activity_type_count": 4,
       "contribution_years_active": 7,
       "days_since_last_activity": 0,
       "recent_merged_pr_sample": 50,
       "recent_trivial_pr_count": 1,
-      "recent_doc_like_pr_count": 9,
-      "recent_doc_like_pr_ratio": 0.18,
+      "recent_doc_like_pr_count": 12,
+      "recent_doc_like_pr_ratio": 0.24,
       "recent_external_pr_sample": 50,
-      "recent_external_doc_like_pr_count": 9,
-      "recent_external_doc_like_pr_ratio": 0.18,
-      "max_impact_repo_stars": 37844,
-      "impact_prestige_score": 0.7529,
+      "recent_external_doc_like_pr_count": 12,
+      "recent_external_doc_like_pr_ratio": 0.24,
+      "max_impact_repo_stars": 37851,
+      "impact_prestige_score": 0.753,
       "impact_pr_count": 252,
       "workflow_landed_impact_pr_count": 0,
-      "impact_depth_raw": 14,
+      "impact_depth_raw": 13.41,
       "verified_impact_pr_count": 88,
-      "core_impact_pr_count": 75,
-      "doc_like_impact_pr_count": 13,
+      "core_impact_pr_count": 72,
+      "doc_like_impact_pr_count": 16,
       "unverified_impact_pr_count": 164,
       "impact_repo_count": 15,
-      "impact_commit_count": 1330,
+      "impact_commit_count": 1336,
       "commit_contribution_aggregation_unavailable": false,
       "merged_pr_contribution_aggregation_incomplete": true,
       "external_trivial_pr_count": 1,
       "star_inflation_suspect": false,
-      "closed_unmerged_pr_count": 83,
-      "maintainer_closed_unmerged_pr_count": 7,
+      "closed_unmerged_pr_count": 84,
+      "maintainer_closed_unmerged_pr_count": 8,
       "self_closed_external_pr_count": 72,
       "self_closed_own_repo_pr_count": 4,
       "unknown_closed_unmerged_pr_count": 0,
       "pr_rejection_rate": 0.02,
       "recent_pr_sample": 30,
       "top_repo_pr_target": "sgl-project/sglang-omni",
-      "top_repo_pr_share": 0.93,
+      "top_repo_pr_share": 0.97,
       "templated_pr_ratio": 0.1,
       "pr_flood_suspect": false
     },
     "contrib_repos": [
       {
         "repo": "sgl-project/sglang-omni",
-        "stars": 1425,
+        "stars": 1439,
         "is_private": false,
         "is_fork": false,
         "owner_login": "sgl-project",
-        "commits": 404,
-        "prs": 95,
+        "commits": 408,
+        "prs": 100,
         "active_years": 1,
         "months": [
           "2026-02",
@@ -2480,18 +2486,18 @@
           "streaming",
           "text-to-speech"
         ],
-        "merge_commits": 8,
-        "engagement": 1.9298,
+        "merge_commits": 4,
+        "engagement": 1.9256,
         "pr_sample": 10,
-        "code_pr_sample": 9
+        "code_pr_sample": 5
       },
       {
         "repo": "zhaochenyang20/Awesome-ML-SYS-Tutorial",
-        "stars": 7487,
+        "stars": 7499,
         "is_private": false,
         "is_fork": false,
         "owner_login": "zhaochenyang20",
-        "commits": 630,
+        "commits": 632,
         "prs": 4,
         "active_years": 3,
         "months": [
@@ -2520,12 +2526,24 @@
         "topics": [],
         "merge_commits": 164,
         "engagement": 0.0493,
+        "community_facts": {
+          "weighted_contributors": 0,
+          "sustained_contributors": 29,
+          "outside_demand": 24,
+          "merge_latency_days": null,
+          "owner_response_share": 0.7391,
+          "outside_acceptance": 0.95,
+          "forks": 520,
+          "days_since_outside_merge": null,
+          "lead_share": 1
+        },
+        "community": 0,
         "pr_sample": 4,
         "code_pr_sample": 0
       },
       {
         "repo": "sgl-project/sglang",
-        "stars": 37066,
+        "stars": 37096,
         "is_private": false,
         "is_fork": false,
         "owner_login": "sgl-project",
@@ -2576,13 +2594,13 @@
           "wan"
         ],
         "merge_commits": 2,
-        "engagement": 1.1779,
+        "engagement": 1.1804,
         "pr_sample": 10,
         "code_pr_sample": 3
       },
       {
         "repo": "radixark/miles",
-        "stars": 3105,
+        "stars": 3112,
         "is_private": false,
         "is_fork": false,
         "owner_login": "radixark",
@@ -2596,13 +2614,13 @@
         ],
         "topics": [],
         "merge_commits": 0,
-        "engagement": 1.2921,
+        "engagement": 1.2911,
         "pr_sample": 9,
         "code_pr_sample": 4
       },
       {
         "repo": "THUDM/slime",
-        "stars": 8647,
+        "stars": 8656,
         "is_private": false,
         "is_fork": false,
         "owner_login": "THUDM",
@@ -2618,13 +2636,13 @@
         ],
         "topics": [],
         "merge_commits": 0,
-        "engagement": 0.2876,
+        "engagement": 0.2874,
         "pr_sample": 10,
         "code_pr_sample": 2
       },
       {
         "repo": "studio-dots-ai/dots.tts",
-        "stars": 1384,
+        "stars": 1385,
         "is_private": false,
         "is_fork": false,
         "owner_login": "studio-dots-ai",
@@ -2642,7 +2660,7 @@
       },
       {
         "repo": "hehehai/voxt",
-        "stars": 882,
+        "stars": 887,
         "is_private": false,
         "is_fork": false,
         "owner_login": "hehehai",
@@ -2668,7 +2686,7 @@
           "voice"
         ],
         "merge_commits": 0,
-        "engagement": 0.1814,
+        "engagement": 0.1815,
         "pr_sample": 1,
         "code_pr_sample": 1
       },
@@ -2690,7 +2708,7 @@
       },
       {
         "repo": "verl-project/verl",
-        "stars": 23845,
+        "stars": 23857,
         "is_private": false,
         "is_fork": false,
         "owner_login": "verl-project",
@@ -2767,7 +2785,7 @@
       },
       {
         "repo": "areal-project/AReaL",
-        "stars": 5827,
+        "stars": 5829,
         "is_private": false,
         "is_fork": false,
         "owner_login": "areal-project",
@@ -2789,7 +2807,7 @@
           "llm-agent"
         ],
         "merge_commits": 0,
-        "engagement": 0.3096,
+        "engagement": 0.3098,
         "pr_sample": 1,
         "code_pr_sample": 1
       },
@@ -2800,7 +2818,7 @@
         "is_fork": false,
         "owner_login": "neulab",
         "commits": 45,
-        "prs": 42,
+        "prs": 37,
         "active_years": 1,
         "months": [
           "2023-04",
@@ -2818,7 +2836,7 @@
       },
       {
         "repo": "PKUanonym/REKCARC-TSC-UHT",
-        "stars": 37844,
+        "stars": 37851,
         "is_private": false,
         "is_fork": false,
         "owner_login": "PKUanonym",
@@ -2882,9 +2900,113 @@
     ],
     "recent_prs": [
       {
+        "title": "[Docs] drama3 news and citation",
+        "repo": "sgl-project/sglang-omni",
+        "repo_stars": 1439,
+        "churn": 17,
+        "changed_files": 1,
+        "trivial": false,
+        "files": [
+          "README.md"
+        ]
+      },
+      {
+        "title": "Revert \"[Lisense] Add Links for Drama\"",
+        "repo": "sgl-project/sglang-omni",
+        "repo_stars": 1439,
+        "churn": 26,
+        "changed_files": 1,
+        "trivial": false,
+        "files": [
+          "docs/cookbook/higgs_tts.md"
+        ]
+      },
+      {
+        "title": "[Lisense] Add Links for Drama",
+        "repo": "sgl-project/sglang-omni",
+        "repo_stars": 1439,
+        "churn": 26,
+        "changed_files": 1,
+        "trivial": false,
+        "files": [
+          "docs/cookbook/higgs_tts.md"
+        ]
+      },
+      {
+        "title": "[Cookbook] Update coomands of Drama3",
+        "repo": "sgl-project/sglang-omni",
+        "repo_stars": 1439,
+        "churn": 47,
+        "changed_files": 1,
+        "trivial": false,
+        "files": [
+          "docs/cookbook/fishaudio_drama3.md"
+        ]
+      },
+      {
+        "title": "[Model] Support FishAudio Drama 3 Model",
+        "repo": "sgl-project/sglang-omni",
+        "repo_stars": 1439,
+        "churn": 29405,
+        "changed_files": 95,
+        "trivial": false,
+        "files": [
+          "docs/cookbook/fishaudio_drama3.md",
+          "docs/index.rst",
+          "examples/configs/drama3_tts.yaml",
+          "pyproject.toml",
+          "sglang_omni/config/schema.py",
+          "sglang_omni/model_runner/request_id_prefill_cuda_graph_runner.py",
+          "sglang_omni/model_runner/sglang_model_runner.py",
+          "sglang_omni/models/fishaudio_drama3/__init__.py",
+          "sglang_omni/models/fishaudio_drama3/audio_decoder.py",
+          "sglang_omni/models/fishaudio_drama3/channels_last_decoder.py",
+          "sglang_omni/models/fishaudio_drama3/config.py",
+          "sglang_omni/models/fishaudio_drama3/decode_state.py",
+          "sglang_omni/models/fishaudio_drama3/decoder_layers.py",
+          "sglang_omni/models/fishaudio_drama3/engine_builder.py",
+          "sglang_omni/models/fishaudio_drama3/first_frame_graphs.py",
+          "sglang_omni/models/fishaudio_drama3/hf_config.py",
+          "sglang_omni/models/fishaudio_drama3/model_inputs.py",
+          "sglang_omni/models/fishaudio_drama3/model_runner.py",
+          "sglang_omni/models/fishaudio_drama3/prompt.py",
+          "sglang_omni/models/fishaudio_drama3/quantization.py",
+          "sglang_omni/models/fishaudio_drama3/request_builders.py",
+          "sglang_omni/models/fishaudio_drama3/sampling.py",
+          "sglang_omni/models/fishaudio_drama3/sampling_kernels.py",
+          "sglang_omni/models/fishaudio_drama3/sampling_selection.py",
+          "sglang_omni/models/fishaudio_drama3/sglang_model.py",
+          "sglang_omni/models/fishaudio_drama3/speech_request.py",
+          "sglang_omni/models/fishaudio_drama3/stages.py",
+          "sglang_omni/models/fishaudio_drama3/stream_windows.py",
+          "sglang_omni/models/fishaudio_drama3/text_config.py",
+          "sglang_omni/models/fishaudio_drama3/tower_activation.py",
+          "sglang_omni/models/fishaudio_drama3/tower_attention.py",
+          "sglang_omni/models/fishaudio_drama3/tower_kernels.py",
+          "sglang_omni/models/fishaudio_drama3/tower_prefill.py",
+          "sglang_omni/models/fishaudio_drama3/tower_projection.py",
+          "sglang_omni/models/fishaudio_drama3/tower_tiles.py",
+          "sglang_omni/models/fishaudio_drama3/vocoder.py",
+          "sglang_omni/models/fishaudio_drama3/weights.py",
+          "sglang_omni/models/fishaudio_s2_pro/fish_speech/models/dac/modded_dac.py",
+          "sglang_omni/models/fishaudio_s2_pro/stages.py",
+          "sglang_omni/models/fishaudio_s2_pro/streaming_vocoder.py",
+          "sglang_omni/scheduling/audio_stream.py",
+          "sglang_omni/scheduling/audio_vocoder.py",
+          "sglang_omni/scheduling/engine_factory.py",
+          "sglang_omni/scheduling/generation_batch_policy.py",
+          "sglang_omni/scheduling/omni_scheduler.py",
+          "sglang_omni/scheduling/sglang_backend/cache.py",
+          "sglang_omni/serve/launcher.py",
+          "sglang_omni/serve/openai_api.py",
+          "sglang_omni/serve/openai_errors.py",
+          "sglang_omni/serve/speech_service.py"
+        ]
+      },
+      {
         "title": "[Benchmark] Full Duplex Eval Scripts",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 4675,
         "changed_files": 38,
         "trivial": false,
@@ -2932,7 +3054,7 @@
       {
         "title": "[MiniCPM-o] Batch duplex sessions and replay the speech flow as CUDA graphs",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 3937,
         "changed_files": 41,
         "trivial": false,
@@ -2983,7 +3105,7 @@
       {
         "title": "[Refactor] Batch Code2Wav across references",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 765,
         "changed_files": 12,
         "trivial": false,
@@ -3005,7 +3127,7 @@
       {
         "title": "Run MiniCPM-o vocoding beside talker on a private stream",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 489,
         "changed_files": 10,
         "trivial": false,
@@ -3025,7 +3147,7 @@
       {
         "title": "[Lint] Leading _ Should be Covered in Unit Tests",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 27536,
         "changed_files": 400,
         "trivial": false,
@@ -3085,7 +3207,7 @@
       {
         "title": "[Lint] If with else is required",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 17643,
         "changed_files": 494,
         "trivial": false,
@@ -3145,7 +3267,7 @@
       {
         "title": "[Lint] Enforce noqa: leading-underscore to pass _ lint",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 23189,
         "changed_files": 383,
         "trivial": false,
@@ -3205,7 +3327,7 @@
       {
         "title": "[Benchmarks] Record the conditions shared benchmark speed runs actually compare",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 1685,
         "changed_files": 26,
         "trivial": false,
@@ -3241,7 +3363,7 @@
       {
         "title": "[Refactor] Remove all the _ in the Repo",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 20732,
         "changed_files": 592,
         "trivial": false,
@@ -3301,7 +3423,7 @@
       {
         "title": "[Refactor] Streaming Detokenizer Class",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 792,
         "changed_files": 7,
         "trivial": false,
@@ -3318,7 +3440,7 @@
       {
         "title": "[Refactor][Perf] MiniCPM code2wav Batching",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 830,
         "changed_files": 14,
         "trivial": false,
@@ -3342,7 +3464,7 @@
       {
         "title": "[docs] require f-strings and ban backticks in comments",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 11,
         "changed_files": 1,
         "trivial": false,
@@ -3353,7 +3475,7 @@
       {
         "title": "[Perf] Torch Compile Default On",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 178,
         "changed_files": 21,
         "trivial": false,
@@ -3384,7 +3506,7 @@
       {
         "title": "[Refactor] Streaming Vocoder of CosyVoice",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 138,
         "changed_files": 2,
         "trivial": false,
@@ -3396,7 +3518,7 @@
       {
         "title": "[Perf][Cosy Voice] Reduce Admission Cost When Grouping The Batch",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 25,
         "changed_files": 1,
         "trivial": false,
@@ -3407,7 +3529,7 @@
       {
         "title": "[Refactor] Streaming Vocoder of CosyVoice",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 2912,
         "changed_files": 38,
         "trivial": false,
@@ -3455,7 +3577,7 @@
       {
         "title": "[Model][AuK] Init AuK Support From Tencent Hunyuan",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 4002,
         "changed_files": 34,
         "trivial": false,
@@ -3499,7 +3621,7 @@
       {
         "title": "[CI] Mirror the CI Stage of TTS as ASR",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 632,
         "changed_files": 6,
         "trivial": false,
@@ -3515,7 +3637,7 @@
       {
         "title": "[TTS][CosyVoice] Resolve and Minimal Refactor of Fun-CosyVoice3 ",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 509,
         "changed_files": 13,
         "trivial": false,
@@ -3538,7 +3660,7 @@
       {
         "title": "[Refactor] Remove Useless Comments",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 174,
         "changed_files": 4,
         "trivial": false,
@@ -3552,7 +3674,7 @@
       {
         "title": "[Model] Support MiniMax Music 3 Model",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 4828,
         "changed_files": 32,
         "trivial": false,
@@ -3594,7 +3716,7 @@
       {
         "title": "[CPU] Monitor CPU While Calibration",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 786,
         "changed_files": 8,
         "trivial": false,
@@ -3612,7 +3734,7 @@
       {
         "title": "[docs] Upd After v 0.1.1",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 132,
         "changed_files": 7,
         "trivial": false,
@@ -3629,7 +3751,7 @@
       {
         "title": "[Community] Add The Supporting of SGLang Omni into dots.tts",
         "repo": "studio-dots-ai/dots.tts",
-        "repo_stars": 1384,
+        "repo_stars": 1385,
         "churn": 140,
         "changed_files": 1,
         "trivial": false,
@@ -3640,7 +3762,7 @@
       {
         "title": "Calibration 07 31",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 2125,
         "changed_files": 22,
         "trivial": false,
@@ -3672,7 +3794,7 @@
       {
         "title": "[CI] Register Google Time Dataset to ASR CI",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 674,
         "changed_files": 12,
         "trivial": false,
@@ -3694,7 +3816,7 @@
       {
         "title": "[CI] Extend MTD CI for MOSS_TD_STREAM_N_ABOVE_50_CER_MAX",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 102,
         "changed_files": 6,
         "trivial": false,
@@ -3710,7 +3832,7 @@
       {
         "title": "[CI]  Trim Calibration Skills with New Grok Model",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 4145,
         "changed_files": 27,
         "trivial": false,
@@ -3747,7 +3869,7 @@
       {
         "title": "[Cookbook] ACK for MTD Model",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 15,
         "changed_files": 1,
         "trivial": false,
@@ -3758,7 +3880,7 @@
       {
         "title": "[Docs] Add cookbook for MTD",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 160,
         "changed_files": 2,
         "trivial": false,
@@ -3770,7 +3892,7 @@
       {
         "title": "[CI] Consolidate AS Shell Threshold",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 410,
         "changed_files": 25,
         "trivial": false,
@@ -3805,7 +3927,7 @@
       {
         "title": "[ASR] Default Sampling with Greedy Search",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 182,
         "changed_files": 7,
         "trivial": false,
@@ -3822,7 +3944,7 @@
       {
         "title": "[ASR] Update MTD sampling defaults",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 456,
         "changed_files": 8,
         "trivial": false,
@@ -3840,7 +3962,7 @@
       {
         "title": "[CI] Cover Long Sequence of ASR for MTD",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 1395,
         "changed_files": 14,
         "trivial": false,
@@ -3864,7 +3986,7 @@
       {
         "title": "[ASR] Eval Update",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 1644,
         "changed_files": 13,
         "trivial": false,
@@ -3887,7 +4009,7 @@
       {
         "title": "[CI] Unify ASR Eval Script with CI",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 25,
         "changed_files": 2,
         "trivial": false,
@@ -3899,7 +4021,7 @@
       {
         "title": "[CI] Add MOSS-Transcribe-Diarize ASR CI stages",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 3315,
         "changed_files": 42,
         "trivial": false,
@@ -3951,7 +4073,7 @@
       {
         "title": "[CI] Rootless Runner For reclaiming",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 25,
         "changed_files": 7,
         "trivial": false,
@@ -3968,7 +4090,7 @@
       {
         "title": "[CI] Reuse ASR SeedTTS benchmark in CI",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 183,
         "changed_files": 13,
         "trivial": false,
@@ -3991,7 +4113,7 @@
       {
         "title": "[CI] Clean Up Calibration Docs",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 1180,
         "changed_files": 25,
         "trivial": false,
@@ -4026,7 +4148,7 @@
       {
         "title": "[CI] Update Threshold For Qwen3 ASR and Moss Local",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 817,
         "changed_files": 7,
         "trivial": false,
@@ -4043,7 +4165,7 @@
       {
         "title": "[CI] Expand Stage 1 to cover full set of Seed TTS on ASR",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 80,
         "changed_files": 8,
         "trivial": false,
@@ -4061,7 +4183,7 @@
       {
         "title": "[CI] Calibration 2026/06/22",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 32,
         "changed_files": 2,
         "trivial": false,
@@ -4073,7 +4195,7 @@
       {
         "title": "[CI] Enable Labels for TTS CI",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 23,
         "changed_files": 1,
         "trivial": false,
@@ -4084,7 +4206,7 @@
       {
         "title": "[CI] Calibration 2026/06/15",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 139,
         "changed_files": 13,
         "trivial": false,
@@ -4107,7 +4229,7 @@
       {
         "title": "[CI] Add Pre Check List",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 300,
         "changed_files": 2,
         "trivial": false,
@@ -4119,7 +4241,7 @@
       {
         "title": "[CI] CI Host Profiles",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 569,
         "changed_files": 7,
         "trivial": false,
@@ -4136,7 +4258,7 @@
       {
         "title": "[CI] Update Calibration Skills",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 354,
         "changed_files": 8,
         "trivial": false,
@@ -4154,7 +4276,7 @@
       {
         "title": "[Hardware] Resolve GPU issues on Blackwell",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 229,
         "changed_files": 5,
         "trivial": false,
@@ -4169,7 +4291,7 @@
       {
         "title": "[Docs] Update Higgs Audio Cookbook",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 57,
         "changed_files": 2,
         "trivial": false,
@@ -4181,7 +4303,7 @@
       {
         "title": "[Refresh] Higgs Performance",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 88,
         "changed_files": 4,
         "trivial": false,
@@ -4195,7 +4317,7 @@
       {
         "title": "[Fix] Resolve Text Only Qwen3 Omni TP Issue",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 74,
         "changed_files": 3,
         "trivial": false,
@@ -4208,7 +4330,7 @@
       {
         "title": "[CI] Move ASR CI to Stage 1",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 199,
         "changed_files": 8,
         "trivial": false,
@@ -4226,7 +4348,7 @@
       {
         "title": "[CI] Release Max Failure of TTS WER",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 169,
         "changed_files": 5,
         "trivial": false,
@@ -4241,7 +4363,7 @@
       {
         "title": "[CI] Higgs into CI thresholds",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 150,
         "changed_files": 2,
         "trivial": false,
@@ -4253,7 +4375,7 @@
       {
         "title": "[CI] Set up Higgs into CI",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 2588,
         "changed_files": 49,
         "trivial": false,
@@ -4312,7 +4434,7 @@
       {
         "title": "[CI] Add Whisper ASR parity CI",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 2526,
         "changed_files": 38,
         "trivial": false,
@@ -4360,7 +4482,7 @@
       {
         "title": "[CI] Calibration with JIT cache",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 2031,
         "changed_files": 38,
         "trivial": false,
@@ -4408,7 +4530,7 @@
       {
         "title": "[CI] cancel stale PR workflow runs",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 55,
         "changed_files": 4,
         "trivial": false,
@@ -4422,7 +4544,7 @@
       {
         "title": "[CI] Remove Setup Stages",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 109,
         "changed_files": 1,
         "trivial": false,
@@ -4433,7 +4555,7 @@
       {
         "title": "[CI] revert priority queue and keep flaky retries",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 3942,
         "changed_files": 15,
         "trivial": false,
@@ -4458,7 +4580,7 @@
       {
         "title": "[CI] Publish Priority Stage Check Runs",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 299,
         "changed_files": 3,
         "trivial": false,
@@ -4471,7 +4593,7 @@
       {
         "title": "[ci] Dispatch Priority Stages Through Scheduler",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 1826,
         "changed_files": 11,
         "trivial": false,
@@ -4492,7 +4614,7 @@
       {
         "title": "[CI] stages wait in queue",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 7,
         "changed_files": 1,
         "trivial": false,
@@ -4503,7 +4625,7 @@
       {
         "title": "[CI] Optimize priority CI by stage",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 1462,
         "changed_files": 7,
         "trivial": false,
@@ -4520,7 +4642,7 @@
       {
         "title": "[CI] Add CI retry wrapper for flaky benchmark stages and add High-Priority Queue",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 536,
         "changed_files": 6,
         "trivial": false,
@@ -4536,7 +4658,7 @@
       {
         "title": "[CI] CI cancellation triggers",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 100,
         "changed_files": 1,
         "trivial": false,
@@ -4547,7 +4669,7 @@
       {
         "title": "[CI] Report all CI metric threshold failures",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 1075,
         "changed_files": 13,
         "trivial": false,
@@ -4570,7 +4692,7 @@
       {
         "title": "[CI] Calibraiton Results 05/22/2026",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 859,
         "changed_files": 14,
         "trivial": false,
@@ -4594,7 +4716,7 @@
       {
         "title": "[CI] Calibration After Fix FlashInfer Sampling ",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 169,
         "changed_files": 13,
         "trivial": false,
@@ -4617,7 +4739,7 @@
       {
         "title": "[Benchmark] Benchmark Results 05/15/2026",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 2440,
         "changed_files": 11,
         "trivial": false,
@@ -4638,7 +4760,7 @@
       {
         "title": "[Feature] Enable Thinker CUDA Graph by Default",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 10,
         "changed_files": 4,
         "trivial": false,
@@ -4652,7 +4774,7 @@
       {
         "title": "[CI] Calibrate v1 thresholds for cuda graph",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 323,
         "changed_files": 15,
         "trivial": false,
@@ -4677,7 +4799,7 @@
       {
         "title": "[CI] Detach S2 Pro CI stage 3 into GitHub Runner",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 270,
         "changed_files": 3,
         "trivial": false,
@@ -4690,7 +4812,7 @@
       {
         "title": "[Feature] Add onSave Callback to Prompt sections and Improve Stored Text Handling",
         "repo": "hehehai/voxt",
-        "repo_stars": 882,
+        "repo_stars": 887,
         "churn": 75,
         "changed_files": 6,
         "trivial": false,
@@ -4706,7 +4828,7 @@
       {
         "title": "[Feat] Expose encoder mem reserve as --encoder-mem-reserve CLI flag",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 345,
         "changed_files": 7,
         "trivial": false,
@@ -4723,7 +4845,7 @@
       {
         "title": "[CI ]Fix  NIXL Cuda Context",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 191,
         "changed_files": 1,
         "trivial": false,
@@ -4734,7 +4856,7 @@
       {
         "title": "[Docs] Update benchmarks README for unified TTS/WER pipeline and MMSU",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 104,
         "changed_files": 1,
         "trivial": false,
@@ -4745,7 +4867,7 @@
       {
         "title": "[CI] Seperate Qwen3 Omni CI into multiple stages",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 178,
         "changed_files": 3,
         "trivial": false,
@@ -4758,7 +4880,7 @@
       {
         "title": "[Docs] Adds Qwen3 Omni Usage Docs, Fix for Image + Text Input with Talker Enabled",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 704,
         "changed_files": 12,
         "trivial": false,
@@ -4780,7 +4902,7 @@
       {
         "title": "[Docs] Detach the docs-check CI and docs-release CI",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 583,
         "changed_files": 12,
         "trivial": false,
@@ -4802,7 +4924,7 @@
       {
         "title": "  [Benchmarking] Redesign benchmark architecture with task×model framework and WER evaluation    ",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 3325,
         "changed_files": 18,
         "trivial": false,
@@ -4830,7 +4952,7 @@
       {
         "title": "[Docs] Add TTS S2-Pro basic usage documentation",
         "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
+        "repo_stars": 1439,
         "churn": 298,
         "changed_files": 5,
         "trivial": false,
@@ -4841,92 +4963,6 @@
           "pyproject.toml",
           "sglang_omni/models/fishaudio_s2_pro/README.md"
         ]
-      },
-      {
-        "title": "[CI] Add Performance Benchmarking of S2 Pro Model ",
-        "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
-        "churn": 950,
-        "changed_files": 15,
-        "trivial": false,
-        "files": [
-          ".github/workflows/test-examples.yaml",
-          ".github/workflows/test-s2pro-benchmark.yaml",
-          ".github/workflows/test.yaml",
-          "benchmarks/performance/tts/benchmark_tts_speed.py",
-          "pyproject.toml",
-          "sglang_omni/models/fishaudio_s2_pro/factory.py",
-          "sglang_omni/models/fishaudio_s2_pro/pipeline/stages.py",
-          "sglang_omni/serve/openai_api.py",
-          "tests/test_model/__init__.py",
-          "tests/test_model/conftest.py",
-          "tests/test_model/helpers.py",
-          "tests/test_model/test_s2pro_benchmark.py",
-          "tests/test_model/test_video_integration.py",
-          "tests/test_relay_unified_multiprocess.py",
-          "tests/utils.py"
-        ]
-      },
-      {
-        "title": "[fix] Remove CPU overhead of S2 Pro in non-streaming mode",
-        "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
-        "churn": 379,
-        "changed_files": 6,
-        "trivial": false,
-        "files": [
-          ".github/workflows/test-examples.yaml",
-          ".github/workflows/test.yaml",
-          "benchmarks/performance/tts/benchmark_tts_speed.py",
-          "sglang_omni/models/fishaudio_s2_pro/factory.py",
-          "sglang_omni/models/fishaudio_s2_pro/pipeline/stages.py",
-          "sglang_omni/serve/openai_api.py"
-        ]
-      },
-      {
-        "title": "[Benchmarking] Refactor the Benchmark File Tree",
-        "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
-        "churn": 26,
-        "changed_files": 3,
-        "trivial": false,
-        "files": [
-          "benchmarks/README.md",
-          "benchmarks/performance/tts/benchmark_tts_speed.py",
-          "sglang_omni/models/fishaudio_s2_pro/factory.py"
-        ]
-      },
-      {
-        "title": "[Benchmark] Add TTS Server Benchmarking",
-        "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
-        "churn": 681,
-        "changed_files": 10,
-        "trivial": false,
-        "files": [
-          "benchmarks/README.md",
-          "benchmarks/benchmark_tts_speed.py",
-          "sglang_omni/client/client.py",
-          "sglang_omni/client/types.py",
-          "sglang_omni/engines/ar/sglang_backend/model_runner.py",
-          "sglang_omni/executors/engine_executor.py",
-          "sglang_omni/models/fishaudio_s2_pro/io.py",
-          "sglang_omni/models/fishaudio_s2_pro/pipeline/engine_io.py",
-          "sglang_omni/models/fishaudio_s2_pro/pipeline/stages.py",
-          "sglang_omni/serve/openai_api.py"
-        ]
-      },
-      {
-        "title": "Import S2 Document",
-        "repo": "sgl-project/sglang-omni",
-        "repo_stars": 1425,
-        "churn": 38,
-        "changed_files": 2,
-        "trivial": false,
-        "files": [
-          "docs/get_started/installation.md",
-          "sglang_omni/models/fishaudio_s2_pro/README.md"
-        ]
       }
     ],
     "star_repos": [
@@ -4934,13 +4970,13 @@
         "name": "Awesome-ML-SYS-Tutorial",
         "owner_login": "zhaochenyang20",
         "name_with_owner": "zhaochenyang20/Awesome-ML-SYS-Tutorial",
-        "stars": 7487,
+        "stars": 7499,
         "forks": 520,
         "open_issues": 51,
-        "size": 117514,
+        "size": 118585,
         "language": "HTML",
         "description": "My learning notes for ML SYS.",
-        "pushed_at": "2026-10-13T07:26:28Z",
+        "pushed_at": "2026-10-13T08:10:15Z",
         "topics": [],
         "languages": [
           {
@@ -5267,8 +5303,8 @@
       }
     ],
     "expected": {
-      "impact_prestige_score": 0.7529,
-      "impact_depth_raw": 14,
+      "impact_prestige_score": 0.753,
+      "impact_depth_raw": 13.41,
       "impact_repo_count": 15,
       "sub_scores": {
         "account_maturity": 9.9,
@@ -5283,12 +5319,12 @@
   },
   "alchaincyf": {
     "description": "Real snapshot. Audience-driven content/skill repos (<1% engagement) and 2 self-merged PRs; no external ecosystem work. Target 50-60.",
-    "before_final_score": 60.4,
+    "before_final_score": 51.3,
     "expected_final_range": [
       50,
       55
     ],
-    "recorded_at": "2026-10-13T12:00:00.000Z",
+    "recorded_at": "2026-10-14T00:00:00.000Z",
     "metrics": {
       "username": "alchaincyf",
       "profile_url": "https://github.com/alchaincyf",
@@ -5299,7 +5335,7 @@
       "company": null,
       "account_age_years": 3.59,
       "created_at": "2023-03-13T04:44:42Z",
-      "followers": 10724,
+      "followers": 10752,
       "following": 1,
       "public_repos": 90,
       "fetched_repo_count": 90,
@@ -5307,11 +5343,11 @@
       "nonempty_original_repo_count": 65,
       "fork_repo_count": 25,
       "empty_original_repo_count": 0,
-      "total_stars": 102690,
-      "max_stars": 34216,
-      "weighted_total_stars": 95997.66,
-      "weighted_max_stars": 34216,
-      "top_repo_engagement_ratio": 0.0056,
+      "total_stars": 102970,
+      "max_stars": 34285,
+      "weighted_total_stars": 96271.2,
+      "weighted_max_stars": 34285,
+      "top_repo_engagement_ratio": 0.0057,
       "attributed_original_repo_count": 0,
       "attributed_original_repo_stars": 0,
       "attributed_original_repos": [],
@@ -5322,10 +5358,11 @@
       "merged_pr_count": 2,
       "external_merged_pr_count": 0,
       "external_high_star_pr_share": 1,
+      "own_pr_community": 0,
       "workflow_landed_pr_count": 0,
       "total_pr_count": 4,
       "issues_created": 2,
-      "last_year_contributions": 1015,
+      "last_year_contributions": 1016,
       "activity_type_count": 4,
       "contribution_years_active": 4,
       "days_since_last_activity": 0,
@@ -5336,7 +5373,7 @@
       "recent_external_pr_sample": 0,
       "recent_external_doc_like_pr_count": 0,
       "recent_external_doc_like_pr_ratio": 0,
-      "max_impact_repo_stars": 34216,
+      "max_impact_repo_stars": 34285,
       "impact_prestige_score": 0,
       "impact_pr_count": 0,
       "workflow_landed_impact_pr_count": 0,
@@ -5346,7 +5383,7 @@
       "doc_like_impact_pr_count": 0,
       "unverified_impact_pr_count": 0,
       "impact_repo_count": 12,
-      "impact_commit_count": 475,
+      "impact_commit_count": 476,
       "commit_contribution_aggregation_unavailable": false,
       "merged_pr_contribution_aggregation_incomplete": false,
       "external_trivial_pr_count": 0,
@@ -5397,7 +5434,7 @@
       },
       {
         "repo": "alchaincyf/huashu-design",
-        "stars": 24890,
+        "stars": 24915,
         "is_private": false,
         "is_fork": false,
         "owner_login": "alchaincyf",
@@ -5419,7 +5456,7 @@
       },
       {
         "repo": "alchaincyf/nuwa-skill",
-        "stars": 34216,
+        "stars": 34285,
         "is_private": false,
         "is_fork": false,
         "owner_login": "alchaincyf",
@@ -5436,11 +5473,11 @@
         ],
         "topics": [],
         "merge_commits": 2,
-        "engagement": 0.0056
+        "engagement": 0.0057
       },
       {
         "repo": "alchaincyf/huashu-chrome",
-        "stars": 296,
+        "stars": 317,
         "is_private": false,
         "is_fork": false,
         "owner_login": "alchaincyf",
@@ -5457,7 +5494,7 @@
       },
       {
         "repo": "alchaincyf/darwin-skill",
-        "stars": 6303,
+        "stars": 6313,
         "is_private": false,
         "is_fork": false,
         "owner_login": "alchaincyf",
@@ -5520,11 +5557,11 @@
       },
       {
         "repo": "alchaincyf/huashu-art-motion",
-        "stars": 3700,
+        "stars": 3833,
         "is_private": false,
         "is_fork": false,
         "owner_login": "alchaincyf",
-        "commits": 18,
+        "commits": 19,
         "prs": 0,
         "active_years": 1,
         "months": [
@@ -5532,7 +5569,7 @@
         ],
         "topics": [],
         "merge_commits": 0,
-        "engagement": 0.0027
+        "engagement": 0.0026
       },
       {
         "repo": "alchaincyf/img2046",
@@ -5605,7 +5642,7 @@
       },
       {
         "repo": "alchaincyf/steve-jobs-skill",
-        "stars": 959,
+        "stars": 961,
         "is_private": false,
         "is_fork": false,
         "owner_login": "alchaincyf",
@@ -5621,7 +5658,7 @@
       },
       {
         "repo": "alchaincyf/x-mentor-skill",
-        "stars": 1272,
+        "stars": 1274,
         "is_private": false,
         "is_fork": false,
         "owner_login": "alchaincyf",
@@ -5656,7 +5693,7 @@
       },
       {
         "repo": "alchaincyf/elon-musk-skill",
-        "stars": 539,
+        "stars": 540,
         "is_private": false,
         "is_fork": false,
         "owner_login": "alchaincyf",
@@ -5672,7 +5709,7 @@
       },
       {
         "repo": "alchaincyf/zhangxuefeng-skill",
-        "stars": 10465,
+        "stars": 10472,
         "is_private": false,
         "is_fork": false,
         "owner_login": "alchaincyf",
@@ -5687,11 +5724,11 @@
         ],
         "topics": [],
         "merge_commits": 0,
-        "engagement": 0.0109
+        "engagement": 0.011
       },
       {
         "repo": "alchaincyf/codex-orange-book",
-        "stars": 663,
+        "stars": 664,
         "is_private": false,
         "is_fork": false,
         "owner_login": "alchaincyf",
@@ -5783,7 +5820,7 @@
       },
       {
         "repo": "alchaincyf/deepseek-harness-orange-book",
-        "stars": 1327,
+        "stars": 1330,
         "is_private": false,
         "is_fork": false,
         "owner_login": "alchaincyf",
@@ -5795,11 +5832,11 @@
         ],
         "topics": [],
         "merge_commits": 0,
-        "engagement": 0.0106
+        "engagement": 0.0105
       },
       {
         "repo": "alchaincyf/obsidian-ai-orange-book",
-        "stars": 1467,
+        "stars": 1468,
         "is_private": false,
         "is_fork": false,
         "owner_login": "alchaincyf",
@@ -5831,7 +5868,7 @@
       },
       {
         "repo": "alchaincyf/huashu-mac-use",
-        "stars": 306,
+        "stars": 307,
         "is_private": false,
         "is_fork": false,
         "owner_login": "alchaincyf",
@@ -5845,7 +5882,7 @@
       },
       {
         "repo": "alchaincyf/sun-yuchen-perspective",
-        "stars": 244,
+        "stars": 246,
         "is_private": false,
         "is_fork": false,
         "owner_login": "alchaincyf",
@@ -5874,7 +5911,7 @@
       },
       {
         "repo": "alchaincyf/claude-code-orange-book",
-        "stars": 317,
+        "stars": 318,
         "is_private": false,
         "is_fork": false,
         "owner_login": "alchaincyf",
@@ -5923,10 +5960,10 @@
         "name": "nuwa-skill",
         "owner_login": "alchaincyf",
         "name_with_owner": "alchaincyf/nuwa-skill",
-        "stars": 34216,
-        "forks": 4540,
-        "open_issues": 17,
-        "size": 38622,
+        "stars": 34285,
+        "forks": 4544,
+        "open_issues": 20,
+        "size": 38550,
         "language": "Python",
         "description": "你想蒸馏的下一个员工，何必是同事。蒸馏任何人的思维方式——心智模型、决策启发式、表达DNA。Distill how anyone thinks.",
         "pushed_at": "2026-10-13T06:54:31Z",
@@ -5946,10 +5983,10 @@
         "name": "huashu-design",
         "owner_login": "alchaincyf",
         "name_with_owner": "alchaincyf/huashu-design",
-        "stars": 24890,
-        "forks": 2811,
+        "stars": 24915,
+        "forks": 2813,
         "open_issues": 5,
-        "size": 222671,
+        "size": 222692,
         "language": "HTML",
         "description": "Huashu Design · HTML-native design skill for Claude Code · Claude Code 里 HTML 原生的设计 skill · 高保真原型 / 幻灯片 / 动画 + 20 设计哲学 + 5 维评审 + MP4 导出 · Agent-agnostic",
         "pushed_at": "2026-10-13T06:51:27Z",
@@ -5977,10 +6014,10 @@
         "name": "zhangxuefeng-skill",
         "owner_login": "alchaincyf",
         "name_with_owner": "alchaincyf/zhangxuefeng-skill",
-        "stars": 10465,
-        "forks": 2673,
-        "open_issues": 26,
-        "size": 5134,
+        "stars": 10472,
+        "forks": 2674,
+        "open_issues": 27,
+        "size": 5093,
         "language": null,
         "description": "张雪峰.skill — 张雪峰的认知操作系统。高考志愿/考研/职业规划的实战思维框架。由女娲.skill生成。",
         "pushed_at": "2026-10-13T06:56:37Z",
@@ -5991,8 +6028,8 @@
         "name": "darwin-skill",
         "owner_login": "alchaincyf",
         "name_with_owner": "alchaincyf/darwin-skill",
-        "stars": 6303,
-        "forks": 660,
+        "stars": 6313,
+        "forks": 661,
         "open_issues": 6,
         "size": 4474,
         "language": "HTML",
@@ -6033,13 +6070,13 @@
         "name": "huashu-art-motion",
         "owner_login": "alchaincyf",
         "name_with_owner": "alchaincyf/huashu-art-motion",
-        "stars": 3700,
-        "forks": 410,
+        "stars": 3833,
+        "forks": 420,
         "open_issues": 3,
-        "size": 73595,
+        "size": 73633,
         "language": "JavaScript",
         "description": "艺术动画skill：35种艺术风格、9种解说语法，用代码让画动起来。",
-        "pushed_at": "2026-10-13T06:51:20Z",
+        "pushed_at": "2026-10-13T08:42:23Z",
         "topics": [],
         "languages": [
           {
@@ -6061,7 +6098,7 @@
         "owner_login": "alchaincyf",
         "name_with_owner": "alchaincyf/huashu-skills",
         "stars": 1724,
-        "forks": 259,
+        "forks": 261,
         "open_issues": 5,
         "size": 17677,
         "language": "Python",
@@ -6079,7 +6116,7 @@
         "name": "obsidian-ai-orange-book",
         "owner_login": "alchaincyf",
         "name_with_owner": "alchaincyf/obsidian-ai-orange-book",
-        "stars": 1467,
+        "stars": 1468,
         "forks": 134,
         "open_issues": 1,
         "size": 20290,
@@ -6092,7 +6129,7 @@
         "name": "deepseek-harness-orange-book",
         "owner_login": "alchaincyf",
         "name_with_owner": "alchaincyf/deepseek-harness-orange-book",
-        "stars": 1327,
+        "stars": 1330,
         "forks": 115,
         "open_issues": 7,
         "size": 42123,
@@ -6105,10 +6142,10 @@
         "name": "x-mentor-skill",
         "owner_login": "alchaincyf",
         "name_with_owner": "alchaincyf/x-mentor-skill",
-        "stars": 1272,
-        "forks": 201,
+        "stars": 1274,
+        "forks": 202,
         "open_issues": 0,
-        "size": 5441,
+        "size": 5447,
         "language": null,
         "description": "X导师.skill — 女娲的第一个「非人类」作品。蒸馏6位顶级X创作者方法论 + 开源算法数据，提炼完整的选题-写作-增长操作手册。Made with 女娲.skill",
         "pushed_at": "2026-10-13T06:56:15Z",
@@ -6155,10 +6192,10 @@
         "name": "steve-jobs-skill",
         "owner_login": "alchaincyf",
         "name_with_owner": "alchaincyf/steve-jobs-skill",
-        "stars": 959,
+        "stars": 961,
         "forks": 176,
         "open_issues": 4,
-        "size": 2762,
+        "size": 2782,
         "language": null,
         "description": "乔布斯.skill — Steve Jobs的认知操作系统。6个心智模型 + 8条决策启发式 + 完整表达DNA。由女娲.skill生成。",
         "pushed_at": "2026-10-13T06:55:17Z",
@@ -6171,7 +6208,7 @@
         "stars": 913,
         "forks": 98,
         "open_issues": 6,
-        "size": 7382,
+        "size": 7402,
         "language": "CSS",
         "description": "md/html 双向流水线 · 三个能力一站式：万物→md / md→精美html / html→md。封装 markitdown + Pandoc + html-to-markdown + trafilatura。4 套反 AI slop 主题。Claude Code skill.",
         "pushed_at": "2026-10-13T06:52:29Z",
@@ -6194,7 +6231,7 @@
         "name": "codex-orange-book",
         "owner_login": "alchaincyf",
         "name_with_owner": "alchaincyf/codex-orange-book",
-        "stars": 663,
+        "stars": 664,
         "forks": 60,
         "open_issues": 0,
         "size": 43843,
@@ -6215,7 +6252,7 @@
         "name": "elon-musk-skill",
         "owner_login": "alchaincyf",
         "name_with_owner": "alchaincyf/elon-musk-skill",
-        "stars": 539,
+        "stars": 540,
         "forks": 117,
         "open_issues": 1,
         "size": 4981,
@@ -6242,9 +6279,9 @@
         "owner_login": "alchaincyf",
         "name_with_owner": "alchaincyf/huashu-excel",
         "stars": 435,
-        "forks": 65,
+        "forks": 66,
         "open_issues": 3,
-        "size": 532,
+        "size": 521,
         "language": "Python",
         "description": "数据分析与 Excel 全流程 skill：体检脏表、清洗、对齐需求、分析、对账、交付。让 AI 算出来的数字经得起追问。跨 agent 通用，依赖仅 openpyxl。",
         "pushed_at": "2026-10-13T06:51:37Z",
@@ -6257,7 +6294,7 @@
         "stars": 380,
         "forks": 97,
         "open_issues": 3,
-        "size": 116,
+        "size": 137,
         "language": null,
         "description": "芒格.skill — 查理·芒格的认知操作系统。由女娲.skill生成。",
         "pushed_at": "2026-10-13T06:54:05Z",
@@ -6267,7 +6304,7 @@
         "name": "claude-code-orange-book",
         "owner_login": "alchaincyf",
         "name_with_owner": "alchaincyf/claude-code-orange-book",
-        "stars": 317,
+        "stars": 318,
         "forks": 53,
         "open_issues": 0,
         "size": 25520,
@@ -6277,13 +6314,26 @@
         "topics": []
       },
       {
+        "name": "huashu-chrome",
+        "owner_login": "alchaincyf",
+        "name_with_owner": "alchaincyf/huashu-chrome",
+        "stars": 317,
+        "forks": 48,
+        "open_issues": 1,
+        "size": 1675,
+        "language": "JavaScript",
+        "description": "让任何 AI agent 操控你自己的 Chrome——带着全部登录态。MCP + Chrome 扩展，Claude Code / Codex / Cursor / Gemini CLI 通用。",
+        "pushed_at": "2026-10-13T04:22:01Z",
+        "topics": []
+      },
+      {
         "name": "karpathy-skill",
         "owner_login": "alchaincyf",
         "name_with_owner": "alchaincyf/karpathy-skill",
         "stars": 313,
         "forks": 84,
         "open_issues": 2,
-        "size": 132,
+        "size": 153,
         "language": null,
         "description": "Andrej Karpathy的认知操作系统。不是语录合集，是可运行的思维框架。Made with 女娲.skill",
         "pushed_at": "2026-10-13T06:53:25Z",
@@ -6293,26 +6343,13 @@
         "name": "huashu-mac-use",
         "owner_login": "alchaincyf",
         "name_with_owner": "alchaincyf/huashu-mac-use",
-        "stars": 306,
-        "forks": 47,
+        "stars": 307,
+        "forks": 48,
         "open_issues": 5,
-        "size": 20985,
+        "size": 20992,
         "language": "Swift",
         "description": "让任何 agent 操控 Mac 上没有 API 的原生 app，读后台、写不打扰、每步留取证 · Agent Skill for macOS computer use",
         "pushed_at": "2026-10-13T06:52:14Z",
-        "topics": []
-      },
-      {
-        "name": "huashu-chrome",
-        "owner_login": "alchaincyf",
-        "name_with_owner": "alchaincyf/huashu-chrome",
-        "stars": 296,
-        "forks": 45,
-        "open_issues": 1,
-        "size": 1675,
-        "language": "JavaScript",
-        "description": "让任何 AI agent 操控你自己的 Chrome——带着全部登录态。MCP + Chrome 扩展，Claude Code / Codex / Cursor / Gemini CLI 通用。",
-        "pushed_at": "2026-10-13T04:22:01Z",
         "topics": []
       },
       {
@@ -6370,7 +6407,7 @@
         "stars": 269,
         "forks": 49,
         "open_issues": 2,
-        "size": 195,
+        "size": 217,
         "language": null,
         "description": "特朗普的思维操作系统。不是模仿秀，是可运行的谈判与权力分析框架。Made with 女娲.skill",
         "pushed_at": "2026-10-13T06:56:05Z",
@@ -6383,7 +6420,7 @@
         "stars": 259,
         "forks": 70,
         "open_issues": 3,
-        "size": 124,
+        "size": 145,
         "language": null,
         "description": "纳瓦尔.skill — Naval Ravikant的认知操作系统。由女娲.skill生成。",
         "pushed_at": "2026-10-13T06:54:17Z",
@@ -6393,10 +6430,10 @@
         "name": "sun-yuchen-perspective",
         "owner_login": "alchaincyf",
         "name_with_owner": "alchaincyf/sun-yuchen-perspective",
-        "stars": 244,
+        "stars": 246,
         "forks": 34,
         "open_issues": 1,
-        "size": 88,
+        "size": 94,
         "language": null,
         "description": "孙宇晨.skill — 注意力收割操作系统 | Justin Sun Perspective Skill for Claude Code | 由女娲.skill蒸馏",
         "pushed_at": "2026-10-13T06:55:29Z",
@@ -6422,7 +6459,7 @@
         "stars": 176,
         "forks": 45,
         "open_issues": 3,
-        "size": 132,
+        "size": 152,
         "language": null,
         "description": "张一鸣的认知操作系统。不是语录合集，是可运行的思维框架。Made with 女娲.skill",
         "pushed_at": "2026-10-13T06:56:26Z",
@@ -6461,7 +6498,7 @@
         "stars": 128,
         "forks": 45,
         "open_issues": 2,
-        "size": 110,
+        "size": 131,
         "language": null,
         "description": "塔勒布.skill — Nassim Taleb的认知操作系统。由女娲.skill生成。",
         "pushed_at": "2026-10-13T06:55:41Z",
@@ -6474,7 +6511,7 @@
         "stars": 120,
         "forks": 33,
         "open_issues": 2,
-        "size": 150,
+        "size": 168,
         "language": "Python",
         "description": "MrBeast的内容创造操作系统。不是语录合集，是可运行的内容方法论。Made with 女娲.skill",
         "pushed_at": "2026-10-13T06:53:51Z",
@@ -6498,7 +6535,7 @@
         "owner_login": "alchaincyf",
         "name_with_owner": "alchaincyf/harness-engineering-orange-book",
         "stars": 108,
-        "forks": 25,
+        "forks": 26,
         "open_issues": 1,
         "size": 8886,
         "language": null,
@@ -6526,7 +6563,7 @@
         "stars": 102,
         "forks": 26,
         "open_issues": 2,
-        "size": 159,
+        "size": 181,
         "language": null,
         "description": "Paul Graham的认知操作系统。不是语录合集，是可运行的思维框架。Made with 女娲.skill",
         "pushed_at": "2026-10-13T06:54:41Z",
@@ -6539,7 +6576,7 @@
         "stars": 98,
         "forks": 6,
         "open_issues": 0,
-        "size": 1684,
+        "size": 1694,
         "language": "Python",
         "description": "闪电.skill：照 Anthropic 两周把 claude.ai 提速 3 倍的方法，给你的网站提速。先量、再证、后爬，用棘轮锁住只许变好。",
         "pushed_at": "2026-10-13T06:51:49Z",
@@ -6617,7 +6654,7 @@
         "stars": 52,
         "forks": 19,
         "open_issues": 2,
-        "size": 140,
+        "size": 159,
         "language": null,
         "description": "Ilya Sutskever的认知操作系统。不是语录合集，是可运行的思维框架。Made with 女娲.skill",
         "pushed_at": "2026-10-13T06:53:13Z",
@@ -6630,7 +6667,7 @@
         "stars": 49,
         "forks": 9,
         "open_issues": 0,
-        "size": 55,
+        "size": 64,
         "language": null,
         "description": "电车站.skill — 人味不是删出来的。Evidence-based de-slop skill: 四层AI味模型+真实素材注入，来自四版本盲测实验",
         "pushed_at": "2026-10-13T06:55:51Z",
@@ -6669,7 +6706,7 @@
         "stars": 34,
         "forks": 5,
         "open_issues": 0,
-        "size": 236,
+        "size": 247,
         "language": "JavaScript",
         "description": "Seedance.skill — 白模驱动的 AI 视频工作台。白模参考视频与提示词出自同一份 scene.json，渲染前做几何体检，还能从一张照片反解出白模。Control AI video with clay renders — and a prompt that can't drift from them.",
         "pushed_at": "2026-10-13T06:54:51Z",
@@ -6708,7 +6745,7 @@
         "stars": 24,
         "forks": 4,
         "open_issues": 0,
-        "size": 18792,
+        "size": 18824,
         "language": "JavaScript",
         "description": "Codex-only AI visual material production skill — slides + WeChat covers + Bilibili/YouTube thumbnails, powered by built-in image_gen (no API fees)",
         "pushed_at": "2026-10-13T06:52:41Z",
@@ -6747,7 +6784,7 @@
         "stars": 21,
         "forks": 3,
         "open_issues": 0,
-        "size": 5054,
+        "size": 5060,
         "language": "Python",
         "description": "GPT-image-2 的 prompt 工程方法论。核心：用真实参考名替代形容词，prompt 默认中文短句。含单图 playbook、批量网格生成、失败模式树。跨 agent 通用。",
         "pushed_at": "2026-10-13T06:52:02Z",
@@ -6760,7 +6797,7 @@
         "stars": 19,
         "forks": 11,
         "open_issues": 0,
-        "size": 11,
+        "size": 17,
         "language": null,
         "description": "Claude Code Skills 完整指南 - 理解、查找和创建 Skills",
         "pushed_at": "2026-10-13T06:55:05Z",
@@ -6796,10 +6833,10 @@
         "name": "huashu-slide-doubao",
         "owner_login": "alchaincyf",
         "name_with_owner": "alchaincyf/huashu-slide-doubao",
-        "stars": 14,
+        "stars": 15,
         "forks": 2,
         "open_issues": 0,
-        "size": 18816,
+        "size": 18856,
         "language": "JavaScript",
         "description": "Doubao-only AI visual material production skill — slides + WeChat covers + Bilibili/YouTube thumbnails, powered by built-in image_gen seedream 5.0 (no API fees)",
         "pushed_at": "2026-10-13T06:52:53Z",
@@ -6838,7 +6875,7 @@
         "stars": 1,
         "forks": 0,
         "open_issues": 0,
-        "size": 45171,
+        "size": 45177,
         "language": "Python",
         "description": "麦门胃：把你的麦当劳订单蒸馏成一个能带走的胃",
         "pushed_at": "2026-10-13T06:53:40Z",
@@ -6858,6 +6895,2205 @@
         "activity_authenticity": 16.3
       },
       "final_score": 51.3
+    }
+  },
+  "louislam": {
+    "description": "Real snapshot. Solo maintainer of uptime-kuma (community ~0.95) and dockge; almost all merged PRs are into his own repos. Guards own-project community credit: target 89-94.",
+    "before_final_score": 78.6,
+    "expected_final_range": [
+      89,
+      94
+    ],
+    "recorded_at": "2026-10-14T00:00:00.000Z",
+    "metrics": {
+      "username": "louislam",
+      "profile_url": "https://github.com/louislam",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1336778?v=4",
+      "name": "Louis Lam",
+      "bio": null,
+      "pronouns": null,
+      "company": null,
+      "account_age_years": 14.74,
+      "created_at": "2012-01-17T14:09:09Z",
+      "followers": 3649,
+      "following": 12,
+      "public_repos": 60,
+      "fetched_repo_count": 60,
+      "original_repo_count": 42,
+      "nonempty_original_repo_count": 42,
+      "fork_repo_count": 18,
+      "empty_original_repo_count": 0,
+      "total_stars": 118643,
+      "max_stars": 92413,
+      "weighted_total_stars": 118408.02,
+      "weighted_max_stars": 92413,
+      "top_repo_engagement_ratio": 0.0886,
+      "attributed_original_repo_count": 0,
+      "attributed_original_repo_stars": 0,
+      "attributed_original_repos": [],
+      "best_original_repo_quality_score": 1,
+      "best_original_repo_quality_repo": "louislam/uptime-kuma",
+      "top_starred_original_repo_quality_score": 1,
+      "top_starred_original_repo_quality_repo": "louislam/uptime-kuma",
+      "merged_pr_count": 496,
+      "external_merged_pr_count": 9,
+      "external_high_star_pr_share": 0.6667,
+      "own_pr_community": 0.4118,
+      "workflow_landed_pr_count": 0,
+      "total_pr_count": 552,
+      "issues_created": 46,
+      "last_year_contributions": 794,
+      "activity_type_count": 4,
+      "contribution_years_active": 15,
+      "days_since_last_activity": 0,
+      "recent_merged_pr_sample": 50,
+      "recent_trivial_pr_count": 7,
+      "recent_doc_like_pr_count": 6,
+      "recent_doc_like_pr_ratio": 0.12,
+      "recent_external_pr_sample": 0,
+      "recent_external_doc_like_pr_count": 0,
+      "recent_external_doc_like_pr_ratio": 0,
+      "max_impact_repo_stars": 92413,
+      "impact_prestige_score": 0.8829,
+      "impact_pr_count": 264,
+      "workflow_landed_impact_pr_count": 0,
+      "impact_depth_raw": 9.92,
+      "verified_impact_pr_count": 0,
+      "core_impact_pr_count": 0,
+      "doc_like_impact_pr_count": 0,
+      "unverified_impact_pr_count": 264,
+      "impact_repo_count": 9,
+      "impact_commit_count": 3269,
+      "commit_contribution_aggregation_unavailable": false,
+      "merged_pr_contribution_aggregation_incomplete": true,
+      "external_trivial_pr_count": 0,
+      "star_inflation_suspect": false,
+      "closed_unmerged_pr_count": 46,
+      "maintainer_closed_unmerged_pr_count": 2,
+      "self_closed_external_pr_count": 2,
+      "self_closed_own_repo_pr_count": 38,
+      "unknown_closed_unmerged_pr_count": 4,
+      "pr_rejection_rate": 0,
+      "recent_pr_sample": 30,
+      "top_repo_pr_target": "louislam/uptime-kuma",
+      "top_repo_pr_share": 0.9,
+      "templated_pr_ratio": 0.07,
+      "pr_flood_suspect": false
+    },
+    "contrib_repos": [
+      {
+        "repo": "louislam/uptime-kuma",
+        "stars": 92413,
+        "is_private": false,
+        "is_fork": false,
+        "owner_login": "louislam",
+        "commits": 3002,
+        "prs": 206,
+        "active_years": 6,
+        "months": [
+          "2021-08",
+          "2021-09",
+          "2021-10",
+          "2021-11",
+          "2021-12",
+          "2022-06",
+          "2022-07",
+          "2022-08",
+          "2022-09",
+          "2022-10",
+          "2022-11",
+          "2022-12",
+          "2023-06",
+          "2023-07",
+          "2023-08",
+          "2023-09",
+          "2023-10",
+          "2023-11",
+          "2023-12",
+          "2024-01",
+          "2024-02",
+          "2024-03",
+          "2024-04",
+          "2024-05",
+          "2024-06",
+          "2024-07",
+          "2024-08",
+          "2024-09",
+          "2024-10",
+          "2024-11",
+          "2024-12",
+          "2025-01",
+          "2025-02",
+          "2025-03",
+          "2025-04",
+          "2025-05",
+          "2025-06",
+          "2025-07",
+          "2025-08",
+          "2025-09",
+          "2025-10",
+          "2025-11",
+          "2025-12",
+          "2026-01",
+          "2026-02",
+          "2026-03",
+          "2026-04",
+          "2026-05",
+          "2026-06",
+          "2026-07",
+          "2026-08",
+          "2026-09",
+          "2026-10"
+        ],
+        "topics": [
+          "uptime",
+          "monitoring",
+          "docker",
+          "selfhosted",
+          "self-hosted",
+          "single-page-app",
+          "webapp",
+          "responsive",
+          "websocket",
+          "socket-io",
+          "uptime-monitoring",
+          "monitor"
+        ],
+        "merge_commits": 751,
+        "engagement": 0.0886,
+        "community_facts": {
+          "weighted_contributors": 63.8383,
+          "sustained_contributors": 76,
+          "outside_demand": 3633.9667,
+          "merge_latency_days": 4.6144,
+          "owner_response_share": 0.0714,
+          "outside_acceptance": 0.6516,
+          "forks": 8556,
+          "days_since_outside_merge": 2.7057,
+          "lead_share": 1
+        },
+        "community": 0.9494,
+        "pr_sample": 10,
+        "code_pr_sample": 9
+      },
+      {
+        "repo": "louislam/its-mytabs",
+        "stars": 568,
+        "is_private": false,
+        "is_fork": false,
+        "owner_login": "louislam",
+        "commits": 96,
+        "prs": 49,
+        "active_years": 2,
+        "months": [
+          "2025-09",
+          "2025-10",
+          "2025-11",
+          "2026-01",
+          "2026-02",
+          "2026-03",
+          "2026-05",
+          "2026-08",
+          "2026-09",
+          "2026-10"
+        ],
+        "community_facts": {
+          "weighted_contributors": 0.3854,
+          "sustained_contributors": 0,
+          "outside_demand": 14.1429,
+          "merge_latency_days": 17.0472,
+          "owner_response_share": 0.5,
+          "outside_acceptance": 0.6364,
+          "forks": 59,
+          "days_since_outside_merge": 269.3581,
+          "lead_share": 1
+        },
+        "community": 0.0593,
+        "topics": [],
+        "merge_commits": 0,
+        "engagement": 0.1919,
+        "pr_sample": 10,
+        "code_pr_sample": 9
+      },
+      {
+        "repo": "louislam/dockge",
+        "stars": 24601,
+        "is_private": false,
+        "is_fork": false,
+        "owner_login": "louislam",
+        "commits": 165,
+        "prs": 3,
+        "active_years": 4,
+        "months": [
+          "2023-10",
+          "2023-11",
+          "2023-12",
+          "2024-01",
+          "2024-10",
+          "2024-12",
+          "2025-01",
+          "2025-03",
+          "2025-04",
+          "2025-12",
+          "2026-01"
+        ],
+        "topics": [
+          "docker",
+          "docker-compose",
+          "docker-stack",
+          "docker-stack-deploy",
+          "responsive",
+          "self-hosted",
+          "selfhosted",
+          "single-page-app",
+          "socket-io",
+          "webapp",
+          "websocket",
+          "docker-deployment",
+          "docker-ui"
+        ],
+        "merge_commits": 23,
+        "engagement": 0.0235,
+        "community_facts": {
+          "weighted_contributors": 15.7057,
+          "sustained_contributors": 6,
+          "outside_demand": 263.1333,
+          "merge_latency_days": 3.1358,
+          "owner_response_share": 0,
+          "outside_acceptance": 0.6748,
+          "forks": 846,
+          "days_since_outside_merge": 184.8037,
+          "lead_share": 1
+        },
+        "community": 0.6943,
+        "pr_sample": 10,
+        "code_pr_sample": 8
+      },
+      {
+        "repo": "louislam/rdp-portal",
+        "stars": 339,
+        "is_private": false,
+        "is_fork": false,
+        "owner_login": "louislam",
+        "commits": 24,
+        "prs": 0,
+        "active_years": 2,
+        "months": [
+          "2022-10",
+          "2022-11",
+          "2025-06"
+        ]
+      },
+      {
+        "repo": "ente/ente",
+        "stars": 29378,
+        "is_private": false,
+        "is_fork": false,
+        "owner_login": "ente",
+        "commits": 1,
+        "prs": 1,
+        "active_years": 1,
+        "months": [
+          "2024-08",
+          "2024-09"
+        ],
+        "topics": [
+          "android",
+          "ios",
+          "e2ee",
+          "encryption",
+          "end-to-end-encryption",
+          "google-photos-alternative",
+          "opensource",
+          "photos",
+          "privacy",
+          "privacy-tools",
+          "2fa",
+          "zero-knowledge",
+          "google-photos",
+          "flutter",
+          "golang",
+          "typescript",
+          "authy"
+        ],
+        "merge_commits": 0,
+        "engagement": 0.3684,
+        "pr_sample": 1,
+        "code_pr_sample": 1
+      },
+      {
+        "repo": "privatenumber/tsx",
+        "stars": 12162,
+        "is_private": false,
+        "is_fork": false,
+        "owner_login": "privatenumber",
+        "commits": 1,
+        "prs": 1,
+        "active_years": 1,
+        "months": [
+          "2024-02"
+        ],
+        "topics": [
+          "esbuild",
+          "esm",
+          "node",
+          "typescript",
+          "loader",
+          "runtime",
+          "cli",
+          "watch"
+        ],
+        "merge_commits": 0,
+        "engagement": 0.0642,
+        "pr_sample": 1,
+        "code_pr_sample": 1
+      },
+      {
+        "repo": "actions/setup-node",
+        "stars": 4984,
+        "is_private": false,
+        "is_fork": false,
+        "owner_login": "actions",
+        "commits": 1,
+        "prs": 1,
+        "active_years": 1,
+        "months": [
+          "2023-07"
+        ],
+        "topics": [],
+        "merge_commits": 0,
+        "engagement": 0.2955,
+        "pr_sample": 1,
+        "code_pr_sample": 1
+      },
+      {
+        "repo": "endroid/qr-code",
+        "stars": 4812,
+        "is_private": false,
+        "is_fork": false,
+        "owner_login": "endroid",
+        "commits": 2,
+        "prs": 1,
+        "active_years": 1,
+        "months": [
+          "2022-05"
+        ],
+        "topics": [
+          "qrcode",
+          "data-uri",
+          "php",
+          "twig-extension",
+          "factory",
+          "reader"
+        ],
+        "merge_commits": 0,
+        "engagement": 0.1276,
+        "pr_sample": 1,
+        "code_pr_sample": 1
+      },
+      {
+        "repo": "lsongdev/node-dns",
+        "stars": 591,
+        "is_private": false,
+        "is_fork": false,
+        "owner_login": "lsongdev",
+        "commits": 1,
+        "prs": 1,
+        "active_years": 1,
+        "months": [
+          "2022-04"
+        ],
+        "topics": [
+          "dns",
+          "nodejs",
+          "network",
+          "dns-server",
+          "dns-protocol",
+          "dns-client",
+          "udp",
+          "dns2",
+          "lookup",
+          "tcp",
+          "networking"
+        ],
+        "merge_commits": 0,
+        "engagement": 0.2386,
+        "pr_sample": 1,
+        "code_pr_sample": 0
+      },
+      {
+        "repo": "banago/PHPloy",
+        "stars": 1430,
+        "is_private": false,
+        "is_fork": false,
+        "owner_login": "banago",
+        "commits": 0,
+        "prs": 1,
+        "active_years": 1,
+        "months": [
+          "2015-11"
+        ],
+        "topics": [
+          "deployment",
+          "workflow"
+        ],
+        "merge_commits": 0,
+        "engagement": 0.3273,
+        "pr_sample": 1,
+        "code_pr_sample": 1
+      }
+    ],
+    "recent_prs": [],
+    "star_repos": [
+      {
+        "name": "uptime-kuma",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/uptime-kuma",
+        "stars": 92413,
+        "forks": 8556,
+        "open_issues": 836,
+        "size": 39078,
+        "language": "JavaScript",
+        "description": "A fancy self-hosted monitoring tool",
+        "pushed_at": "2026-10-13T17:16:20Z",
+        "topics": [
+          "docker",
+          "monitor",
+          "monitoring",
+          "responsive",
+          "self-hosted",
+          "selfhosted",
+          "single-page-app",
+          "socket-io",
+          "uptime",
+          "uptime-monitoring",
+          "webapp",
+          "websocket"
+        ],
+        "languages": [
+          {
+            "name": "JavaScript",
+            "size": 1555374
+          },
+          {
+            "name": "Vue",
+            "size": 1134067
+          },
+          {
+            "name": "TypeScript",
+            "size": 64337
+          },
+          {
+            "name": "SCSS",
+            "size": 15980
+          },
+          {
+            "name": "Dockerfile",
+            "size": 4676
+          },
+          {
+            "name": "Go",
+            "size": 2699
+          },
+          {
+            "name": "HTML",
+            "size": 1102
+          },
+          {
+            "name": "Java",
+            "size": 908
+          },
+          {
+            "name": "C#",
+            "size": 557
+          },
+          {
+            "name": "PowerShell",
+            "size": 387
+          },
+          {
+            "name": "Shell",
+            "size": 349
+          },
+          {
+            "name": "PHP",
+            "size": 322
+          },
+          {
+            "name": "Python",
+            "size": 216
+          }
+        ]
+      },
+      {
+        "name": "dockge",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/dockge",
+        "stars": 24601,
+        "forks": 846,
+        "open_issues": 173,
+        "size": 1270,
+        "language": "TypeScript",
+        "description": "A fancy, easy-to-use and reactive self-hosted docker compose.yaml stack-oriented manager",
+        "pushed_at": "2026-04-25T02:28:26Z",
+        "topics": [
+          "docker",
+          "docker-compose",
+          "docker-deployment",
+          "docker-stack",
+          "docker-stack-deploy",
+          "docker-ui",
+          "responsive",
+          "self-hosted",
+          "selfhosted",
+          "single-page-app",
+          "socket-io",
+          "webapp",
+          "websocket"
+        ],
+        "languages": [
+          {
+            "name": "TypeScript",
+            "size": 190919
+          },
+          {
+            "name": "Vue",
+            "size": 166891
+          },
+          {
+            "name": "SCSS",
+            "size": 13907
+          },
+          {
+            "name": "JavaScript",
+            "size": 5382
+          },
+          {
+            "name": "Dockerfile",
+            "size": 2567
+          },
+          {
+            "name": "Go",
+            "size": 1434
+          },
+          {
+            "name": "HTML",
+            "size": 1090
+          }
+        ]
+      },
+      {
+        "name": "its-mytabs",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/its-mytabs",
+        "stars": 568,
+        "forks": 59,
+        "open_issues": 21,
+        "size": 4919,
+        "language": "TypeScript",
+        "description": "Open source, web based, self hostable guitar/bass tab (tablature) viewer and player, similar to Songsterr.",
+        "pushed_at": "2026-10-07T06:08:28Z",
+        "topics": [],
+        "languages": [
+          {
+            "name": "TypeScript",
+            "size": 287043
+          },
+          {
+            "name": "Vue",
+            "size": 152178
+          },
+          {
+            "name": "SCSS",
+            "size": 2461
+          },
+          {
+            "name": "Dockerfile",
+            "size": 1456
+          },
+          {
+            "name": "HTML",
+            "size": 833
+          },
+          {
+            "name": "Shell",
+            "size": 156
+          }
+        ]
+      },
+      {
+        "name": "rdp-portal",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/rdp-portal",
+        "stars": 339,
+        "forks": 36,
+        "open_issues": 2,
+        "size": 481,
+        "language": "C#",
+        "description": "A slightly smarter and simple Remote Desktop manager for Windows.",
+        "pushed_at": "2025-06-28T06:27:42Z",
+        "topics": [
+          "application",
+          "manager",
+          "portable",
+          "rdp",
+          "remote-desktop",
+          "windows"
+        ],
+        "languages": [
+          {
+            "name": "C#",
+            "size": 22233
+          }
+        ]
+      },
+      {
+        "name": "lazy-compress-h265",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/lazy-compress-h265",
+        "stars": 159,
+        "forks": 10,
+        "open_issues": 3,
+        "size": 100,
+        "language": "C#",
+        "description": "Compress or convert your video files to h.265 (hevc) format with one-click, make its size much smaller!",
+        "pushed_at": "2021-12-21T19:59:39Z",
+        "topics": [],
+        "languages": [
+          {
+            "name": "C#",
+            "size": 13290
+          }
+        ]
+      },
+      {
+        "name": "uptime-kuma-wiki",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/uptime-kuma-wiki",
+        "stars": 110,
+        "forks": 116,
+        "open_issues": 12,
+        "size": 1188,
+        "language": "TypeScript",
+        "description": null,
+        "pushed_at": "2026-10-13T05:06:44Z",
+        "topics": [],
+        "languages": [
+          {
+            "name": "TypeScript",
+            "size": 115477
+          },
+          {
+            "name": "HTML",
+            "size": 1822
+          }
+        ]
+      },
+      {
+        "name": "vestacp-crossover-adminlte",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/vestacp-crossover-adminlte",
+        "stars": 98,
+        "forks": 39,
+        "open_issues": 9,
+        "size": 6814,
+        "language": "CSS",
+        "description": "Awesome UI for VestaCP",
+        "pushed_at": "2021-12-21T19:58:59Z",
+        "topics": []
+      },
+      {
+        "name": "akaigrid",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/akaigrid",
+        "stars": 76,
+        "forks": 10,
+        "open_issues": 1,
+        "size": 196,
+        "language": "TypeScript",
+        "description": "AkaiGrid is a fancy frontend for browsing your video folders on Windows.",
+        "pushed_at": "2026-09-07T10:55:07Z",
+        "topics": [
+          "deno",
+          "library",
+          "video",
+          "webapp",
+          "windows"
+        ]
+      },
+      {
+        "name": "demo-kuma",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/demo-kuma",
+        "stars": 71,
+        "forks": 9,
+        "open_issues": 7,
+        "size": 85,
+        "language": "TypeScript",
+        "description": null,
+        "pushed_at": "2024-01-08T19:04:21Z",
+        "topics": []
+      },
+      {
+        "name": "redbean-node",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/redbean-node",
+        "stars": 33,
+        "forks": 10,
+        "open_issues": 7,
+        "size": 684,
+        "language": "TypeScript",
+        "description": "RedBeanNode is an easy to use ORM tool for Node.js, strongly inspired by RedBeanPHP.",
+        "pushed_at": "2026-09-23T14:44:14Z",
+        "topics": [
+          "bean",
+          "knex",
+          "mariadb",
+          "mysql",
+          "orm",
+          "query",
+          "redbean",
+          "redbean-node",
+          "redbeannode",
+          "redbeanphp",
+          "sql",
+          "sqlite"
+        ]
+      },
+      {
+        "name": "kmb-patch",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/kmb-patch",
+        "stars": 22,
+        "forks": 1,
+        "open_issues": 0,
+        "size": 73,
+        "language": "TypeScript",
+        "description": "KMB Android APK Patch",
+        "pushed_at": "2025-07-25T17:58:58Z",
+        "topics": [
+          "android",
+          "apk",
+          "kmb"
+        ]
+      },
+      {
+        "name": "whatsadd",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/whatsadd",
+        "stars": 21,
+        "forks": 5,
+        "open_issues": 3,
+        "size": 665,
+        "language": "Kotlin",
+        "description": null,
+        "pushed_at": "2025-02-20T05:41:42Z",
+        "topics": []
+      },
+      {
+        "name": "android-lazy-library",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/android-lazy-library",
+        "stars": 21,
+        "forks": 4,
+        "open_issues": 1,
+        "size": 867,
+        "language": "Java",
+        "description": "LouisLam's Lazy Library for Android. The library includes a lot of useful functions/methods for the rapid development.",
+        "pushed_at": "2022-11-23T08:22:59Z",
+        "topics": []
+      },
+      {
+        "name": "uptime-kuma-website",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/uptime-kuma-website",
+        "stars": 17,
+        "forks": 7,
+        "open_issues": 2,
+        "size": 365,
+        "language": "TypeScript",
+        "description": null,
+        "pushed_at": "2026-10-10T05:08:10Z",
+        "topics": []
+      },
+      {
+        "name": "docker-boot",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/docker-boot",
+        "stars": 15,
+        "forks": 0,
+        "open_issues": 0,
+        "size": 5,
+        "language": "JavaScript",
+        "description": "Quickly start a temporary container and go into the container's terminal. Easy to remember!",
+        "pushed_at": "2023-07-30T10:29:15Z",
+        "topics": []
+      },
+      {
+        "name": "node-cloudflared-tunnel",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/node-cloudflared-tunnel",
+        "stars": 12,
+        "forks": 3,
+        "open_issues": 0,
+        "size": 42,
+        "language": "JavaScript",
+        "description": null,
+        "pushed_at": "2022-07-22T15:18:54Z",
+        "topics": []
+      },
+      {
+        "name": "hkepc-unofficial-android",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/hkepc-unofficial-android",
+        "stars": 10,
+        "forks": 0,
+        "open_issues": 0,
+        "size": 6376,
+        "language": "Java",
+        "description": null,
+        "pushed_at": "2025-07-05T06:40:57Z",
+        "topics": []
+      },
+      {
+        "name": "uptime-kuma-real-browsers-plugin",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/uptime-kuma-real-browsers-plugin",
+        "stars": 9,
+        "forks": 0,
+        "open_issues": 1,
+        "size": 7,
+        "language": "JavaScript",
+        "description": "An Uptime Kuma plugin that add ability to monitor your website with real browsers such as Chrome and Firefox",
+        "pushed_at": "2023-01-28T10:00:47Z",
+        "topics": []
+      },
+      {
+        "name": "bun-serve-router",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/bun-serve-router",
+        "stars": 8,
+        "forks": 1,
+        "open_issues": 0,
+        "size": 7,
+        "language": "TypeScript",
+        "description": "A very simple router implementation for bun.serve() using URL Pattern API.",
+        "pushed_at": "2023-09-26T18:45:34Z",
+        "topics": []
+      },
+      {
+        "name": "dockge-website",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/dockge-website",
+        "stars": 7,
+        "forks": 2,
+        "open_issues": 0,
+        "size": 140,
+        "language": "Hack",
+        "description": null,
+        "pushed_at": "2025-03-30T17:50:18Z",
+        "topics": []
+      },
+      {
+        "name": "uptime-kuma-example-plugin",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/uptime-kuma-example-plugin",
+        "stars": 6,
+        "forks": 0,
+        "open_issues": 0,
+        "size": 1,
+        "language": "JavaScript",
+        "description": null,
+        "pushed_at": "2023-01-27T09:26:45Z",
+        "topics": []
+      },
+      {
+        "name": "signal-desktop-docker-vnc",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/signal-desktop-docker-vnc",
+        "stars": 5,
+        "forks": 1,
+        "open_issues": 0,
+        "size": 3,
+        "language": null,
+        "description": null,
+        "pushed_at": "2021-09-28T07:11:19Z",
+        "topics": []
+      },
+      {
+        "name": "navifsp",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/navifsp",
+        "stars": 4,
+        "forks": 0,
+        "open_issues": 1,
+        "size": 75,
+        "language": "Go",
+        "description": "Mounts a Navidrome server as a drive or a folder on Windows",
+        "pushed_at": "2026-08-08T20:02:23Z",
+        "topics": []
+      },
+      {
+        "name": "simple-docker-github-actions-runner",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/simple-docker-github-actions-runner",
+        "stars": 4,
+        "forks": 0,
+        "open_issues": 0,
+        "size": 3,
+        "language": "Dockerfile",
+        "description": null,
+        "pushed_at": "2024-10-11T04:44:12Z",
+        "topics": []
+      },
+      {
+        "name": "bun-windows-via-docker",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/bun-windows-via-docker",
+        "stars": 4,
+        "forks": 0,
+        "open_issues": 0,
+        "size": 6,
+        "language": "JavaScript",
+        "description": "Use Bun on Windows via Docker Desktop",
+        "pushed_at": "2023-09-25T13:40:50Z",
+        "topics": []
+      },
+      {
+        "name": "louislam-crud",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/louislam-crud",
+        "stars": 2,
+        "forks": 1,
+        "open_issues": 0,
+        "size": 1121,
+        "language": "PHP",
+        "description": "An easy-to-use CRUD library for you to create a back-end system or RESTful API in a few minutes.",
+        "pushed_at": "2023-12-29T21:14:30Z",
+        "topics": [
+          "cms",
+          "composer",
+          "crud",
+          "library",
+          "package",
+          "php"
+        ]
+      },
+      {
+        "name": "dropbox-ignore",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/dropbox-ignore",
+        "stars": 1,
+        "forks": 0,
+        "open_issues": 0,
+        "size": 27,
+        "language": "TypeScript",
+        "description": "Tell Dropdox to ignore a directory",
+        "pushed_at": "2026-08-22T04:05:38Z",
+        "topics": []
+      },
+      {
+        "name": "deno-vite-issue-reproduce",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/deno-vite-issue-reproduce",
+        "stars": 1,
+        "forks": 0,
+        "open_issues": 0,
+        "size": 5,
+        "language": "Vue",
+        "description": null,
+        "pushed_at": "2026-02-04T12:59:33Z",
+        "topics": []
+      },
+      {
+        "name": "jcenter-dependencies-rescue",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/jcenter-dependencies-rescue",
+        "stars": 1,
+        "forks": 0,
+        "open_issues": 0,
+        "size": 14,
+        "language": "TypeScript",
+        "description": null,
+        "pushed_at": "2025-07-04T07:04:31Z",
+        "topics": []
+      },
+      {
+        "name": "deno-serve-router",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/deno-serve-router",
+        "stars": 1,
+        "forks": 0,
+        "open_issues": 0,
+        "size": 11,
+        "language": "TypeScript",
+        "description": null,
+        "pushed_at": "2025-04-22T15:22:55Z",
+        "topics": []
+      },
+      {
+        "name": "tsx-issue-reproduce",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/tsx-issue-reproduce",
+        "stars": 1,
+        "forks": 0,
+        "open_issues": 0,
+        "size": 11,
+        "language": "TypeScript",
+        "description": null,
+        "pushed_at": "2024-01-20T20:58:55Z",
+        "topics": []
+      },
+      {
+        "name": "mariadb-with-mroonga",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/mariadb-with-mroonga",
+        "stars": 1,
+        "forks": 0,
+        "open_issues": 0,
+        "size": 2,
+        "language": "Dockerfile",
+        "description": null,
+        "pushed_at": "2022-08-16T08:02:50Z",
+        "topics": []
+      },
+      {
+        "name": "pro-rally-2001-win10-patch",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/pro-rally-2001-win10-patch",
+        "stars": 1,
+        "forks": 1,
+        "open_issues": 0,
+        "size": 6648,
+        "language": null,
+        "description": null,
+        "pushed_at": "2021-05-18T10:50:30Z",
+        "topics": []
+      },
+      {
+        "name": "lazy-media-query-less",
+        "owner_login": "louislam",
+        "name_with_owner": "louislam/lazy-media-query-less",
+        "stars": 1,
+        "forks": 0,
+        "open_issues": 0,
+        "size": 152,
+        "language": "CSS",
+        "description": null,
+        "pushed_at": "2015-07-06T02:34:55Z",
+        "topics": []
+      }
+    ],
+    "expected": {
+      "impact_prestige_score": 0.8829,
+      "impact_depth_raw": 9.92,
+      "impact_repo_count": 9,
+      "sub_scores": {
+        "account_maturity": 10,
+        "original_project_quality": 18,
+        "contribution_quality": 20.8,
+        "ecosystem_impact": 18.9,
+        "community_influence": 8,
+        "activity_authenticity": 16
+      },
+      "final_score": 91.7
+    }
+  },
+  "jesseduffield": {
+    "description": "Real snapshot. Solo maintainer of lazygit (community ~0.97) and lazydocker; most merged PRs are own-repo. Guards own-project community credit: target 89-94.",
+    "before_final_score": 86.1,
+    "expected_final_range": [
+      89,
+      94
+    ],
+    "recorded_at": "2026-10-14T00:00:00.000Z",
+    "metrics": {
+      "username": "jesseduffield",
+      "profile_url": "https://github.com/jesseduffield",
+      "avatar_url": "https://avatars.githubusercontent.com/u/8456633?v=4",
+      "name": "Jesse Duffield",
+      "bio": "Creator of lazygit, lazydocker, horcrux, and the OK? language",
+      "pronouns": null,
+      "company": null,
+      "account_age_years": 12.16,
+      "created_at": "2014-08-15T09:18:18Z",
+      "followers": 6992,
+      "following": 6,
+      "public_repos": 63,
+      "fetched_repo_count": 63,
+      "original_repo_count": 31,
+      "nonempty_original_repo_count": 30,
+      "fork_repo_count": 32,
+      "empty_original_repo_count": 1,
+      "total_stars": 144471,
+      "max_stars": 83154,
+      "weighted_total_stars": 141794.61,
+      "weighted_max_stars": 83154,
+      "top_repo_engagement_ratio": 0.0701,
+      "attributed_original_repo_count": 0,
+      "attributed_original_repo_stars": 0,
+      "attributed_original_repos": [],
+      "best_original_repo_quality_score": 1,
+      "best_original_repo_quality_repo": "jesseduffield/lazydocker",
+      "top_starred_original_repo_quality_score": 0.75,
+      "top_starred_original_repo_quality_repo": "jesseduffield/lazygit",
+      "merged_pr_count": 702,
+      "external_merged_pr_count": 33,
+      "external_high_star_pr_share": 0.8788,
+      "own_pr_community": 0.3594,
+      "workflow_landed_pr_count": 0,
+      "total_pr_count": 820,
+      "issues_created": 220,
+      "last_year_contributions": 4720,
+      "activity_type_count": 4,
+      "contribution_years_active": 13,
+      "days_since_last_activity": 2,
+      "recent_merged_pr_sample": 50,
+      "recent_trivial_pr_count": 19,
+      "recent_doc_like_pr_count": 15,
+      "recent_doc_like_pr_ratio": 0.3,
+      "recent_external_pr_sample": 8,
+      "recent_external_doc_like_pr_count": 0,
+      "recent_external_doc_like_pr_ratio": 0,
+      "max_impact_repo_stars": 83154,
+      "impact_prestige_score": 0.8387,
+      "impact_pr_count": 292,
+      "workflow_landed_impact_pr_count": 0,
+      "impact_depth_raw": 9.28,
+      "verified_impact_pr_count": 17,
+      "core_impact_pr_count": 17,
+      "doc_like_impact_pr_count": 0,
+      "unverified_impact_pr_count": 275,
+      "impact_repo_count": 8,
+      "impact_commit_count": 2048,
+      "commit_contribution_aggregation_unavailable": false,
+      "merged_pr_contribution_aggregation_incomplete": true,
+      "external_trivial_pr_count": 0,
+      "star_inflation_suspect": false,
+      "closed_unmerged_pr_count": 114,
+      "maintainer_closed_unmerged_pr_count": 55,
+      "self_closed_external_pr_count": 12,
+      "self_closed_own_repo_pr_count": 33,
+      "unknown_closed_unmerged_pr_count": 14,
+      "pr_rejection_rate": 0.07,
+      "recent_pr_sample": 30,
+      "top_repo_pr_target": "jesseduffield/lazygit",
+      "top_repo_pr_share": 0.77,
+      "templated_pr_ratio": 0.37,
+      "pr_flood_suspect": false
+    },
+    "contrib_repos": [
+      {
+        "repo": "jesseduffield/lazygit",
+        "stars": 83154,
+        "is_private": false,
+        "is_fork": false,
+        "owner_login": "jesseduffield",
+        "commits": 1729,
+        "prs": 222,
+        "active_years": 6,
+        "months": [
+          "2021-02",
+          "2021-03",
+          "2021-04",
+          "2021-05",
+          "2021-06",
+          "2021-07",
+          "2021-08",
+          "2021-09",
+          "2021-10",
+          "2021-11",
+          "2021-12",
+          "2022-02",
+          "2022-03",
+          "2022-04",
+          "2022-05",
+          "2022-06",
+          "2022-07",
+          "2022-08",
+          "2022-09",
+          "2022-10",
+          "2022-11",
+          "2022-12",
+          "2023-02",
+          "2023-03",
+          "2023-04",
+          "2023-05",
+          "2023-06",
+          "2023-07",
+          "2023-08",
+          "2023-09",
+          "2023-10",
+          "2023-11",
+          "2023-12",
+          "2024-01",
+          "2024-02",
+          "2024-03",
+          "2024-04",
+          "2024-05",
+          "2024-06",
+          "2024-07",
+          "2024-08",
+          "2024-09",
+          "2024-11",
+          "2024-12",
+          "2025-01",
+          "2025-02",
+          "2025-03",
+          "2025-04",
+          "2025-05",
+          "2025-07",
+          "2025-08",
+          "2025-09",
+          "2025-10",
+          "2025-11",
+          "2025-12",
+          "2026-01",
+          "2026-02",
+          "2026-03",
+          "2026-04",
+          "2026-09"
+        ],
+        "community_facts": {
+          "weighted_contributors": 44.5158,
+          "sustained_contributors": 36,
+          "outside_demand": 3767.5333,
+          "merge_latency_days": 0.5389,
+          "owner_response_share": 0,
+          "outside_acceptance": 0.7902,
+          "forks": 3074,
+          "days_since_outside_merge": 2.6716,
+          "lead_share": 1
+        },
+        "community": 0.9698,
+        "topics": [
+          "cli",
+          "git",
+          "terminal"
+        ],
+        "merge_commits": 934,
+        "engagement": 0.0701,
+        "pr_sample": 10,
+        "code_pr_sample": 3
+      },
+      {
+        "repo": "jesseduffield/lazydocker",
+        "stars": 53114,
+        "is_private": false,
+        "is_fork": false,
+        "owner_login": "jesseduffield",
+        "commits": 257,
+        "prs": 41,
+        "active_years": 6,
+        "months": [
+          "2021-03",
+          "2021-11",
+          "2022-01",
+          "2022-02",
+          "2022-03",
+          "2022-05",
+          "2022-06",
+          "2022-10",
+          "2022-11",
+          "2022-12",
+          "2023-03",
+          "2023-07",
+          "2023-09",
+          "2023-10",
+          "2024-05",
+          "2024-07",
+          "2024-11",
+          "2024-12",
+          "2025-09",
+          "2025-10",
+          "2025-11",
+          "2025-12",
+          "2026-01",
+          "2026-03",
+          "2026-04"
+        ],
+        "community_facts": {
+          "weighted_contributors": 11.1665,
+          "sustained_contributors": 12,
+          "outside_demand": 355.6833,
+          "merge_latency_days": 51.7758,
+          "owner_response_share": 0.0526,
+          "outside_acceptance": 0.6615,
+          "forks": 1694,
+          "days_since_outside_merge": 177.9201,
+          "lead_share": 1
+        },
+        "community": 0.614,
+        "topics": [],
+        "merge_commits": 85,
+        "engagement": 0.0202,
+        "pr_sample": 10,
+        "code_pr_sample": 10
+      },
+      {
+        "repo": "Homebrew/homebrew-core",
+        "stars": 15618,
+        "is_private": false,
+        "is_fork": false,
+        "owner_login": "Homebrew",
+        "commits": 55,
+        "prs": 25,
+        "active_years": 5,
+        "months": [
+          "2021-02",
+          "2021-03",
+          "2021-04",
+          "2021-06",
+          "2021-08",
+          "2021-10",
+          "2021-11",
+          "2022-01",
+          "2022-02",
+          "2022-03",
+          "2022-05",
+          "2022-07",
+          "2022-11",
+          "2023-02",
+          "2023-05",
+          "2023-07",
+          "2023-08",
+          "2023-10",
+          "2024-03",
+          "2024-05",
+          "2024-07",
+          "2024-09",
+          "2025-01",
+          "2025-02",
+          "2025-03",
+          "2025-04"
+        ],
+        "pr_sample": 10,
+        "code_pr_sample": 10
+      },
+      {
+        "repo": "jesseduffield/OK",
+        "stars": 625,
+        "is_private": false,
+        "is_fork": false,
+        "owner_login": "jesseduffield",
+        "commits": 90,
+        "prs": 0,
+        "active_years": 3,
+        "months": [
+          "2021-08",
+          "2021-09",
+          "2021-12",
+          "2022-10",
+          "2022-11",
+          "2025-04"
+        ]
+      },
+      {
+        "repo": "ankane/ahoy_email",
+        "stars": 1195,
+        "is_private": false,
+        "is_fork": false,
+        "owner_login": "ankane",
+        "commits": 1,
+        "prs": 1,
+        "active_years": 1,
+        "months": [
+          "2024-11"
+        ],
+        "pr_sample": 1,
+        "code_pr_sample": 1
+      },
+      {
+        "repo": "jesseduffield/horcrux",
+        "stars": 5108,
+        "is_private": false,
+        "is_fork": false,
+        "owner_login": "jesseduffield",
+        "commits": 5,
+        "prs": 0,
+        "active_years": 1,
+        "months": [
+          "2023-09"
+        ],
+        "community_facts": {
+          "weighted_contributors": 0,
+          "sustained_contributors": 0,
+          "outside_demand": 18,
+          "merge_latency_days": null,
+          "owner_response_share": 0.3889,
+          "outside_acceptance": 0.8889,
+          "forks": 141,
+          "days_since_outside_merge": null,
+          "lead_share": 1
+        },
+        "community": 0
+      },
+      {
+        "repo": "jesseduffield/lazynpm",
+        "stars": 863,
+        "is_private": false,
+        "is_fork": false,
+        "owner_login": "jesseduffield",
+        "commits": 3,
+        "prs": 0,
+        "active_years": 2,
+        "months": [
+          "2022-11",
+          "2023-03"
+        ]
+      },
+      {
+        "repo": "jesseduffield/lazycli",
+        "stars": 435,
+        "is_private": false,
+        "is_fork": false,
+        "owner_login": "jesseduffield",
+        "commits": 145,
+        "prs": 0,
+        "active_years": 2,
+        "months": [
+          "2021-01",
+          "2021-02",
+          "2021-03",
+          "2021-05",
+          "2021-06",
+          "2022-05",
+          "2022-11"
+        ]
+      },
+      {
+        "repo": "stepancheg/rust-protobuf",
+        "stars": 2968,
+        "is_private": false,
+        "is_fork": false,
+        "owner_login": "stepancheg",
+        "commits": 1,
+        "prs": 1,
+        "active_years": 1,
+        "months": [
+          "2022-05"
+        ],
+        "pr_sample": 1,
+        "code_pr_sample": 1
+      },
+      {
+        "repo": "jesseduffield/lazy_migrate",
+        "stars": 211,
+        "is_private": false,
+        "is_fork": false,
+        "owner_login": "jesseduffield",
+        "commits": 5,
+        "prs": 0,
+        "active_years": 1,
+        "months": [
+          "2021-02"
+        ]
+      },
+      {
+        "repo": "git/git-scm.com",
+        "stars": 2416,
+        "is_private": false,
+        "is_fork": false,
+        "owner_login": "git",
+        "commits": 0,
+        "prs": 1,
+        "active_years": 1,
+        "months": [
+          "2020-08"
+        ],
+        "pr_sample": 1,
+        "code_pr_sample": 0
+      },
+      {
+        "repo": "dandavison/delta",
+        "stars": 32488,
+        "is_private": false,
+        "is_fork": false,
+        "owner_login": "dandavison",
+        "commits": 0,
+        "prs": 1,
+        "active_years": 1,
+        "months": [
+          "2020-03"
+        ],
+        "pr_sample": 1,
+        "code_pr_sample": 1
+      }
+    ],
+    "recent_prs": [
+      {
+        "title": "lazygit 0.49.0",
+        "repo": "Homebrew/homebrew-core",
+        "repo_stars": 15618,
+        "churn": 16,
+        "changed_files": 1,
+        "trivial": false,
+        "files": [
+          "Formula/l/lazygit.rb"
+        ]
+      },
+      {
+        "title": "lazygit 0.48.0",
+        "repo": "Homebrew/homebrew-core",
+        "repo_stars": 15618,
+        "churn": 16,
+        "changed_files": 1,
+        "trivial": false,
+        "files": [
+          "Formula/l/lazygit.rb"
+        ]
+      },
+      {
+        "title": "lazygit 0.47.2",
+        "repo": "Homebrew/homebrew-core",
+        "repo_stars": 15618,
+        "churn": 16,
+        "changed_files": 1,
+        "trivial": false,
+        "files": [
+          "Formula/l/lazygit.rb"
+        ]
+      },
+      {
+        "title": "lazygit 0.47.1",
+        "repo": "Homebrew/homebrew-core",
+        "repo_stars": 15618,
+        "churn": 16,
+        "changed_files": 1,
+        "trivial": false,
+        "files": [
+          "Formula/l/lazygit.rb"
+        ]
+      },
+      {
+        "title": "lazygit 0.46.0",
+        "repo": "Homebrew/homebrew-core",
+        "repo_stars": 15618,
+        "churn": 16,
+        "changed_files": 1,
+        "trivial": false,
+        "files": [
+          "Formula/l/lazygit.rb"
+        ]
+      },
+      {
+        "title": "lazygit 0.45.2",
+        "repo": "Homebrew/homebrew-core",
+        "repo_stars": 15618,
+        "churn": 16,
+        "changed_files": 1,
+        "trivial": false,
+        "files": [
+          "Formula/l/lazygit.rb"
+        ]
+      },
+      {
+        "title": "lazygit 0.45.0",
+        "repo": "Homebrew/homebrew-core",
+        "repo_stars": 15618,
+        "churn": 17,
+        "changed_files": 1,
+        "trivial": false,
+        "files": [
+          "Formula/l/lazygit.rb"
+        ]
+      },
+      {
+        "title": "lazygit 0.44.1",
+        "repo": "Homebrew/homebrew-core",
+        "repo_stars": 15618,
+        "churn": 18,
+        "changed_files": 1,
+        "trivial": false,
+        "files": [
+          "Formula/l/lazygit.rb"
+        ]
+      },
+      {
+        "title": "lazygit 0.44.0",
+        "repo": "Homebrew/homebrew-core",
+        "repo_stars": 15618,
+        "churn": 18,
+        "changed_files": 1,
+        "trivial": false,
+        "files": [
+          "Formula/l/lazygit.rb"
+        ]
+      },
+      {
+        "title": "Allow parsing with HTML5",
+        "repo": "ankane/ahoy_email",
+        "repo_stars": 1195,
+        "churn": 51,
+        "changed_files": 6,
+        "trivial": false,
+        "files": [
+          "README.md",
+          "lib/ahoy_email.rb",
+          "lib/ahoy_email/processor.rb",
+          "test/internal/app/mailers/utm_params_mailer.rb",
+          "test/test_helper.rb",
+          "test/utm_params_test.rb"
+        ]
+      },
+      {
+        "title": "lazygit 0.43.1",
+        "repo": "Homebrew/homebrew-core",
+        "repo_stars": 15618,
+        "churn": 18,
+        "changed_files": 1,
+        "trivial": false,
+        "files": [
+          "Formula/l/lazygit.rb"
+        ]
+      },
+      {
+        "title": "lazygit 0.43.0",
+        "repo": "Homebrew/homebrew-core",
+        "repo_stars": 15618,
+        "churn": 18,
+        "changed_files": 1,
+        "trivial": false,
+        "files": [
+          "Formula/l/lazygit.rb"
+        ]
+      },
+      {
+        "title": "lazygit 0.42.0",
+        "repo": "Homebrew/homebrew-core",
+        "repo_stars": 15618,
+        "churn": 30,
+        "changed_files": 1,
+        "trivial": false,
+        "files": [
+          "Formula/l/lazygit.rb"
+        ]
+      },
+      {
+        "title": "lazygit 0.41.0",
+        "repo": "Homebrew/homebrew-core",
+        "repo_stars": 15618,
+        "churn": 20,
+        "changed_files": 1,
+        "trivial": false,
+        "files": [
+          "Formula/l/lazygit.rb"
+        ]
+      },
+      {
+        "title": "lazydocker 0.23.1",
+        "repo": "Homebrew/homebrew-core",
+        "repo_stars": 15618,
+        "churn": 18,
+        "changed_files": 1,
+        "trivial": false,
+        "files": [
+          "Formula/l/lazydocker.rb"
+        ]
+      },
+      {
+        "title": "lazydocker 0.23.0",
+        "repo": "Homebrew/homebrew-core",
+        "repo_stars": 15618,
+        "churn": 20,
+        "changed_files": 1,
+        "trivial": false,
+        "files": [
+          "Formula/l/lazydocker.rb"
+        ]
+      },
+      {
+        "title": "lazygit 0.40.2",
+        "repo": "Homebrew/homebrew-core",
+        "repo_stars": 15618,
+        "churn": 18,
+        "changed_files": 1,
+        "trivial": false,
+        "files": [
+          "Formula/lazygit.rb"
+        ]
+      }
+    ],
+    "star_repos": [
+      {
+        "name": "lazygit",
+        "owner_login": "jesseduffield",
+        "name_with_owner": "jesseduffield/lazygit",
+        "stars": 83154,
+        "forks": 3074,
+        "open_issues": 1047,
+        "size": 168684,
+        "language": "Go",
+        "description": "simple terminal UI for git commands",
+        "pushed_at": "2026-10-11T09:23:14Z",
+        "topics": [
+          "cli",
+          "git",
+          "terminal"
+        ],
+        "languages": [
+          {
+            "name": "Go",
+            "size": 5260294
+          },
+          {
+            "name": "Shell",
+            "size": 11006
+          },
+          {
+            "name": "Nix",
+            "size": 4277
+          },
+          {
+            "name": "Just",
+            "size": 2074
+          },
+          {
+            "name": "Makefile",
+            "size": 1592
+          },
+          {
+            "name": "Dockerfile",
+            "size": 1121
+          }
+        ]
+      },
+      {
+        "name": "lazydocker",
+        "owner_login": "jesseduffield",
+        "name_with_owner": "jesseduffield/lazydocker",
+        "stars": 53114,
+        "forks": 1694,
+        "open_issues": 305,
+        "size": 30218,
+        "language": "Go",
+        "description": "The lazier way to manage everything docker",
+        "pushed_at": "2026-04-19T02:51:06Z",
+        "topics": [],
+        "languages": [
+          {
+            "name": "Go",
+            "size": 371058
+          },
+          {
+            "name": "Shell",
+            "size": 3677
+          },
+          {
+            "name": "Dockerfile",
+            "size": 2261
+          }
+        ]
+      },
+      {
+        "name": "horcrux",
+        "owner_login": "jesseduffield",
+        "name_with_owner": "jesseduffield/horcrux",
+        "stars": 5108,
+        "forks": 141,
+        "open_issues": 19,
+        "size": 144,
+        "language": "Go",
+        "description": "Split your file into encrypted fragments so that you don't need to remember a passcode",
+        "pushed_at": "2024-08-20T23:18:11Z",
+        "topics": [],
+        "languages": [
+          {
+            "name": "Go",
+            "size": 24555
+          }
+        ]
+      },
+      {
+        "name": "lazynpm",
+        "owner_login": "jesseduffield",
+        "name_with_owner": "jesseduffield/lazynpm",
+        "stars": 863,
+        "forks": 40,
+        "open_issues": 17,
+        "size": 4535,
+        "language": "Go",
+        "description": "terminal UI for npm",
+        "pushed_at": "2023-03-02T10:41:11Z",
+        "topics": [],
+        "languages": [
+          {
+            "name": "Go",
+            "size": 272949
+          },
+          {
+            "name": "Shell",
+            "size": 7314
+          },
+          {
+            "name": "Dockerfile",
+            "size": 514
+          }
+        ]
+      },
+      {
+        "name": "OK",
+        "owner_login": "jesseduffield",
+        "name_with_owner": "jesseduffield/OK",
+        "stars": 625,
+        "forks": 22,
+        "open_issues": 11,
+        "size": 400,
+        "language": "Go",
+        "description": "Welcome to the future of programming languages: OK?",
+        "pushed_at": "2025-04-26T04:42:11Z",
+        "topics": [],
+        "languages": [
+          {
+            "name": "Go",
+            "size": 147138
+          },
+          {
+            "name": "TypeScript",
+            "size": 14447
+          },
+          {
+            "name": "JavaScript",
+            "size": 5625
+          },
+          {
+            "name": "CSS",
+            "size": 3094
+          },
+          {
+            "name": "HTML",
+            "size": 1724
+          },
+          {
+            "name": "Shell",
+            "size": 416
+          }
+        ]
+      },
+      {
+        "name": "horcrux-ui",
+        "owner_login": "jesseduffield",
+        "name_with_owner": "jesseduffield/horcrux-ui",
+        "stars": 498,
+        "forks": 14,
+        "open_issues": 6,
+        "size": 44,
+        "language": "Go",
+        "description": "GUI for horcrux",
+        "pushed_at": "2020-08-09T05:18:55Z",
+        "topics": [],
+        "languages": [
+          {
+            "name": "Go",
+            "size": 10374
+          }
+        ]
+      },
+      {
+        "name": "lazycli",
+        "owner_login": "jesseduffield",
+        "name_with_owner": "jesseduffield/lazycli",
+        "stars": 435,
+        "forks": 17,
+        "open_issues": 10,
+        "size": 936,
+        "language": "Rust",
+        "description": "Turn static CLI commands into TUIs with ease",
+        "pushed_at": "2023-07-15T17:53:31Z",
+        "topics": []
+      },
+      {
+        "name": "notes",
+        "owner_login": "jesseduffield",
+        "name_with_owner": "jesseduffield/notes",
+        "stars": 219,
+        "forks": 9,
+        "open_issues": 2,
+        "size": 0,
+        "language": null,
+        "description": "One place for me to put all my programmery notes",
+        "pushed_at": "2020-01-05T03:51:09Z",
+        "topics": []
+      },
+      {
+        "name": "lazy_migrate",
+        "owner_login": "jesseduffield",
+        "name_with_owner": "jesseduffield/lazy_migrate",
+        "stars": 211,
+        "forks": 9,
+        "open_issues": 30,
+        "size": 5358,
+        "language": "Ruby",
+        "description": "A little terminal UI for managing schema migrations in rails",
+        "pushed_at": "2024-06-28T09:24:00Z",
+        "topics": []
+      },
+      {
+        "name": "openpray",
+        "owner_login": "jesseduffield",
+        "name_with_owner": "jesseduffield/openpray",
+        "stars": 51,
+        "forks": 0,
+        "open_issues": 1,
+        "size": 196,
+        "language": "Go",
+        "description": "A daemon that periodically asks an LLM to pray for the server it runs on, reducing the likelihood that the server is hacked",
+        "pushed_at": "2026-06-11T04:16:14Z",
+        "topics": []
+      },
+      {
+        "name": "lazycore",
+        "owner_login": "jesseduffield",
+        "name_with_owner": "jesseduffield/lazycore",
+        "stars": 32,
+        "forks": 6,
+        "open_issues": 1,
+        "size": 17,
+        "language": "Go",
+        "description": "Shared functionality for lazygit, lazydocker, etc",
+        "pushed_at": "2022-10-23T21:01:28Z",
+        "topics": []
+      },
+      {
+        "name": "ai-battlegrounds",
+        "owner_login": "jesseduffield",
+        "name_with_owner": "jesseduffield/ai-battlegrounds",
+        "stars": 31,
+        "forks": 2,
+        "open_issues": 0,
+        "size": 2071,
+        "language": "TypeScript",
+        "description": "It's about time we put LLM's in an ACTUAL arena",
+        "pushed_at": "2025-12-30T07:30:08Z",
+        "topics": []
+      },
+      {
+        "name": "wisdom",
+        "owner_login": "jesseduffield",
+        "name_with_owner": "jesseduffield/wisdom",
+        "stars": 24,
+        "forks": 0,
+        "open_issues": 0,
+        "size": 3,
+        "language": null,
+        "description": "Stuff I wish I knew at the start",
+        "pushed_at": "2022-02-19T01:53:57Z",
+        "topics": []
+      },
+      {
+        "name": "generics",
+        "owner_login": "jesseduffield",
+        "name_with_owner": "jesseduffield/generics",
+        "stars": 19,
+        "forks": 4,
+        "open_issues": 0,
+        "size": 75,
+        "language": "Go",
+        "description": "extensions on the official Go generics packages",
+        "pushed_at": "2025-05-17T12:27:08Z",
+        "topics": []
+      },
+      {
+        "name": "kill",
+        "owner_login": "jesseduffield",
+        "name_with_owner": "jesseduffield/kill",
+        "stars": 15,
+        "forks": 1,
+        "open_issues": 1,
+        "size": 9,
+        "language": "Go",
+        "description": "simple package for killing processes",
+        "pushed_at": "2025-01-01T12:41:09Z",
+        "topics": []
+      },
+      {
+        "name": "lazygit-debian",
+        "owner_login": "jesseduffield",
+        "name_with_owner": "jesseduffield/lazygit-debian",
+        "stars": 15,
+        "forks": 1,
+        "open_issues": 0,
+        "size": 3485,
+        "language": null,
+        "description": "Debian package for lazygit",
+        "pushed_at": "2023-09-05T14:18:11Z",
+        "topics": []
+      },
+      {
+        "name": "CodeSlap",
+        "owner_login": "jesseduffield",
+        "name_with_owner": "jesseduffield/CodeSlap",
+        "stars": 12,
+        "forks": 2,
+        "open_issues": 16,
+        "size": 2205,
+        "language": "JavaScript",
+        "description": "Push commands to your terminal console from the comfort of a text editor",
+        "pushed_at": "2022-12-11T16:06:42Z",
+        "topics": [
+          "console",
+          "lazy",
+          "ssh",
+          "terminal"
+        ]
+      },
+      {
+        "name": "lazysession",
+        "owner_login": "jesseduffield",
+        "name_with_owner": "jesseduffield/lazysession",
+        "stars": 12,
+        "forks": 1,
+        "open_issues": 0,
+        "size": 1757,
+        "language": "Go",
+        "description": "Don't let a slow ssh connection trip up your typing speed",
+        "pushed_at": "2020-02-16T08:34:51Z",
+        "topics": []
+      },
+      {
+        "name": "homebrew-lazydocker",
+        "owner_login": "jesseduffield",
+        "name_with_owner": "jesseduffield/homebrew-lazydocker",
+        "stars": 7,
+        "forks": 8,
+        "open_issues": 3,
+        "size": 30,
+        "language": "Ruby",
+        "description": "home for the homebrew tap of lazydocker",
+        "pushed_at": "2026-04-19T02:54:19Z",
+        "topics": []
+      },
+      {
+        "name": "react-dilemma",
+        "owner_login": "jesseduffield",
+        "name_with_owner": "jesseduffield/react-dilemma",
+        "stars": 7,
+        "forks": 0,
+        "open_issues": 0,
+        "size": 196,
+        "language": "TypeScript",
+        "description": "working through some possible solutions to a problem in react",
+        "pushed_at": "2021-01-17T12:33:48Z",
+        "topics": []
+      },
+      {
+        "name": "LazyGitRuby",
+        "owner_login": "jesseduffield",
+        "name_with_owner": "jesseduffield/LazyGitRuby",
+        "stars": 5,
+        "forks": 2,
+        "open_issues": 0,
+        "size": 3,
+        "language": "Ruby",
+        "description": "a simple command line tool to save you time with git",
+        "pushed_at": "2018-05-10T12:54:16Z",
+        "topics": []
+      },
+      {
+        "name": "homebrew-lazygit",
+        "owner_login": "jesseduffield",
+        "name_with_owner": "jesseduffield/homebrew-lazygit",
+        "stars": 4,
+        "forks": 1,
+        "open_issues": 2,
+        "size": 72,
+        "language": null,
+        "description": "Homebrew Repo for Lazygit, a UI Terminal for git",
+        "pushed_at": "2025-08-06T12:18:35Z",
+        "topics": []
+      },
+      {
+        "name": "immortality-reminder",
+        "owner_login": "jesseduffield",
+        "name_with_owner": "jesseduffield/immortality-reminder",
+        "stars": 3,
+        "forks": 0,
+        "open_issues": 0,
+        "size": 1,
+        "language": null,
+        "description": null,
+        "pushed_at": "2023-01-07T02:10:53Z",
+        "topics": []
+      },
+      {
+        "name": "react-reconciliation",
+        "owner_login": "jesseduffield",
+        "name_with_owner": "jesseduffield/react-reconciliation",
+        "stars": 2,
+        "forks": 1,
+        "open_issues": 24,
+        "size": 1938,
+        "language": "JavaScript",
+        "description": "examples of reconciliation in react",
+        "pushed_at": "2023-01-05T07:54:17Z",
+        "topics": []
+      },
+      {
+        "name": "lazygit-site",
+        "owner_login": "jesseduffield",
+        "name_with_owner": "jesseduffield/lazygit-site",
+        "stars": 2,
+        "forks": 0,
+        "open_issues": 0,
+        "size": 285,
+        "language": "JavaScript",
+        "description": "Static website for lazygit",
+        "pushed_at": "2019-03-09T23:19:57Z",
+        "topics": []
+      },
+      {
+        "name": "homebrew-lazynpm",
+        "owner_login": "jesseduffield",
+        "name_with_owner": "jesseduffield/homebrew-lazynpm",
+        "stars": 1,
+        "forks": 2,
+        "open_issues": 0,
+        "size": 2,
+        "language": "Ruby",
+        "description": null,
+        "pushed_at": "2022-04-17T23:19:30Z",
+        "topics": []
+      },
+      {
+        "name": "homebrew-horcrux",
+        "owner_login": "jesseduffield",
+        "name_with_owner": "jesseduffield/homebrew-horcrux",
+        "stars": 1,
+        "forks": 1,
+        "open_issues": 0,
+        "size": 1,
+        "language": "Ruby",
+        "description": "homebrew tap for the horcrux repo",
+        "pushed_at": "2020-01-03T09:44:00Z",
+        "topics": []
+      },
+      {
+        "name": "git_practice",
+        "owner_login": "jesseduffield",
+        "name_with_owner": "jesseduffield/git_practice",
+        "stars": 1,
+        "forks": 1,
+        "open_issues": 0,
+        "size": 20488,
+        "language": null,
+        "description": "A repository for me to practice git",
+        "pushed_at": "2018-11-14T09:23:14Z",
+        "topics": []
+      }
+    ],
+    "expected": {
+      "impact_prestige_score": 0.8387,
+      "impact_depth_raw": 9.28,
+      "impact_repo_count": 8,
+      "sub_scores": {
+        "account_maturity": 10,
+        "original_project_quality": 15,
+        "contribution_quality": 23.6,
+        "ecosystem_impact": 17.8,
+        "community_influence": 8,
+        "activity_authenticity": 17
+      },
+      "final_score": 91.4
     }
   }
 }

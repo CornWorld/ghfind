@@ -313,8 +313,10 @@ const FOLLOW_RATIO_FULL_AT = 500;
 /** Contribution Quality volume: external merged PRs (full at 150 effective). */
 const EXTERNAL_PR_VOLUME_MAX = 12;
 const EXTERNAL_PR_VOLUME_FULL_AT = 150;
-/** Own-repo merged PRs (full at 200). */
+/** Own-repo merged PRs (full at 200): 4 points, up to 6 more (10 in total)
+ * when the repos they land in have an outside community. */
 const OWN_PR_VOLUME_MAX = 4;
+const OWN_PR_COMMUNITY_BONUS = 6;
 const OWN_PR_VOLUME_FULL_AT = 200;
 /** Weight of an external PR into a repo under 200 stars. */
 const LOW_STAR_EXTERNAL_PR_WEIGHT = 0.6;
@@ -336,8 +338,10 @@ function legacyAcceptance(m: RawMetrics): number {
 
 /**
  * PR volume and acceptance for Contribution Quality. With an external merged
- * PR count, volume = 12·logRatio(effective external, 150) + 4·logRatio(own, 200),
- * where PRs into repos under 200 stars count at 0.6 and the doc-like discount
+ * PR count, volume = 12·logRatio(effective external, 150) +
+ * (4 + 6·A)·logRatio(own, 200), where A (`own_pr_community`) is the
+ * community-weighted share of own PRs that landed in repos other people build
+ * on, PRs into repos under 200 stars count at 0.6, and the doc-like discount
  * applies to the external part only. Acceptance uses external decided PRs
  * (merged + maintainer-closed) once there are at least 3. Snapshots without
  * the external count keep the single-pool formula.
@@ -362,7 +366,9 @@ export function contributionVolumeAndAcceptance(m: RawMetrics): {
   const externalRaw =
     logRatio(effectiveExternal, EXTERNAL_PR_VOLUME_FULL_AT) * EXTERNAL_PR_VOLUME_MAX;
   const externalVolume = Math.max(0, externalRaw - docLikePrVolumeDiscount(m, externalRaw));
-  const ownVolume = logRatio(own, OWN_PR_VOLUME_FULL_AT) * OWN_PR_VOLUME_MAX;
+  const community = Math.max(0, Math.min(m.own_pr_community ?? 0, 1));
+  const ownVolume =
+    logRatio(own, OWN_PR_VOLUME_FULL_AT) * (OWN_PR_VOLUME_MAX + OWN_PR_COMMUNITY_BONUS * community);
 
   const externalDecided = external + (m.maintainer_closed_unmerged_pr_count ?? 0);
   const acceptance =

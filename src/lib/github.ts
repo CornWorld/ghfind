@@ -472,7 +472,7 @@ export async function listPublicDefaultBranchCommits(input: {
 async function graphql<T>(
   query: string,
   variables: Record<string, unknown>,
-  options: { splitOnTimeout?: boolean } = {},
+  options: { splitOnTimeout?: boolean; allowNotFound?: boolean } = {},
 ): Promise<T> {
   if (!hasGithubToken()) throw new GitHubAuthRequiredError("GITHUB_TOKEN is required.");
   let res: Response;
@@ -499,6 +499,13 @@ async function graphql<T>(
     json = (await res.json()) as { data?: T; errors?: { message?: string; type?: string }[] };
   } catch {
     throw new GitHubDataUnavailableError("GitHub GraphQL returned invalid JSON.");
+  }
+  if (
+    options.allowNotFound &&
+    json.data &&
+    json.errors?.every((e) => e.type === "NOT_FOUND")
+  ) {
+    return json.data;
   }
   if (json.errors?.length) {
     const first = json.errors[0];
@@ -2318,6 +2325,12 @@ export interface ContribRepoAgg {
   engagement?: number;
   /** An org repo credited as the user's original project: it counts as own. */
   attributed_original?: boolean;
+  /** Own-project community facts (own-account repos and attributed originals
+   * with outside contributors). Absent = not measured. */
+  community_facts?: OwnRepoCommunityFacts;
+  /** 0..1 community score from {@link ownRepoCommunity}; 0 when the account
+   * is a star-inflation suspect. Absent = not measured. */
+  community?: number;
 }
 
 export interface OrgRepoAttribution {
@@ -2485,7 +2498,10 @@ function passesImpactRepoGates(r: ContribRepoAgg, loginLower: string): boolean {
   // commit. Do not let that personal registry/directory entry borrow the
   // repository's star count, while preserving credit for actual maintainers.
   if (isLowSignalEntryRepo(r.repo) && r.commits <= 1 && r.prs <= 1) return false;
-  const threshold = isOwnImpactRepo(r, loginLower) ? 1000 : 200;
+  // Own repos need 1000★, unless a measured outside community vouches for
+  // them: their credit then comes from that community, not from stars.
+  const threshold =
+    isOwnImpactRepo(r, loginLower) && !((r.community ?? 0) > 0) ? 1000 : 200;
   if (r.stars < threshold) return false;
   return r.commits >= defaultBranchCommitMin(r.repo) || r.prs >= 1;
 }
@@ -2497,6 +2513,8 @@ const DOC_RESOURCE_IMPACT_WEIGHT = 0.5;
 /** The user's own repos already earn their stars in Original Project Quality;
  * in ecosystem impact they add depth at this weight and never prestige. */
 const OWN_REPO_IMPACT_DEPTH_WEIGHT = 0.3;
+/** Stars an own repo needs to count without a measured community. */
+const OWN_REPO_IMPACT_MIN_STARS = 1000;
 
 /** Code share assumed for a repo without a classified PR sample. */
 const IMPACT_CODE_SHARE_PRIOR = 0.7;
@@ -2544,6 +2562,310 @@ export function impactRepoTenureWeight(r: Pick<ContribRepoAgg, "months">): numbe
   );
 }
 
+// ---------------------------------------------------------------------------
+// Own-project community score
+//
+// A per-repo 0..1 signal for the user's own projects built from what OTHER
+// people do there: established outside contributors (weighted by activity),
+// retention, demand (issues/PRs they open), the maintainer's responsiveness,
+// forks and recency. It never uses stars (Original Project Quality already
+// credits those). Contributors gate the score: an audience without people
+// building with you is not a community.
+// ---------------------------------------------------------------------------
+
+/** Outside account profile facts used by the established-account filter. */
+interface CommunityProfile {
+  login: string;
+  created_at: string | null;
+  followers: number;
+  merged_prs: number;
+  orgs: string[];
+}
+
+interface CommunityContributor {
+  login: string;
+  type: string;
+  contributions: number;
+}
+
+interface CommunityPrSample {
+  author: string | null;
+  author_type: string | null;
+  created_at: string;
+  merged_at: string;
+  title: string | null;
+  churn: number;
+  files: string[];
+}
+
+interface CommunityIssueSample {
+  author: string | null;
+  author_type: string | null;
+  created_at: string;
+  commenters: string[];
+}
+
+/** Raw per-repo community inputs. Every sample excludes the user's own PRs
+ * and issues (`-author:` search). */
+export interface OwnRepoCommunityRaw {
+  repo: string;
+  forks: number;
+  merged_total: number;
+  closed_unmerged_total: number;
+  prs_opened_total: number;
+  issues_total: number;
+  contributors: CommunityContributor[];
+  merged: CommunityPrSample[];
+  issues: CommunityIssueSample[];
+}
+
+export interface OwnRepoCommunityContext {
+  login: string;
+  /** The user's public organizations (lowercase): their members are insiders. */
+  owner_orgs: string[];
+  /** Org repo credited as the user's original: the repo's org members are
+   * insiders too, and credit scales with the user's lead share. */
+  attributed: boolean;
+  /** Owners of repos the user contributes to (lowercase): mutual contributors
+   * count at half weight. */
+  mutual_owners: string[];
+  profiles: Record<string, CommunityProfile>;
+  now: string;
+}
+
+/** Collector output per repo; {@link ownRepoCommunity} turns it into 0..1. */
+export interface OwnRepoCommunityFacts {
+  weighted_contributors: number;
+  sustained_contributors: number;
+  outside_demand: number;
+  merge_latency_days: number | null;
+  owner_response_share: number;
+  outside_acceptance: number;
+  forks: number;
+  days_since_outside_merge: number | null;
+  /** 1 for repos on the user's account; for attributed org originals, the
+   * user's commits relative to the repo's top contributor. */
+  lead_share: number;
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const COMMUNITY_ESTABLISHED_DAYS = 180;
+const COMMUNITY_MIN_FOLLOWERS = 10;
+const COMMUNITY_MIN_OUTSIDE_MERGED_PRS = 3;
+const COMMUNITY_MUTUAL_WEIGHT = 0.5;
+const COMMUNITY_SUSTAINED_COMMITS = 5;
+const COMMUNITY_RESPONSE_MIN_AGE_DAYS = 3;
+const COMMUNITY_CONTRIBUTORS_FULL_AT = 30;
+const COMMUNITY_SUSTAINED_FULL_AT = 10;
+const COMMUNITY_DEMAND_FULL_AT = 300;
+const COMMUNITY_FORKS_FULL_AT = 1000;
+const COMMUNITY_LATENCY_ZERO_DAYS = 60;
+const COMMUNITY_RECENT_DAYS = 90;
+const COMMUNITY_STALE_DAYS = 730;
+const COMMUNITY_STALE_FLOOR = 0.4;
+/** Community depth: a fully engaged community equals a fully worked 5k★ repo. */
+const COMMUNITY_DEPTH = 2.5;
+
+const BOT_LOGIN = /\[bot\]$|-bot$|^bot-|^(renovate|dependabot|github-actions|greenkeeper|snyk-bot|codecov|allcontributors)/i;
+
+function round4(value: number): number {
+  return Math.round(value * 10_000) / 10_000;
+}
+
+function isCommunityBot(login: string | null, type: string | null): boolean {
+  return !login || (type !== null && type !== "User") || BOT_LOGIN.test(login);
+}
+
+/** An established outside account: at least 180 days old when it acted, and
+ * an independent footprint (followers, or merged PRs beyond those seen here). */
+function isEstablishedAccount(
+  profile: CommunityProfile | undefined,
+  at: string,
+  seenHere: number,
+): boolean {
+  if (!profile?.created_at) return false;
+  const created = Date.parse(profile.created_at);
+  const acted = Date.parse(at);
+  if (!Number.isFinite(created) || !Number.isFinite(acted)) return false;
+  if (acted - created < COMMUNITY_ESTABLISHED_DAYS * DAY_MS) return false;
+  return (
+    profile.followers >= COMMUNITY_MIN_FOLLOWERS ||
+    profile.merged_prs - seenHere >= COMMUNITY_MIN_OUTSIDE_MERGED_PRS
+  );
+}
+
+/**
+ * Filter raw samples into community facts. Excluded everywhere: bots, the
+ * user, accounts that are new or lack an independent footprint, and members of
+ * the user's (or the attributed repo's) organizations. Trivial (≤5-line) and
+ * doc-like PRs do not count, and their share scales the contributor weight.
+ * Pure so TypeScript and Go can be pinned to the same facts.
+ */
+export function computeOwnRepoCommunityFacts(
+  raw: OwnRepoCommunityRaw,
+  ctx: OwnRepoCommunityContext,
+): OwnRepoCommunityFacts {
+  const loginLower = ctx.login.toLowerCase();
+  const owner = repoOwner(raw.repo);
+  const insiderOrgs = new Set(ctx.owner_orgs.map((o) => o.toLowerCase()));
+  if (ctx.attributed && owner) insiderOrgs.add(owner);
+  const mutual = new Set(ctx.mutual_owners.map((o) => o.toLowerCase()));
+  const profileOf = (login: string | null) => (login ? ctx.profiles[login.toLowerCase()] : undefined);
+  const isInsider = (login: string | null) =>
+    (profileOf(login)?.orgs ?? []).some((o) => insiderOrgs.has(o.toLowerCase()));
+  const nowMs = Date.parse(ctx.now);
+
+  // PR sample: who counts, and what share of their work is substantive.
+  const seen = new Map<string, number>();
+  for (const pr of raw.merged) {
+    if (pr.author) seen.set(pr.author.toLowerCase(), (seen.get(pr.author.toLowerCase()) ?? 0) + 1);
+  }
+  const kept: CommunityPrSample[] = [];
+  let trivial = 0;
+  for (const pr of raw.merged) {
+    if (isCommunityBot(pr.author, pr.author_type) || pr.author?.toLowerCase() === loginLower) continue;
+    if (isInsider(pr.author)) continue;
+    if (!isEstablishedAccount(profileOf(pr.author), pr.created_at, seen.get(pr.author!.toLowerCase()) ?? 0)) continue;
+    const asPr: RecentPr = {
+      title: pr.title,
+      repo: raw.repo,
+      repo_stars: 0,
+      churn: pr.churn,
+      changed_files: pr.files.length,
+      trivial: pr.churn <= 5,
+      files: pr.files,
+    };
+    if (asPr.trivial || isDocLikeImpactPr(asPr)) {
+      trivial += 1;
+      continue;
+    }
+    kept.push(pr);
+  }
+  const decided = kept.length + trivial;
+  const substantiveShare = decided > 0 ? kept.length / decided : 0.5;
+
+  // Contributors: GitHub's contributor list (commits), filtered the same way.
+  let weighted = 0;
+  let sustained = 0;
+  let topCommits = 0;
+  let userCommits = 0;
+  for (const c of raw.contributors) {
+    const lower = c.login.toLowerCase();
+    if (isCommunityBot(c.login, c.type)) continue;
+    topCommits = Math.max(topCommits, c.contributions);
+    if (lower === loginLower) {
+      userCommits = c.contributions;
+      continue;
+    }
+    if (isInsider(c.login) || !isEstablishedAccount(profileOf(c.login), ctx.now, c.contributions)) continue;
+    weighted += logRatio(c.contributions, 10) * (mutual.has(lower) ? COMMUNITY_MUTUAL_WEIGHT : 1);
+    if (c.contributions >= COMMUNITY_SUSTAINED_COMMITS) sustained += 1;
+  }
+
+  // Demand: issues and PRs opened by others, scaled by the established share.
+  const keptIssues = raw.issues.filter(
+    (i) =>
+      !isCommunityBot(i.author, i.author_type) &&
+      i.author?.toLowerCase() !== loginLower &&
+      !isInsider(i.author) &&
+      isEstablishedAccount(profileOf(i.author), i.created_at, 0),
+  );
+  const issueShare = raw.issues.length > 0 ? keptIssues.length / raw.issues.length : 0;
+  const prShare = raw.merged.length > 0 ? kept.length / raw.merged.length : 0;
+  const demand = raw.issues_total * issueShare + raw.prs_opened_total * prShare;
+
+  // Responsiveness: merge latency, replies to outside issues, acceptance.
+  const latencies = kept
+    .map((pr) => (Date.parse(pr.merged_at) - Date.parse(pr.created_at)) / DAY_MS)
+    .sort((a, b) => a - b);
+  const mid = latencies.length >> 1;
+  const latency =
+    latencies.length === 0
+      ? null
+      : latencies.length % 2
+        ? latencies[mid]
+        : (latencies[mid - 1] + latencies[mid]) / 2;
+  const answerable = keptIssues.filter(
+    (i) => nowMs - Date.parse(i.created_at) > COMMUNITY_RESPONSE_MIN_AGE_DAYS * DAY_MS,
+  );
+  const answered = answerable.filter((i) => i.commenters.some((c) => c.toLowerCase() === loginLower));
+  const decidedPrs = raw.merged_total + raw.closed_unmerged_total;
+  const lastMerge = kept.reduce((a, pr) => Math.max(a, Date.parse(pr.merged_at)), 0);
+
+  return {
+    weighted_contributors: round4(weighted * substantiveShare),
+    sustained_contributors: sustained,
+    outside_demand: round4(demand),
+    merge_latency_days: latency === null ? null : round4(latency),
+    owner_response_share: answerable.length > 0 ? round4(answered.length / answerable.length) : 0,
+    outside_acceptance: decidedPrs > 0 ? round4(raw.merged_total / decidedPrs) : 0,
+    forks: raw.forks,
+    days_since_outside_merge: lastMerge > 0 ? round4(Math.max(0, nowMs - lastMerge) / DAY_MS) : null,
+    lead_share: ctx.attributed
+      ? topCommits > 0
+        ? round4(Math.min(1, userCommits / topCommits))
+        : 0
+      : 1,
+  };
+}
+
+/**
+ * 0..1 community score: lead × recency × contributors × (0.6 + 0.4 · mean of
+ * retention, demand, responsiveness, forks). Contributors gate everything.
+ */
+export function ownRepoCommunity(f: OwnRepoCommunityFacts): number {
+  const contributors = logRatio(f.weighted_contributors, COMMUNITY_CONTRIBUTORS_FULL_AT);
+  const retention = logRatio(f.sustained_contributors, COMMUNITY_SUSTAINED_FULL_AT);
+  const demand = logRatio(f.outside_demand, COMMUNITY_DEMAND_FULL_AT);
+  const latencyScore =
+    f.merge_latency_days === null
+      ? 0
+      : Math.max(
+          0,
+          Math.min(
+            1,
+            1 - Math.log10(Math.max(f.merge_latency_days, 1)) / Math.log10(COMMUNITY_LATENCY_ZERO_DAYS),
+          ),
+        );
+  const responsiveness =
+    0.5 * latencyScore + 0.25 * f.owner_response_share + 0.25 * f.outside_acceptance;
+  const forks = logRatio(f.forks, COMMUNITY_FORKS_FULL_AT);
+  const days = f.days_since_outside_merge;
+  const recency =
+    days === null || days >= COMMUNITY_STALE_DAYS
+      ? COMMUNITY_STALE_FLOOR
+      : days <= COMMUNITY_RECENT_DAYS
+        ? 1
+        : 1 -
+          (1 - COMMUNITY_STALE_FLOOR) *
+            ((days - COMMUNITY_RECENT_DAYS) / (COMMUNITY_STALE_DAYS - COMMUNITY_RECENT_DAYS));
+  const modulators = (retention + demand + responsiveness + forks) / 4;
+  return round4(
+    Math.max(0, Math.min(1, f.lead_share)) * recency * contributors * (0.6 + 0.4 * modulators),
+  );
+}
+
+/**
+ * Contribution Quality's own-PR weight: the share of the user's own-repo PRs
+ * that landed in repos with a community, weighted by that community. Only repos
+ * on the user's account count (PRs into org repos are external PRs).
+ */
+export function ownPrCommunityShare(
+  repos: ContribRepoAgg[],
+  loginLower: string,
+  ownPrs: number,
+): number {
+  if (ownPrs <= 0) return 0;
+  const weighted = repos.reduce(
+    (a, r) =>
+      r.owner_login.toLowerCase() === loginLower && !r.is_fork && (r.community ?? 0) > 0
+        ? a + r.prs * (r.community ?? 0)
+        : a,
+    0,
+  );
+  return round4(Math.max(0, Math.min(1, weighted / ownPrs)));
+}
+
 /** Commits that represent authored work: merge commits are excluded. */
 export function authoredCommits(r: Pick<ContribRepoAgg, "commits" | "merge_commits">): number {
   return Math.max(0, r.commits - Math.max(0, r.merge_commits ?? 0));
@@ -2565,9 +2887,13 @@ export function authoredCommits(r: Pick<ContribRepoAgg, "commits" | "merge_commi
  *   - tenure ({@link impactRepoTenureWeight}): a one-month burst earns ~0.75;
  *   - docs/site/resource repos (see {@link isDocOrResourceRepo}) need
  *     {@link DOC_RESOURCE_IMPACT_MIN_STARS} and then count at half weight.
- * Own repos (including attributed originals) never set prestige and add depth
- * at 0.3 × their community-engagement multiplier: their stars already count in
- * Original Project Quality. Merge commits never count as work.
+ * Own repos (including attributed originals) never earn impact from their
+ * stars, which already count in Original Project Quality. They earn it from
+ * their outside community ({@link ownRepoCommunity}): community × work ×
+ * code share × tenure × doc weight as prestige, plus 2.5 × community × repo
+ * weight as depth on top of the legacy damped star depth (0.3 × engagement
+ * multiplier, ≥1000★ only). With a measured community they qualify at the
+ * external 200★ bar. Merge commits never count as work.
  *
  * TODO(content-repos): also treat a repo as content when its file tree is
  * ≥70% md/pdf/png/mp3/html with fewer than 15 code files (e.g. prompt/skill
@@ -2596,9 +2922,10 @@ export function computeImpactFromContribMap(
   const impactPrestigeScore =
     Math.round(
       qualifying.reduce((a, r) => {
-        if (isOwn(r)) return a;
+        // Own repos earn maintainer prestige from their outside community,
+        // never from stars (Original Project Quality credits those).
         const repoPrestige =
-          logRatio(r.stars, 100_000) *
+          (isOwn(r) ? (r.community ?? 0) : logRatio(r.stars, 100_000)) *
           prestigeWorkMultiplier(authoredCommits(r), r.prs) *
           repoWeight(r);
         return Math.max(a, repoPrestige);
@@ -2612,10 +2939,18 @@ export function computeImpactFromContribMap(
         // flatten that signal). Bounded so one mega-repo can't dominate.
         const work = authoredCommits(r) + r.prs;
         const weight = work > 0 ? Math.min(1 + Math.log10(work), 2.5) : 0;
-        const ownWeight = isOwn(r)
-          ? OWN_REPO_IMPACT_DEPTH_WEIGHT * starEngagementMultiplier(r.engagement)
-          : 1;
-        return a + logRatio(r.stars, 5000) * weight * repoWeight(r) * ownWeight;
+        if (isOwn(r)) {
+          // Legacy damped star depth (own repos ≥1000★) plus community depth.
+          const starDepth =
+            r.stars >= OWN_REPO_IMPACT_MIN_STARS
+              ? logRatio(r.stars, 5000) *
+                weight *
+                repoWeight(r) *
+                (OWN_REPO_IMPACT_DEPTH_WEIGHT * starEngagementMultiplier(r.engagement))
+              : 0;
+          return a + starDepth + COMMUNITY_DEPTH * (r.community ?? 0) * repoWeight(r);
+        }
+        return a + logRatio(r.stars, 5000) * weight * repoWeight(r);
       }, 0) * 100,
     ) / 100;
 
@@ -3260,6 +3595,466 @@ export async function collectImpactCodeSamples(
   return samples;
 }
 
+/** Best-effort key/value cache for collector facts (KV or Redis in
+ * production, none in tests and fixture recording). */
+export interface CollectCache {
+  get<T>(key: string): Promise<T | null>;
+  set(key: string, value: unknown, ttlSeconds: number): Promise<void>;
+}
+
+/** Own repos whose community is measured per scan (by outside merged PRs). */
+const COMMUNITY_REPO_CAP = 3;
+const COMMUNITY_PR_SAMPLE_PAGES = 3;
+const COMMUNITY_PR_PAGE = 20;
+const COMMUNITY_ISSUE_SAMPLE = 30;
+const COMMUNITY_PROFILE_BATCH = 15;
+const COMMUNITY_PROFILE_CONCURRENCY = 4;
+/** Stop community collection when a real response shows less quota left. */
+const COMMUNITY_REST_FLOOR = 300;
+const COMMUNITY_GRAPHQL_FLOOR = 500;
+const COMMUNITY_PROFILE_TTL = 30 * 24 * 60 * 60;
+const COMMUNITY_FACTS_TTL = 7 * 24 * 60 * 60;
+const COMMUNITY_COUNTS_TTL = 24 * 60 * 60;
+const COMMUNITY_CACHE_VERSION = "v1";
+
+class CommunityBudgetExhausted extends Error {}
+
+/** Own-account repos and attributed originals that can carry a community. */
+function communityCandidates(repos: ContribRepoAgg[], loginLower: string): ContribRepoAgg[] {
+  return repos.filter(
+    (r) =>
+      !r.is_private &&
+      !r.is_fork &&
+      r.repo.includes("/") &&
+      r.stars >= 200 &&
+      r.commits + r.prs > 0 &&
+      (r.attributed_original === true || r.owner_login.toLowerCase() === loginLower),
+  );
+}
+
+/** Owners of the repos the user contributes to (mutual-contribution check). */
+function contributedRepoOwners(repos: ContribRepoAgg[], loginLower: string): string[] {
+  return [
+    ...new Set(
+      repos
+        .filter(
+          (r) =>
+            r.commits + r.prs > 0 &&
+            !r.attributed_original &&
+            r.owner_login.toLowerCase() !== loginLower,
+        )
+        .map((r) => r.owner_login.toLowerCase()),
+    ),
+  ].sort();
+}
+
+async function cacheGet<T>(cache: CollectCache | undefined, key: string): Promise<T | null> {
+  if (!cache) return null;
+  try {
+    return await cache.get<T>(key);
+  } catch {
+    return null;
+  }
+}
+
+async function cacheSet(
+  cache: CollectCache | undefined,
+  key: string,
+  value: unknown,
+  ttlSeconds: number,
+): Promise<void> {
+  if (!cache) return;
+  try {
+    await cache.set(key, value, ttlSeconds);
+  } catch {
+    // best-effort cache
+  }
+}
+
+function checkGraphqlBudget(rateLimit: { remaining?: number } | null | undefined): void {
+  if (typeof rateLimit?.remaining === "number" && rateLimit.remaining < COMMUNITY_GRAPHQL_FLOOR) {
+    throw new CommunityBudgetExhausted();
+  }
+}
+
+/** Attempts per community GraphQL query. One failed sample would otherwise
+ * leave a repo's community unmeasured and swing the score between scans. */
+const COMMUNITY_GRAPHQL_ATTEMPTS = 3;
+
+/** GraphQL with retries for transient failures (502s, timeouts); rate limits
+ * and missing auth are not retried. */
+async function communityGraphql<T>(query: string, variables: Record<string, unknown>): Promise<T> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await graphql<T>(query, variables);
+    } catch (error) {
+      if (
+        attempt >= COMMUNITY_GRAPHQL_ATTEMPTS ||
+        error instanceof GitHubRateLimitError ||
+        error instanceof GitHubAuthRequiredError
+      ) {
+        throw error;
+      }
+      await sleep(1000 * attempt);
+    }
+  }
+}
+
+/** Outside merged PR counts per candidate repo (aliased, 10 per query). */
+async function fetchCommunityCounts(
+  candidates: ContribRepoAgg[],
+  login: string,
+  cache: CollectCache | undefined,
+): Promise<Record<string, number>> {
+  const key = `community:counts:${COMMUNITY_CACHE_VERSION}:${login.toLowerCase()}`;
+  const cached = await cacheGet<Record<string, number>>(cache, key);
+  if (cached && candidates.every((r) => r.repo.toLowerCase() in cached)) return cached;
+  const counts: Record<string, number> = {};
+  for (let i = 0; i < candidates.length; i += 10) {
+    const chunk = candidates.slice(i, i + 10);
+    const varDecls = chunk.map((_, j) => `$q${j}: String!`).join(", ");
+    const aliases = chunk
+      .map((_, j) => `c${j}: search(query: $q${j}, type: ISSUE, first: 0) { issueCount }`)
+      .join("\n        ");
+    const variables: Record<string, unknown> = {};
+    chunk.forEach((r, j) => {
+      variables[`q${j}`] = `repo:${r.repo} is:pr is:merged -author:${login}`;
+    });
+    const data = await communityGraphql<Record<string, { issueCount: number } | null> & {
+      rateLimit: { remaining: number } | null;
+    }>(`query(${varDecls}) {
+        rateLimit { remaining }
+        ${aliases}
+      }`, variables);
+    checkGraphqlBudget(data.rateLimit);
+    chunk.forEach((r, j) => {
+      counts[r.repo.toLowerCase()] = (data[`c${j}`] as { issueCount: number } | null)?.issueCount ?? 0;
+    });
+  }
+  await cacheSet(cache, key, counts, COMMUNITY_COUNTS_TTL);
+  return counts;
+}
+
+interface CommunityAuthorNode {
+  __typename?: string;
+  login?: string;
+}
+
+/** Raw community samples for one repo: contributor list (REST) plus outside
+ * merged PRs, outside issues and counts (GraphQL). */
+async function fetchOwnRepoCommunityRaw(repo: string, login: string): Promise<OwnRepoCommunityRaw> {
+  const res = await ghFetch(`${GITHUB_API}/repos/${repo}/contributors?per_page=100`);
+  const remaining = Number(res.headers.get("x-ratelimit-remaining"));
+  if (res.status === 403 || res.status === 429) {
+    if (remaining === 0) throw new GitHubRateLimitError();
+    throw new GitHubDataUnavailableError("GitHub contributors unavailable.");
+  }
+  if (Number.isFinite(remaining) && res.headers.has("x-ratelimit-remaining") && remaining < COMMUNITY_REST_FLOOR) {
+    await res.body?.cancel().catch(() => undefined);
+    throw new CommunityBudgetExhausted();
+  }
+  const contributors: CommunityContributor[] = res.ok
+    ? ((await res.json().catch(() => [])) as { login?: string; type?: string; contributions?: number }[])
+        .filter((c) => typeof c.login === "string")
+        .map((c) => ({ login: c.login!, type: c.type ?? "User", contributions: c.contributions ?? 0 }))
+    : [];
+
+  const [owner, ...nameParts] = repo.split("/");
+  const q = (filter: string) => `repo:${repo} ${filter} -author:${login}`;
+  const counts = await communityGraphql<{
+    rateLimit: { remaining: number } | null;
+    repository: { forkCount: number } | null;
+    closed: { issueCount: number };
+    opened: { issueCount: number };
+  }>(
+    `query($o: String!, $n: String!, $c: String!, $p: String!) {
+      rateLimit { remaining }
+      repository(owner: $o, name: $n) { forkCount }
+      closed: search(query: $c, type: ISSUE, first: 0) { issueCount }
+      opened: search(query: $p, type: ISSUE, first: 0) { issueCount }
+    }`,
+    { o: owner, n: nameParts.join("/"), c: q("is:pr is:closed is:unmerged"), p: q("is:pr") },
+  );
+  checkGraphqlBudget(counts.rateLimit);
+
+  const merged: CommunityPrSample[] = [];
+  let mergedTotal = 0;
+  let after: string | null = null;
+  for (let page = 0; page < COMMUNITY_PR_SAMPLE_PAGES; page++) {
+    const data: {
+      search: {
+        issueCount: number;
+        pageInfo: { hasNextPage: boolean; endCursor: string | null };
+        nodes: ({
+          createdAt?: string;
+          mergedAt?: string | null;
+          additions?: number;
+          deletions?: number;
+          title?: string | null;
+          files?: { nodes: { path: string }[] } | null;
+          author?: CommunityAuthorNode | null;
+        } | null)[];
+      };
+    } = await communityGraphql(
+      `query($q: String!, $after: String) {
+        search(query: $q, type: ISSUE, first: ${COMMUNITY_PR_PAGE}, after: $after) {
+          issueCount
+          pageInfo { hasNextPage endCursor }
+          nodes { ... on PullRequest {
+            createdAt mergedAt additions deletions title
+            files(first: 15) { nodes { path } }
+            author { __typename login }
+          } }
+        }
+      }`,
+      { q: q("is:pr is:merged sort:created-desc"), after },
+    );
+    mergedTotal = data.search.issueCount;
+    for (const n of data.search.nodes) {
+      if (!n?.createdAt || !n.mergedAt) continue;
+      merged.push({
+        author: n.author?.login ?? null,
+        author_type: n.author?.__typename ?? null,
+        created_at: n.createdAt,
+        merged_at: n.mergedAt,
+        title: n.title ?? null,
+        churn: (n.additions ?? 0) + (n.deletions ?? 0),
+        files: (n.files?.nodes ?? []).map((f) => f.path),
+      });
+    }
+    if (!data.search.pageInfo.hasNextPage || !data.search.pageInfo.endCursor) break;
+    after = data.search.pageInfo.endCursor;
+  }
+
+  const issueData = await communityGraphql<{
+    search: {
+      issueCount: number;
+      nodes: ({
+        createdAt?: string;
+        author?: CommunityAuthorNode | null;
+        comments?: { nodes: ({ author: { login: string } | null } | null)[] } | null;
+      } | null)[];
+    };
+  }>(
+    `query($q: String!) {
+      search(query: $q, type: ISSUE, first: ${COMMUNITY_ISSUE_SAMPLE}) {
+        issueCount
+        nodes { ... on Issue {
+          createdAt
+          author { __typename login }
+          comments(first: 5) { nodes { author { login } } }
+        } }
+      }
+    }`,
+    { q: q("is:issue sort:created-desc") },
+  );
+  const issues: CommunityIssueSample[] = issueData.search.nodes
+    .filter((n): n is NonNullable<typeof n> & { createdAt: string } => Boolean(n?.createdAt))
+    .map((n) => ({
+      author: n.author?.login ?? null,
+      author_type: n.author?.__typename ?? null,
+      created_at: n.createdAt,
+      commenters: (n.comments?.nodes ?? [])
+        .map((c) => c?.author?.login)
+        .filter((l): l is string => typeof l === "string"),
+    }));
+
+  return {
+    repo,
+    forks: counts.repository?.forkCount ?? 0,
+    merged_total: mergedTotal,
+    closed_unmerged_total: counts.closed.issueCount,
+    prs_opened_total: counts.opened.issueCount,
+    issues_total: issueData.search.issueCount,
+    contributors,
+    merged,
+    issues,
+  };
+}
+
+interface CommunityProfileNode {
+  login: string;
+  createdAt: string | null;
+  followers: { totalCount: number } | null;
+  pullRequests: { totalCount: number } | null;
+  organizations: { nodes: ({ login: string } | null)[] } | null;
+}
+
+/** Profile facts for outside accounts, cached per login for 30 days. A
+ * missing or unresolvable account gets no profile (never established). */
+async function fetchCommunityProfiles(
+  logins: string[],
+  cache: CollectCache | undefined,
+): Promise<Record<string, CommunityProfile>> {
+  const profiles: Record<string, CommunityProfile> = {};
+  const missing: string[] = [];
+  for (const login of logins) {
+    const cached = await cacheGet<CommunityProfile>(
+      cache,
+      `community:profile:${COMMUNITY_CACHE_VERSION}:${login}`,
+    );
+    if (cached) profiles[login] = cached;
+    else missing.push(login);
+  }
+  const batches: string[][] = [];
+  for (let i = 0; i < missing.length; i += COMMUNITY_PROFILE_BATCH) {
+    batches.push(missing.slice(i, i + COMMUNITY_PROFILE_BATCH));
+  }
+  const runBatch = async (batch: string[]) => {
+    const varDecls = batch.map((_, j) => `$l${j}: String!`).join(", ");
+    const aliases = batch
+      .map(
+        (_, j) =>
+          `u${j}: user(login: $l${j}) { login createdAt followers { totalCount } pullRequests(states: MERGED) { totalCount } organizations(first: 10) { nodes { login } } }`,
+      )
+      .join("\n        ");
+    const variables: Record<string, unknown> = {};
+    batch.forEach((l, j) => {
+      variables[`l${j}`] = l;
+    });
+    let data: Record<string, CommunityProfileNode | null> | null = null;
+    for (let attempt = 0; attempt < 3 && !data; attempt++) {
+      try {
+        data = await graphql<Record<string, CommunityProfileNode | null>>(
+          `query(${varDecls}) {
+        ${aliases}
+      }`,
+          variables,
+          { allowNotFound: true },
+        );
+      } catch (error) {
+        if (error instanceof GitHubRateLimitError) throw error;
+        await sleep(1000 * (attempt + 1));
+      }
+    }
+    for (const [j, login] of batch.entries()) {
+      const node = data?.[`u${j}`];
+      if (!node) continue;
+      const profile: CommunityProfile = {
+        login,
+        created_at: node.createdAt,
+        followers: node.followers?.totalCount ?? 0,
+        merged_prs: node.pullRequests?.totalCount ?? 0,
+        orgs: (node.organizations?.nodes ?? [])
+          .map((o) => o?.login?.toLowerCase())
+          .filter((o): o is string => typeof o === "string")
+          .sort(),
+      };
+      profiles[login] = profile;
+      await cacheSet(cache, `community:profile:${COMMUNITY_CACHE_VERSION}:${login}`, profile, COMMUNITY_PROFILE_TTL);
+    }
+  };
+  for (let i = 0; i < batches.length; i += COMMUNITY_PROFILE_CONCURRENCY) {
+    await Promise.all(batches.slice(i, i + COMMUNITY_PROFILE_CONCURRENCY).map(runBatch));
+  }
+  return profiles;
+}
+
+/**
+ * Own-project community facts for the user's top {@link COMMUNITY_REPO_CAP}
+ * own repos by outside merged PRs (own-account repos and attributed org
+ * originals). Facts are cached per user and repo for 7 days, outside-PR counts
+ * for 1 day, account profiles for 30 days. Best-effort: only a GitHub rate
+ * limit fails the scan; a repo that cannot be measured, or a real response
+ * showing the quota near its floor, leaves the remaining repos unmeasured.
+ */
+export async function collectOwnRepoCommunities(input: {
+  repos: ContribRepoAgg[];
+  login: string;
+  ownerOrgs: string[];
+  now: Date;
+  cache?: CollectCache;
+}): Promise<Map<string, OwnRepoCommunityFacts>> {
+  const loginLower = input.login.toLowerCase();
+  const facts = new Map<string, OwnRepoCommunityFacts>();
+  const candidates = communityCandidates(input.repos, loginLower);
+  if (candidates.length === 0) return facts;
+  try {
+    const counts = await fetchCommunityCounts(candidates, input.login, input.cache);
+    const picked = candidates
+      .filter((r) => (counts[r.repo.toLowerCase()] ?? 0) > 0)
+      // Code-unit tie-break so Go (byte order) selects the same repos.
+      .sort(
+        (a, b) =>
+          (counts[b.repo.toLowerCase()] ?? 0) - (counts[a.repo.toLowerCase()] ?? 0) ||
+          b.stars - a.stars ||
+          (a.repo < b.repo ? -1 : a.repo > b.repo ? 1 : 0),
+      )
+      .slice(0, COMMUNITY_REPO_CAP);
+    const mutualOwners = contributedRepoOwners(input.repos, loginLower);
+    const ownerOrgs = input.ownerOrgs.map((o) => o.toLowerCase());
+    const factsKey = (r: ContribRepoAgg) =>
+      `community:facts:${COMMUNITY_CACHE_VERSION}:${loginLower}:${r.repo.toLowerCase()}`;
+    const uncached: ContribRepoAgg[] = [];
+    for (const r of picked) {
+      const cached = await cacheGet<OwnRepoCommunityFacts>(input.cache, factsKey(r));
+      if (cached) facts.set(r.repo.toLowerCase(), cached);
+      else uncached.push(r);
+    }
+    // Raw samples for every uncached repo in parallel, then ONE deduplicated
+    // profile lookup: contributors overlap heavily across a user's projects.
+    const raws = await Promise.all(
+      uncached.map(async (r) => {
+        try {
+          return await fetchOwnRepoCommunityRaw(r.repo, input.login);
+        } catch (error) {
+          if (error instanceof GitHubRateLimitError || error instanceof CommunityBudgetExhausted) throw error;
+          return null;
+        }
+      }),
+    );
+    const logins = [
+      ...new Set(
+        raws.flatMap((raw) =>
+          raw
+            ? [
+                ...raw.contributors.filter((c) => !isCommunityBot(c.login, c.type)).map((c) => c.login),
+                ...raw.merged.filter((p) => !isCommunityBot(p.author, p.author_type)).map((p) => p.author!),
+                ...raw.issues.filter((i) => !isCommunityBot(i.author, i.author_type)).map((i) => i.author!),
+              ]
+            : [],
+        )
+          .map((l) => l.toLowerCase())
+          .filter((l) => l !== loginLower),
+      ),
+    ].sort();
+    const profiles = logins.length ? await fetchCommunityProfiles(logins, input.cache) : {};
+    for (const [i, r] of uncached.entries()) {
+      const raw = raws[i];
+      if (!raw) continue;
+      const repoFacts = computeOwnRepoCommunityFacts(raw, {
+        login: input.login,
+        owner_orgs: ownerOrgs,
+        attributed: r.attributed_original === true,
+        mutual_owners: mutualOwners,
+        profiles,
+        now: input.now.toISOString(),
+      });
+      facts.set(r.repo.toLowerCase(), repoFacts);
+      await cacheSet(input.cache, factsKey(r), repoFacts, COMMUNITY_FACTS_TTL);
+    }
+  } catch (error) {
+    if (error instanceof GitHubRateLimitError) throw error;
+    if (!(error instanceof CommunityBudgetExhausted) && !(error instanceof GitHubDataUnavailableError)) {
+      throw error;
+    }
+  }
+  return facts;
+}
+
+/** Attach community facts and scores; star-inflation suspects get 0. */
+export function applyOwnRepoCommunities(
+  repos: ContribRepoAgg[],
+  facts: Map<string, OwnRepoCommunityFacts>,
+  starInflationSuspect: boolean,
+): ContribRepoAgg[] {
+  return repos.map((r) => {
+    const f = facts.get(r.repo.toLowerCase());
+    if (!f) return r;
+    return { ...r, community_facts: f, community: starInflationSuspect ? 0 : ownRepoCommunity(f) };
+  });
+}
+
 /** Stars at which a repo is popular enough for the engagement gate to apply. */
 export const ENGAGEMENT_MIN_STARS = 500;
 
@@ -3585,6 +4380,9 @@ export interface CollectOptions {
   now?: Date;
   /** Receives the score inputs once collection is complete. */
   recordScoreInputs?: (inputs: ScoreInputsRecord) => void;
+  /** Cache for slow-moving community facts (profiles, per-repo facts,
+   * outside-PR counts). Omitted = always fetch. */
+  cache?: CollectCache;
 }
 
 export async function collect(username: string, options: CollectOptions = {}): Promise<{
@@ -3741,10 +4539,6 @@ export async function collect(username: string, options: CollectOptions = {}): P
   const ownedContribRepos = signaledContribRepos.map((r) =>
     attributedNames.has(r.repo.toLowerCase()) ? { ...r, attributed_original: true } : r,
   );
-  const contribRepos = applyImpactCodeSamples(
-    ownedContribRepos,
-    await collectImpactCodeSamples(ownedContribRepos, login, recentPrWindow),
-  );
   const scoredOriginalRepos = [
     ...new Map(
       [...personalOriginalRepos, ...attributedOriginalRepos].map((repo) => [
@@ -3756,8 +4550,8 @@ export async function collect(username: string, options: CollectOptions = {}): P
   // Display-only side channels (never score inputs), ported from Go:
   // independently proven org maintenance + contribution-weighted languages.
   const [organizationMaintainedRepos, estimatedContributionLanguages] = await Promise.all([
-    collectOrganizationMaintainedRepos(contribRepos, loginLower, user.html_url ?? null),
-    collectEstimatedContributionLanguages(contribRepos),
+    collectOrganizationMaintainedRepos(ownedContribRepos, loginLower, user.html_url ?? null),
+    collectEstimatedContributionLanguages(ownedContribRepos),
   ]);
   const attributedOriginalRepoNames = attributedOriginalRepos.map((r) => repoDisplayName(r));
   const attributedOriginalRepoStars = attributedOriginalRepos.reduce(
@@ -3799,6 +4593,42 @@ export async function collect(username: string, options: CollectOptions = {}): P
   const bestOriginalQuality = bestOriginalRepoQuality(topRepos, loginLower, now);
   const topStarredOriginalQuality = topStarredOriginalRepoQuality(starTopRepos, loginLower, now);
   const weightedStars = weightedOriginalStars(starRepos, now);
+
+  // Star-inflation signal: notable stars but almost no forks/issues engagement
+  let starInflationSuspect = false;
+  if (topStarred && topStarred.stars >= 100) {
+    const top = topStarred;
+    const forksPer100 = top.forks / (top.stars / 100);
+    if (forksPer100 < 1.0 && top.open_issues <= 1) starInflationSuspect = true;
+  }
+
+  // Own-project community: outside people building in the user's own repos.
+  // Star-inflation suspects get none. Own repos that now qualify through their
+  // community (200–999★) get the merge/topic signals the first pass skipped.
+  const communityRepos = applyOwnRepoCommunities(
+    ownedContribRepos,
+    await collectOwnRepoCommunities({
+      repos: ownedContribRepos,
+      login,
+      ownerOrgs: organizations,
+      now,
+      cache: options.cache,
+    }),
+    starInflationSuspect,
+  );
+  const unsignaledCommunityRepos = communityRepos.filter(
+    (r) => (r.community ?? 0) > 0 && r.topics === undefined,
+  );
+  const signaledCommunityRepos = unsignaledCommunityRepos.length
+    ? applyImpactRepoSignals(
+        communityRepos,
+        await fetchImpactRepoSignals(unsignaledCommunityRepos, loginLower, user.node_id),
+      )
+    : communityRepos;
+  const contribRepos = applyImpactCodeSamples(
+    signaledCommunityRepos,
+    await collectImpactCodeSamples(signaledCommunityRepos, login, recentPrWindow),
+  );
 
   const recentPrs = recentPrWindow.slice(0, 50);
   const trivialPrs = recentPrs.filter((p) => p.trivial).length;
@@ -3852,14 +4682,6 @@ export async function collect(username: string, options: CollectOptions = {}): P
     isExternalTrivialFarmPr(p, loginLower),
   ).length;
 
-  // Star-inflation signal: notable stars but almost no forks/issues engagement
-  let starInflationSuspect = false;
-  if (topStarred && topStarred.stars >= 100) {
-    const top = topStarred;
-    const forksPer100 = top.forks / (top.stars / 100);
-    if (forksPer100 < 1.0 && top.open_issues <= 1) starInflationSuspect = true;
-  }
-
   const metrics: RawMetrics = {
     username: login,
     profile_url: user.html_url,
@@ -3895,6 +4717,11 @@ export async function collect(username: string, options: CollectOptions = {}): P
       ? {
           external_merged_pr_count: Math.min(externalMergedPrs.total, mergedPrCount),
           external_high_star_pr_share: highStarPrShare(externalMergedPrs.nodes),
+          own_pr_community: ownPrCommunityShare(
+            contribRepos,
+            loginLower,
+            mergedPrCount - Math.min(externalMergedPrs.total, mergedPrCount),
+          ),
         }
       : {}),
     workflow_landed_pr_count: workflowLandedPrs.length,
