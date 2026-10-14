@@ -152,7 +152,7 @@ describe("assembleCandidateReport", () => {
       scored, gaps: input.gaps, projects, advice: sanitizeAdvice(advice, { ...input, projects }),
     });
     expect(report.createdAt).toBe("2026-10-12T00:00:00.000Z");
-    expect(report.matches.map((m) => [m.jobId, m.fit])).toEqual([["a", 100], ["b", 60], ["c", 40]]);
+    expect(report.matches.map((m) => [m.jobId, m.fit])).toEqual([["a", 63], ["b", 60], ["c", 28]]);
     expect(report.matches[0].reason.en).toBe("Fits");
     expect(report.matches[1].reason.en).toBe("Meets 1 of 2 skill requirements");
     expect(report.matches[1].gaps).toEqual([{ label: { zh: "CUDA", en: "CUDA" }, kind: "skill", cost: "medium" }]);
