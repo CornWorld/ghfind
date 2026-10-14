@@ -108,14 +108,14 @@ export const SKILLS: readonly SkillDef[] = [
   // LLM-specific.
   { id: "llm-training", label: "LLM training", zh: "大模型训练", group: "llm", aliases: ["pretraining", "llm pretraining"] },
   { id: "distributed-training", label: "Distributed training", zh: "分布式训练", group: "llm", aliases: ["megatron", "megatron-lm", "deepspeed", "fsdp"] },
-  { id: "llm-inference", label: "LLM inference", zh: "大模型推理", group: "llm", aliases: ["vllm", "sglang", "tensorrt-llm", "llm serving"] },
+  { id: "llm-inference", label: "LLM inference", zh: "大模型推理", group: "llm", aliases: ["vllm", "sglang", "tensorrt-llm", "llm serving", "lmdeploy", "llama.cpp"] },
   { id: "gpu-kernels", label: "GPU kernels", zh: "GPU 算子开发", group: "llm", aliases: ["cutlass", "kernel optimization"] },
-  { id: "fine-tuning", label: "Fine-tuning", zh: "微调", group: "llm", aliases: ["lora", "sft", "peft"] },
-  { id: "rlhf", label: "RLHF / post-training", zh: "RLHF / 后训练", group: "llm", aliases: ["post-training", "dpo", "grpo"] },
+  { id: "fine-tuning", label: "Fine-tuning", zh: "微调", group: "llm", aliases: ["lora", "sft", "peft", "llama-factory", "unsloth", "axolotl"] },
+  { id: "rlhf", label: "RLHF / post-training", zh: "RLHF / 后训练", group: "llm", aliases: ["post-training", "dpo", "grpo", "trl", "openrlhf", "verl"] },
   { id: "rag", label: "RAG", group: "llm", aliases: ["retrieval augmented generation"] },
-  { id: "llm-agents", label: "LLM agents", zh: "智能体", group: "llm", aliases: ["agent", "agents", "ai agent", "langchain", "llamaindex"] },
+  { id: "llm-agents", label: "LLM agents", zh: "智能体", group: "llm", aliases: ["agent", "agents", "ai agent", "langchain", "llamaindex", "openhands", "autogen", "swe-agent"] },
   { id: "prompt-engineering", label: "Prompt engineering", zh: "提示工程", group: "llm" },
-  { id: "llm-evaluation", label: "LLM evaluation", zh: "大模型评测", group: "llm", aliases: ["evals", "benchmarking llms"] },
+  { id: "llm-evaluation", label: "LLM evaluation", zh: "大模型评测", group: "llm", aliases: ["evals", "benchmarking llms", "lm-evaluation-harness", "opencompass"] },
   { id: "model-compression", label: "Model compression", zh: "模型压缩", group: "llm", aliases: ["quantization", "distillation", "pruning"] },
 
   // Infrastructure.
@@ -198,6 +198,10 @@ export function isSkillId(id: string): boolean {
 /** Resolve an id, label, Chinese label or alias to its id; null when unknown. */
 export function resolveSkill(name: string): string | null {
   return BY_NAME.get(normalizeSkillName(name)) ?? null;
+}
+
+export function skillGroup(id: string): SkillGroup | null {
+  return BY_ID.get(id)?.group ?? null;
 }
 
 export function skillLabel(id: string, zh = false): string {

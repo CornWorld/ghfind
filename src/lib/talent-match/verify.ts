@@ -73,6 +73,8 @@ export function verifiedSkills(languages: readonly LanguageShare[], repos: reado
     const level = repoLevel(repo);
     const evidence = repoEvidence(repo);
     if (repo.language) offer(resolveSkill(repo.language), level, evidence);
+    // Well-known projects are taxonomy aliases (vllm, sglang, deepspeed, …).
+    offer(resolveSkill(repo.nameWithOwner.slice(repo.nameWithOwner.indexOf("/") + 1)), level, evidence);
     for (const topic of repo.topics) offer(resolveSkill(topic), level, evidence);
   }
   return [...byId.values()];

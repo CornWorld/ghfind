@@ -1,4 +1,5 @@
 import type { Degree, RequirementSkill, StoredProfile, ExtractedRequirement } from "./schema";
+import { skillGroup } from "./taxonomy";
 
 /**
  * Deterministic Talent Match scoring. Models never decide a score: résumés
@@ -8,7 +9,8 @@ import type { Degree, RequirementSkill, StoredProfile, ExtractedRequirement } fr
  * {@link MATCH_VERSION} so stored reports stay labelled with their rules.
  */
 // v2 narrows the candidate pool to DeepSeek and focuses advice on the top role.
-export const MATCH_VERSION = 2;
+// v3 adds the showcard job-matching fixes from #480.
+export const MATCH_VERSION = 3;
 
 /** Résumé-only (claimed) evidence counts for less than GitHub-verified. */
 export const SOURCE_WEIGHT = { verified: 1, claimed: 0.7 } as const;
@@ -18,6 +20,26 @@ const NICE_TO_HAVE_WEIGHT = 0.2;
 const CONDITIONS_WEIGHT = 0.2;
 /** Fit ceiling when any must-have skill is entirely absent. */
 const MISSING_MUST_HAVE_CAP = 60;
+/**
+ * Specificity: how much a requirement says about the role, as the summed
+ * levels of its skills, nice-to-haves and soft skills each counting half. A
+ * role stated with at least SPECIFIC_MASS is fully specific; sparser roles
+ * (a level-1 language, a couple of soft skills, as non-engineering roles
+ * extract to) are easy to "fully meet" and say little about fit, so their
+ * fit shrinks toward SPARSE_FIT_FLOOR of itself.
+ */
+const SPECIFIC_MASS = 8;
+const SPARSE_FIT_FLOOR = 0.4;
+const NICE_MASS_WEIGHT = 0.5;
+const SOFT_SKILL_WEIGHT = 0.5;
+/**
+ * Fit factor when the candidate holds none of the role's domain skills (its
+ * required skills other than languages): a language alone is shared by most
+ * engineers and is not positive evidence for the role.
+ */
+const NO_DOMAIN_EVIDENCE_FACTOR = 0.75;
+/** Soft skills outside the "practice" group. */
+const SOFT_SKILLS: ReadonlySet<string> = new Set(["prompt-engineering"]);
 /** Being at most this many years short is a medium-cost gap; more is high. */
 const EXPERIENCE_MEDIUM_GAP_YEARS = 2;
 
@@ -45,6 +67,10 @@ export interface MatchScore {
   reach: Reach;
   /** Each part 0-100. */
   breakdown: { mustHave: number; niceToHave: number; conditions: number };
+  /** How fully the requirement states the role, 0-1 (see SPECIFIC_MASS). */
+  specificity: number;
+  /** Fit before the missing-must-have cap; orders roles that share the cap. */
+  uncappedFit: number;
   /** Required skill ids the candidate meets at the required level. */
   matched: string[];
   gaps: MatchGap[];
@@ -65,6 +91,18 @@ function skillGapCost(have: number, required: number): Cost {
 }
 
 const percent = (value: number) => Math.round(value * 100);
+
+const isSoft = (id: string) => SOFT_SKILLS.has(id) || skillGroup(id) === "practice";
+const isDomain = (id: string) => skillGroup(id) !== "language";
+
+/** 0-1: how much the requirement's skills say about the role. */
+export function requirementSpecificity(requirement: Pick<MatchRequirement, "mustHave" | "niceToHave">): number {
+  const mass = (skills: readonly RequirementSkill[]) =>
+    skills.reduce((sum, s) => sum + s.level * (isSoft(s.id) ? SOFT_SKILL_WEIGHT : 1), 0);
+  const mustIds = new Set(requirement.mustHave.map((s) => s.id));
+  const nice = requirement.niceToHave.filter((s) => !mustIds.has(s.id));
+  return Math.min(1, (mass(requirement.mustHave) + NICE_MASS_WEIGHT * mass(nice)) / SPECIFIC_MASS);
+}
 
 export function scoreMatch(candidate: MatchCandidate, requirement: MatchRequirement): MatchScore {
   const held = new Map<string, HeldSkill>();
@@ -104,6 +142,9 @@ export function scoreMatch(candidate: MatchCandidate, requirement: MatchRequirem
 
   const mustHaveScore = coverage(mustHave, true);
   const niceToHaveScore = coverage(niceToHave, false);
+  // With no must-haves the nice-to-haves are all the role states; an empty
+  // must list must not count as fully met.
+  const coreScore = mustHave.length ? mustHaveScore : niceToHaveScore;
 
   const conditions: number[] = [];
   const yearsMin = requirement.yearsMin ?? 0;
@@ -132,18 +173,24 @@ export function scoreMatch(candidate: MatchCandidate, requirement: MatchRequirem
     ? percent(conditions.reduce((a, b) => a + b, 0) / conditions.length)
     : 100;
 
-  let fit = Math.round(
-    MUST_HAVE_WEIGHT * mustHaveScore + NICE_TO_HAVE_WEIGHT * niceToHaveScore + CONDITIONS_WEIGHT * conditionsScore,
-  );
+  const specificity = requirementSpecificity(requirement);
+  let fit =
+    (MUST_HAVE_WEIGHT * coreScore + NICE_TO_HAVE_WEIGHT * niceToHaveScore + CONDITIONS_WEIGHT * conditionsScore) *
+    (SPARSE_FIT_FLOOR + (1 - SPARSE_FIT_FLOOR) * specificity);
+  const domain = [...mustHave, ...niceToHave].filter((s) => isDomain(s.id));
+  if (domain.length && !domain.some((s) => (held.get(s.id)?.level ?? 0) > 0)) fit *= NO_DOMAIN_EVIDENCE_FACTOR;
+  const uncappedFit = Math.round(fit);
   if (missingMustHave) fit = Math.min(fit, MISSING_MUST_HAVE_CAP);
 
   const verified = matched.filter((id) => held.get(id)?.source === "verified").length;
 
   return {
     matchVersion: MATCH_VERSION,
-    fit,
+    fit: Math.round(fit),
     reach: reachOf(gaps),
     breakdown: { mustHave: mustHaveScore, niceToHave: niceToHaveScore, conditions: conditionsScore },
+    specificity,
+    uncappedFit,
     matched,
     gaps,
     verifiedShare: matched.length ? verified / matched.length : 0,
@@ -167,11 +214,12 @@ export function reachOf(gaps: readonly MatchGap[]): Reach {
 
 const REACH_ORDER: Record<Reach, number> = { high: 0, medium: 1, low: 2 };
 
-/** Best first: fit, then reach, then the caller's stable id. */
+/** Best first: fit, then uncapped fit, then reach, then the caller's stable id. */
 export function rankMatches<T extends { id: string; score: MatchScore }>(matches: readonly T[]): T[] {
   return [...matches].sort(
     (a, b) =>
       b.score.fit - a.score.fit ||
+      b.score.uncappedFit - a.score.uncappedFit ||
       REACH_ORDER[a.score.reach] - REACH_ORDER[b.score.reach] ||
       a.id.localeCompare(b.id),
   );
