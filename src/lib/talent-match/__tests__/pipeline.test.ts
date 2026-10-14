@@ -57,6 +57,14 @@ describe("verifiedSkills", () => {
       { id: "cuda", level: 3, evidence: "vllm-project/vllm · 4 PRs · 41.2k★", source: "verified" },
     ]);
   });
+
+  it("reads well-known project names as skills when topics don't say", () => {
+    const skills = verifiedSkills([], [
+      repo({ nameWithOwner: "sgl-project/sglang", stars: 37000, prs: 100, language: "Python" }),
+      repo({ nameWithOwner: "EleutherAI/lm-evaluation-harness", stars: 14000, prs: 70 }),
+    ]);
+    expect(skills.map((s) => [s.id, s.level])).toEqual([["python", 4], ["llm-inference", 4], ["llm-evaluation", 4]]);
+  });
 });
 
 describe("buildStoredProfile", () => {
