@@ -1153,6 +1153,20 @@ html[data-theme="light"] :is(.text-zinc-500, .text-zinc-600) { color: #777773; }
   html .workspace-mobile-sidebar[role="dialog"] { display: flex; flex-direction: column; gap: 0; width: min(290px, 88vw); padding: 24px 16px 16px; border-radius: 0; background: var(--surface-muted); height: 100dvh; }
   .workspace-mobile-sidebar .workspace-brand { justify-content: space-between; }
   .workspace-mobile-sidebar .workspace-navigation { overflow-y: auto; }
+  /* The drawer nav overflows on phones, but every mobile platform paints
+     overlay scrollbars, which stay hidden until the user scrolls — iOS cannot
+     paint a persistent one at all — so the list reads as if it ended at the
+     fold. Paint the overflow instead: a cover that rides the content (local)
+     hides each shadow (scroll, pinned to the box edge) once that edge reaches
+     the end of the list. */
+  .workspace-navigation {
+    --nav-scroll-shadow: rgb(0 0 0 / 0.35);
+    background: linear-gradient(var(--surface-muted) 30%, transparent) center top / 100% 40px local no-repeat,
+      linear-gradient(transparent, var(--surface-muted) 70%) center bottom / 100% 40px local no-repeat,
+      linear-gradient(var(--nav-scroll-shadow), transparent) center top / 100% 12px scroll no-repeat,
+      linear-gradient(transparent, var(--nav-scroll-shadow)) center bottom / 100% 12px scroll no-repeat;
+  }
+  html[data-theme="light"] .workspace-navigation { --nav-scroll-shadow: rgb(0 0 0 / 0.12); }
   .workspace-mobile-sidebar .sidebar-link { min-height: 42px; }
   .workspace-mobile-sidebar .sidebar-group + .sidebar-group { margin-top: 18px; }
   .workspace-content .home-page { padding-inline: 22px; }
