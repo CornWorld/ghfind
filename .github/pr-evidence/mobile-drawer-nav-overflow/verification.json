@@ -1,0 +1,558 @@
+[
+  {
+    "shell": "next",
+    "phase": "before",
+    "mode": "light",
+    "media": "light",
+    "themeState": {
+      "theme": "light",
+      "mode": "light",
+      "colorScheme": "light",
+      "bodyBackground": "rgb(255, 255, 255)"
+    },
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1.25,
+      "mobile": true
+    },
+    "screenshot": ".github/pr-evidence/mobile-drawer-nav-overflow/before-light-mobile.png",
+    "nav": {
+      "scrollHeight": 642,
+      "clientHeight": 467,
+      "overflows": true,
+      "scrollbarGutter": 0
+    },
+    "checks": [
+      {
+        "state": "at rest (scrollTop 0)",
+        "edge": "bottom",
+        "sampleX": 264,
+        "sampleYsCss": [
+          602,
+          608,
+          613
+        ],
+        "samples": [
+          242,
+          242,
+          242
+        ],
+        "surface": 242,
+        "delta": 0,
+        "cueVisible": false
+      },
+      {
+        "state": "at rest (scrollTop 0)",
+        "edge": "top",
+        "sampleX": 264,
+        "sampleYsCss": [
+          147.2,
+          152.8,
+          159.2
+        ],
+        "samples": [
+          242,
+          228,
+          228
+        ],
+        "surface": 242,
+        "delta": 0,
+        "cueVisible": false
+      }
+    ]
+  },
+  {
+    "shell": "next",
+    "phase": "before",
+    "mode": "dark",
+    "media": "dark",
+    "themeState": {
+      "theme": "dark",
+      "mode": "dark",
+      "colorScheme": "dark",
+      "bodyBackground": "rgb(20, 20, 20)"
+    },
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1.25,
+      "mobile": true
+    },
+    "screenshot": ".github/pr-evidence/mobile-drawer-nav-overflow/before-dark-mobile.png",
+    "nav": {
+      "scrollHeight": 642,
+      "clientHeight": 467,
+      "overflows": true,
+      "scrollbarGutter": 0
+    },
+    "checks": [
+      {
+        "state": "at rest (scrollTop 0)",
+        "edge": "bottom",
+        "sampleX": 264,
+        "sampleYsCss": [
+          602,
+          608,
+          613
+        ],
+        "samples": [
+          38,
+          38,
+          38
+        ],
+        "surface": 38,
+        "delta": 0,
+        "cueVisible": false
+      },
+      {
+        "state": "at rest (scrollTop 0)",
+        "edge": "top",
+        "sampleX": 264,
+        "sampleYsCss": [
+          147.2,
+          152.8,
+          159.2
+        ],
+        "samples": [
+          38,
+          52,
+          52
+        ],
+        "surface": 38,
+        "delta": 0,
+        "cueVisible": false
+      }
+    ]
+  },
+  {
+    "shell": "next",
+    "phase": "after",
+    "mode": "light",
+    "media": "light",
+    "themeState": {
+      "theme": "light",
+      "mode": "light",
+      "colorScheme": "light",
+      "bodyBackground": "rgb(255, 255, 255)"
+    },
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1.25,
+      "mobile": true
+    },
+    "screenshot": ".github/pr-evidence/mobile-drawer-nav-overflow/after-light-mobile.png",
+    "nav": {
+      "scrollHeight": 642,
+      "clientHeight": 467,
+      "overflows": true,
+      "scrollbarGutter": 0
+    },
+    "checks": [
+      {
+        "state": "at rest (scrollTop 0)",
+        "edge": "bottom",
+        "sampleX": 264,
+        "sampleYsCss": [
+          602,
+          608,
+          613
+        ],
+        "samples": [
+          240,
+          226,
+          214
+        ],
+        "surface": 242,
+        "delta": 28,
+        "cueVisible": true
+      },
+      {
+        "state": "at rest (scrollTop 0)",
+        "edge": "top",
+        "sampleX": 264,
+        "sampleYsCss": [
+          147.2,
+          152.8,
+          159.2
+        ],
+        "samples": [
+          242,
+          228,
+          228
+        ],
+        "surface": 242,
+        "delta": 0,
+        "cueVisible": false
+      },
+      {
+        "state": "scrolled to end",
+        "edge": "top",
+        "sampleX": 264,
+        "samples": [
+          214,
+          228,
+          242
+        ],
+        "surface": 242,
+        "delta": 28,
+        "cueVisible": true
+      },
+      {
+        "state": "scrolled to end",
+        "edge": "bottom",
+        "sampleX": 264,
+        "samples": [
+          242,
+          242,
+          242
+        ],
+        "surface": 242,
+        "delta": 0,
+        "cueVisible": false
+      }
+    ]
+  },
+  {
+    "shell": "next",
+    "phase": "after",
+    "mode": "dark",
+    "media": "dark",
+    "themeState": {
+      "theme": "dark",
+      "mode": "dark",
+      "colorScheme": "dark",
+      "bodyBackground": "rgb(20, 20, 20)"
+    },
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1.25,
+      "mobile": true
+    },
+    "screenshot": ".github/pr-evidence/mobile-drawer-nav-overflow/after-dark-mobile.png",
+    "nav": {
+      "scrollHeight": 642,
+      "clientHeight": 467,
+      "overflows": true,
+      "scrollbarGutter": 0
+    },
+    "checks": [
+      {
+        "state": "at rest (scrollTop 0)",
+        "edge": "bottom",
+        "sampleX": 264,
+        "sampleYsCss": [
+          602,
+          608,
+          613
+        ],
+        "samples": [
+          38,
+          31,
+          26
+        ],
+        "surface": 38,
+        "delta": 12,
+        "cueVisible": true
+      },
+      {
+        "state": "at rest (scrollTop 0)",
+        "edge": "top",
+        "sampleX": 264,
+        "sampleYsCss": [
+          147.2,
+          152.8,
+          159.2
+        ],
+        "samples": [
+          38,
+          52,
+          52
+        ],
+        "surface": 38,
+        "delta": 0,
+        "cueVisible": false
+      },
+      {
+        "state": "scrolled to end",
+        "edge": "top",
+        "sampleX": 264,
+        "samples": [
+          25,
+          32,
+          38
+        ],
+        "surface": 38,
+        "delta": 13,
+        "cueVisible": true
+      },
+      {
+        "state": "scrolled to end",
+        "edge": "bottom",
+        "sampleX": 264,
+        "samples": [
+          38,
+          38,
+          38
+        ],
+        "surface": 38,
+        "delta": 0,
+        "cueVisible": false
+      }
+    ]
+  },
+  {
+    "shell": "astro",
+    "phase": "before",
+    "mode": "light",
+    "media": "light",
+    "themeState": {
+      "theme": "light",
+      "mode": "light",
+      "colorScheme": "light",
+      "bodyBackground": "rgb(255, 255, 255)"
+    },
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1.25,
+      "mobile": true
+    },
+    "screenshot": ".github/pr-evidence/mobile-drawer-nav-overflow/astro-before-light-mobile.png",
+    "nav": {
+      "scrollHeight": 642,
+      "clientHeight": 469,
+      "overflows": true,
+      "scrollbarGutter": 0
+    },
+    "checks": [
+      {
+        "state": "at rest (scrollTop 0)",
+        "edge": "bottom",
+        "sampleX": 264,
+        "sampleYsCss": [
+          603,
+          609,
+          614
+        ],
+        "samples": [
+          242,
+          242,
+          242
+        ],
+        "surface": 242,
+        "delta": 0,
+        "cueVisible": false
+      },
+      {
+        "state": "at rest (scrollTop 0)",
+        "edge": "top",
+        "sampleX": 264,
+        "sampleYsCss": [
+          146.4,
+          152,
+          158.4
+        ],
+        "samples": [
+          242,
+          228,
+          228
+        ],
+        "surface": 242,
+        "delta": 0,
+        "cueVisible": false
+      }
+    ]
+  },
+  {
+    "shell": "astro",
+    "phase": "before",
+    "mode": "dark",
+    "media": "dark",
+    "themeState": {
+      "theme": "dark",
+      "mode": "dark",
+      "colorScheme": "dark",
+      "bodyBackground": "rgb(20, 20, 20)"
+    },
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1.25,
+      "mobile": true
+    },
+    "screenshot": ".github/pr-evidence/mobile-drawer-nav-overflow/astro-before-dark-mobile.png",
+    "nav": {
+      "scrollHeight": 642,
+      "clientHeight": 469,
+      "overflows": true,
+      "scrollbarGutter": 0
+    },
+    "checks": [
+      {
+        "state": "at rest (scrollTop 0)",
+        "edge": "bottom",
+        "sampleX": 264,
+        "sampleYsCss": [
+          603,
+          609,
+          614
+        ],
+        "samples": [
+          38,
+          38,
+          38
+        ],
+        "surface": 38,
+        "delta": 0,
+        "cueVisible": false
+      },
+      {
+        "state": "at rest (scrollTop 0)",
+        "edge": "top",
+        "sampleX": 264,
+        "sampleYsCss": [
+          146.4,
+          152,
+          158.4
+        ],
+        "samples": [
+          38,
+          52,
+          52
+        ],
+        "surface": 38,
+        "delta": 0,
+        "cueVisible": false
+      }
+    ]
+  },
+  {
+    "shell": "astro",
+    "phase": "after",
+    "mode": "light",
+    "media": "light",
+    "themeState": {
+      "theme": "light",
+      "mode": "light",
+      "colorScheme": "light",
+      "bodyBackground": "rgb(255, 255, 255)"
+    },
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1.25,
+      "mobile": true
+    },
+    "screenshot": ".github/pr-evidence/mobile-drawer-nav-overflow/astro-after-light-mobile.png",
+    "nav": {
+      "scrollHeight": 642,
+      "clientHeight": 469,
+      "overflows": true,
+      "scrollbarGutter": 0
+    },
+    "checks": [
+      {
+        "state": "at rest (scrollTop 0)",
+        "edge": "bottom",
+        "sampleX": 264,
+        "sampleYsCss": [
+          603,
+          609,
+          614
+        ],
+        "samples": [
+          241,
+          227,
+          220
+        ],
+        "surface": 242,
+        "delta": 22,
+        "cueVisible": true
+      },
+      {
+        "state": "at rest (scrollTop 0)",
+        "edge": "top",
+        "sampleX": 264,
+        "sampleYsCss": [
+          146.4,
+          152,
+          158.4
+        ],
+        "samples": [
+          242,
+          228,
+          228
+        ],
+        "surface": 242,
+        "delta": 0,
+        "cueVisible": false
+      }
+    ]
+  },
+  {
+    "shell": "astro",
+    "phase": "after",
+    "mode": "dark",
+    "media": "dark",
+    "themeState": {
+      "theme": "dark",
+      "mode": "dark",
+      "colorScheme": "dark",
+      "bodyBackground": "rgb(20, 20, 20)"
+    },
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1.25,
+      "mobile": true
+    },
+    "screenshot": ".github/pr-evidence/mobile-drawer-nav-overflow/astro-after-dark-mobile.png",
+    "nav": {
+      "scrollHeight": 642,
+      "clientHeight": 469,
+      "overflows": true,
+      "scrollbarGutter": 0
+    },
+    "checks": [
+      {
+        "state": "at rest (scrollTop 0)",
+        "edge": "bottom",
+        "sampleX": 264,
+        "sampleYsCss": [
+          603,
+          609,
+          614
+        ],
+        "samples": [
+          37,
+          31,
+          28
+        ],
+        "surface": 38,
+        "delta": 10,
+        "cueVisible": true
+      },
+      {
+        "state": "at rest (scrollTop 0)",
+        "edge": "top",
+        "sampleX": 264,
+        "sampleYsCss": [
+          146.4,
+          152,
+          158.4
+        ],
+        "samples": [
+          38,
+          52,
+          52
+        ],
+        "surface": 38,
+        "delta": 0,
+        "cueVisible": false
+      }
+    ]
+  }
+]
