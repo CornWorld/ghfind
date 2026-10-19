@@ -28,36 +28,52 @@
         "state": "at rest (scrollTop 0)",
         "edge": "bottom",
         "sampleX": 264,
-        "sampleYsCss": [
-          602,
-          608,
-          613
+        "surface": 243,
+        "band": [
+          {
+            "sampleYsCss": 611.6,
+            "value": 243
+          },
+          {
+            "sampleYsCss": 607.6,
+            "value": 243
+          },
+          {
+            "sampleYsCss": 603.6,
+            "value": 243
+          }
         ],
-        "samples": [
-          242,
-          242,
-          242
-        ],
-        "surface": 242,
-        "delta": 0,
+        "reference": {
+          "sampleYsCss": 599.6,
+          "value": 243
+        },
+        "darkening": 0,
         "cueVisible": false
       },
       {
         "state": "at rest (scrollTop 0)",
         "edge": "top",
         "sampleX": 264,
-        "sampleYsCss": [
-          147.2,
-          152.8,
-          159.2
+        "surface": 243,
+        "band": [
+          {
+            "sampleYsCss": 149.4,
+            "value": 229
+          },
+          {
+            "sampleYsCss": 153.4,
+            "value": 229
+          },
+          {
+            "sampleYsCss": 157.4,
+            "value": 229
+          }
         ],
-        "samples": [
-          242,
-          228,
-          228
-        ],
-        "surface": 242,
-        "delta": 0,
+        "reference": {
+          "sampleYsCss": 161.4,
+          "value": 229
+        },
+        "darkening": 0,
         "cueVisible": false
       }
     ]
@@ -91,36 +107,131 @@
         "state": "at rest (scrollTop 0)",
         "edge": "bottom",
         "sampleX": 264,
-        "sampleYsCss": [
-          602,
-          608,
-          613
-        ],
-        "samples": [
-          38,
-          38,
-          38
-        ],
         "surface": 38,
-        "delta": 0,
+        "band": [
+          {
+            "sampleYsCss": 611.6,
+            "value": 38
+          },
+          {
+            "sampleYsCss": 607.6,
+            "value": 38
+          },
+          {
+            "sampleYsCss": 603.6,
+            "value": 38
+          }
+        ],
+        "reference": {
+          "sampleYsCss": 599.6,
+          "value": 38
+        },
+        "darkening": 0,
         "cueVisible": false
       },
       {
         "state": "at rest (scrollTop 0)",
         "edge": "top",
         "sampleX": 264,
-        "sampleYsCss": [
-          147.2,
-          152.8,
-          159.2
-        ],
-        "samples": [
-          38,
-          52,
-          52
-        ],
         "surface": 38,
-        "delta": 0,
+        "band": [
+          {
+            "sampleYsCss": 149.4,
+            "value": 52
+          },
+          {
+            "sampleYsCss": 153.4,
+            "value": 52
+          },
+          {
+            "sampleYsCss": 157.4,
+            "value": 52
+          }
+        ],
+        "reference": {
+          "sampleYsCss": 161.4,
+          "value": 52
+        },
+        "darkening": 0,
+        "cueVisible": false
+      }
+    ]
+  },
+  {
+    "shell": "next",
+    "phase": "before",
+    "mode": "auto",
+    "media": "light",
+    "themeState": {
+      "theme": "light",
+      "mode": "auto",
+      "colorScheme": "light",
+      "bodyBackground": "rgb(255, 255, 255)"
+    },
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1.25,
+      "mobile": true
+    },
+    "screenshot": ".github/pr-evidence/mobile-drawer-nav-overflow/before-auto-light-mobile.png",
+    "nav": {
+      "scrollHeight": 642,
+      "clientHeight": 467,
+      "overflows": true,
+      "scrollbarGutter": 0
+    },
+    "checks": [
+      {
+        "state": "at rest (scrollTop 0)",
+        "edge": "bottom",
+        "sampleX": 264,
+        "surface": 243,
+        "band": [
+          {
+            "sampleYsCss": 611.6,
+            "value": 243
+          },
+          {
+            "sampleYsCss": 607.6,
+            "value": 243
+          },
+          {
+            "sampleYsCss": 603.6,
+            "value": 243
+          }
+        ],
+        "reference": {
+          "sampleYsCss": 599.6,
+          "value": 243
+        },
+        "darkening": 0,
+        "cueVisible": false
+      },
+      {
+        "state": "at rest (scrollTop 0)",
+        "edge": "top",
+        "sampleX": 264,
+        "surface": 243,
+        "band": [
+          {
+            "sampleYsCss": 149.4,
+            "value": 229
+          },
+          {
+            "sampleYsCss": 153.4,
+            "value": 229
+          },
+          {
+            "sampleYsCss": 157.4,
+            "value": 229
+          }
+        ],
+        "reference": {
+          "sampleYsCss": 161.4,
+          "value": 229
+        },
+        "darkening": 0,
         "cueVisible": false
       }
     ]
@@ -143,6 +254,7 @@
       "mobile": true
     },
     "screenshot": ".github/pr-evidence/mobile-drawer-nav-overflow/after-light-mobile.png",
+    "screenshotScrolled": ".github/pr-evidence/mobile-drawer-nav-overflow/after-light-mobile-scrolled.png",
     "nav": {
       "scrollHeight": 642,
       "clientHeight": 467,
@@ -154,62 +266,104 @@
         "state": "at rest (scrollTop 0)",
         "edge": "bottom",
         "sampleX": 264,
-        "sampleYsCss": [
-          602,
-          608,
-          613
+        "surface": 243,
+        "band": [
+          {
+            "sampleYsCss": 611.6,
+            "value": 217
+          },
+          {
+            "sampleYsCss": 607.6,
+            "value": 227
+          },
+          {
+            "sampleYsCss": 603.6,
+            "value": 237
+          }
         ],
-        "samples": [
-          240,
-          226,
-          214
-        ],
-        "surface": 242,
-        "delta": 28,
+        "reference": {
+          "sampleYsCss": 599.6,
+          "value": 243
+        },
+        "darkening": 26,
         "cueVisible": true
       },
       {
         "state": "at rest (scrollTop 0)",
         "edge": "top",
         "sampleX": 264,
-        "sampleYsCss": [
-          147.2,
-          152.8,
-          159.2
+        "surface": 243,
+        "band": [
+          {
+            "sampleYsCss": 149.4,
+            "value": 229
+          },
+          {
+            "sampleYsCss": 153.4,
+            "value": 229
+          },
+          {
+            "sampleYsCss": 157.4,
+            "value": 229
+          }
         ],
-        "samples": [
-          242,
-          228,
-          228
-        ],
-        "surface": 242,
-        "delta": 0,
+        "reference": {
+          "sampleYsCss": 161.4,
+          "value": 229
+        },
+        "darkening": 0,
         "cueVisible": false
       },
       {
         "state": "scrolled to end",
         "edge": "top",
         "sampleX": 264,
-        "samples": [
-          214,
-          228,
-          242
+        "surface": 243,
+        "band": [
+          {
+            "sampleYsCss": 149.4,
+            "value": 221
+          },
+          {
+            "sampleYsCss": 153.4,
+            "value": 231
+          },
+          {
+            "sampleYsCss": 157.4,
+            "value": 241
+          }
         ],
-        "surface": 242,
-        "delta": 28,
+        "reference": {
+          "sampleYsCss": 161.4,
+          "value": 243
+        },
+        "darkening": 22,
         "cueVisible": true
       },
       {
         "state": "scrolled to end",
         "edge": "bottom",
         "sampleX": 264,
-        "samples": [
-          242,
-          242,
-          242
+        "surface": 243,
+        "band": [
+          {
+            "sampleYsCss": 611.6,
+            "value": 243
+          },
+          {
+            "sampleYsCss": 607.6,
+            "value": 243
+          },
+          {
+            "sampleYsCss": 603.6,
+            "value": 243
+          }
         ],
-        "surface": 242,
-        "delta": 0,
+        "reference": {
+          "sampleYsCss": 599.6,
+          "value": 243
+        },
+        "darkening": 0,
         "cueVisible": false
       }
     ]
@@ -232,6 +386,7 @@
       "mobile": true
     },
     "screenshot": ".github/pr-evidence/mobile-drawer-nav-overflow/after-dark-mobile.png",
+    "screenshotScrolled": ".github/pr-evidence/mobile-drawer-nav-overflow/after-dark-mobile-scrolled.png",
     "nav": {
       "scrollHeight": 642,
       "clientHeight": 467,
@@ -243,62 +398,183 @@
         "state": "at rest (scrollTop 0)",
         "edge": "bottom",
         "sampleX": 264,
-        "sampleYsCss": [
-          602,
-          608,
-          613
-        ],
-        "samples": [
-          38,
-          31,
-          26
-        ],
         "surface": 38,
-        "delta": 12,
+        "band": [
+          {
+            "sampleYsCss": 611.6,
+            "value": 27
+          },
+          {
+            "sampleYsCss": 607.6,
+            "value": 31
+          },
+          {
+            "sampleYsCss": 603.6,
+            "value": 35
+          }
+        ],
+        "reference": {
+          "sampleYsCss": 599.6,
+          "value": 38
+        },
+        "darkening": 11,
         "cueVisible": true
       },
       {
         "state": "at rest (scrollTop 0)",
         "edge": "top",
         "sampleX": 264,
-        "sampleYsCss": [
-          147.2,
-          152.8,
-          159.2
-        ],
-        "samples": [
-          38,
-          52,
-          52
-        ],
         "surface": 38,
-        "delta": 0,
+        "band": [
+          {
+            "sampleYsCss": 149.4,
+            "value": 52
+          },
+          {
+            "sampleYsCss": 153.4,
+            "value": 52
+          },
+          {
+            "sampleYsCss": 157.4,
+            "value": 52
+          }
+        ],
+        "reference": {
+          "sampleYsCss": 161.4,
+          "value": 52
+        },
+        "darkening": 0,
         "cueVisible": false
       },
       {
         "state": "scrolled to end",
         "edge": "top",
         "sampleX": 264,
-        "samples": [
-          25,
-          32,
-          38
-        ],
         "surface": 38,
-        "delta": 13,
+        "band": [
+          {
+            "sampleYsCss": 149.4,
+            "value": 28
+          },
+          {
+            "sampleYsCss": 153.4,
+            "value": 33
+          },
+          {
+            "sampleYsCss": 157.4,
+            "value": 37
+          }
+        ],
+        "reference": {
+          "sampleYsCss": 161.4,
+          "value": 38
+        },
+        "darkening": 10,
         "cueVisible": true
       },
       {
         "state": "scrolled to end",
         "edge": "bottom",
         "sampleX": 264,
-        "samples": [
-          38,
-          38,
-          38
-        ],
         "surface": 38,
-        "delta": 0,
+        "band": [
+          {
+            "sampleYsCss": 611.6,
+            "value": 38
+          },
+          {
+            "sampleYsCss": 607.6,
+            "value": 38
+          },
+          {
+            "sampleYsCss": 603.6,
+            "value": 38
+          }
+        ],
+        "reference": {
+          "sampleYsCss": 599.6,
+          "value": 38
+        },
+        "darkening": 0,
+        "cueVisible": false
+      }
+    ]
+  },
+  {
+    "shell": "next",
+    "phase": "after",
+    "mode": "auto",
+    "media": "light",
+    "themeState": {
+      "theme": "light",
+      "mode": "auto",
+      "colorScheme": "light",
+      "bodyBackground": "rgb(255, 255, 255)"
+    },
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1.25,
+      "mobile": true
+    },
+    "screenshot": ".github/pr-evidence/mobile-drawer-nav-overflow/after-auto-light-mobile.png",
+    "nav": {
+      "scrollHeight": 642,
+      "clientHeight": 467,
+      "overflows": true,
+      "scrollbarGutter": 0
+    },
+    "checks": [
+      {
+        "state": "at rest (scrollTop 0)",
+        "edge": "bottom",
+        "sampleX": 264,
+        "surface": 243,
+        "band": [
+          {
+            "sampleYsCss": 611.6,
+            "value": 217
+          },
+          {
+            "sampleYsCss": 607.6,
+            "value": 227
+          },
+          {
+            "sampleYsCss": 603.6,
+            "value": 237
+          }
+        ],
+        "reference": {
+          "sampleYsCss": 599.6,
+          "value": 243
+        },
+        "darkening": 26,
+        "cueVisible": true
+      },
+      {
+        "state": "at rest (scrollTop 0)",
+        "edge": "top",
+        "sampleX": 264,
+        "surface": 243,
+        "band": [
+          {
+            "sampleYsCss": 149.4,
+            "value": 229
+          },
+          {
+            "sampleYsCss": 153.4,
+            "value": 229
+          },
+          {
+            "sampleYsCss": 157.4,
+            "value": 229
+          }
+        ],
+        "reference": {
+          "sampleYsCss": 161.4,
+          "value": 229
+        },
+        "darkening": 0,
         "cueVisible": false
       }
     ]
@@ -332,36 +608,52 @@
         "state": "at rest (scrollTop 0)",
         "edge": "bottom",
         "sampleX": 264,
-        "sampleYsCss": [
-          603,
-          609,
-          614
+        "surface": 243,
+        "band": [
+          {
+            "sampleYsCss": 612.6,
+            "value": 243
+          },
+          {
+            "sampleYsCss": 608.6,
+            "value": 243
+          },
+          {
+            "sampleYsCss": 604.6,
+            "value": 243
+          }
         ],
-        "samples": [
-          242,
-          242,
-          242
-        ],
-        "surface": 242,
-        "delta": 0,
+        "reference": {
+          "sampleYsCss": 600.6,
+          "value": 243
+        },
+        "darkening": 0,
         "cueVisible": false
       },
       {
         "state": "at rest (scrollTop 0)",
         "edge": "top",
         "sampleX": 264,
-        "sampleYsCss": [
-          146.4,
-          152,
-          158.4
+        "surface": 243,
+        "band": [
+          {
+            "sampleYsCss": 148.4,
+            "value": 229
+          },
+          {
+            "sampleYsCss": 152.4,
+            "value": 229
+          },
+          {
+            "sampleYsCss": 156.4,
+            "value": 229
+          }
         ],
-        "samples": [
-          242,
-          228,
-          228
-        ],
-        "surface": 242,
-        "delta": 0,
+        "reference": {
+          "sampleYsCss": 160.4,
+          "value": 229
+        },
+        "darkening": 0,
         "cueVisible": false
       }
     ]
@@ -395,36 +687,131 @@
         "state": "at rest (scrollTop 0)",
         "edge": "bottom",
         "sampleX": 264,
-        "sampleYsCss": [
-          603,
-          609,
-          614
-        ],
-        "samples": [
-          38,
-          38,
-          38
-        ],
         "surface": 38,
-        "delta": 0,
+        "band": [
+          {
+            "sampleYsCss": 612.6,
+            "value": 38
+          },
+          {
+            "sampleYsCss": 608.6,
+            "value": 38
+          },
+          {
+            "sampleYsCss": 604.6,
+            "value": 38
+          }
+        ],
+        "reference": {
+          "sampleYsCss": 600.6,
+          "value": 38
+        },
+        "darkening": 0,
         "cueVisible": false
       },
       {
         "state": "at rest (scrollTop 0)",
         "edge": "top",
         "sampleX": 264,
-        "sampleYsCss": [
-          146.4,
-          152,
-          158.4
-        ],
-        "samples": [
-          38,
-          52,
-          52
-        ],
         "surface": 38,
-        "delta": 0,
+        "band": [
+          {
+            "sampleYsCss": 148.4,
+            "value": 52
+          },
+          {
+            "sampleYsCss": 152.4,
+            "value": 52
+          },
+          {
+            "sampleYsCss": 156.4,
+            "value": 52
+          }
+        ],
+        "reference": {
+          "sampleYsCss": 160.4,
+          "value": 52
+        },
+        "darkening": 0,
+        "cueVisible": false
+      }
+    ]
+  },
+  {
+    "shell": "astro",
+    "phase": "before",
+    "mode": "auto",
+    "media": "light",
+    "themeState": {
+      "theme": "light",
+      "mode": "auto",
+      "colorScheme": "light",
+      "bodyBackground": "rgb(255, 255, 255)"
+    },
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1.25,
+      "mobile": true
+    },
+    "screenshot": ".github/pr-evidence/mobile-drawer-nav-overflow/astro-before-auto-light-mobile.png",
+    "nav": {
+      "scrollHeight": 642,
+      "clientHeight": 469,
+      "overflows": true,
+      "scrollbarGutter": 0
+    },
+    "checks": [
+      {
+        "state": "at rest (scrollTop 0)",
+        "edge": "bottom",
+        "sampleX": 264,
+        "surface": 243,
+        "band": [
+          {
+            "sampleYsCss": 612.6,
+            "value": 243
+          },
+          {
+            "sampleYsCss": 608.6,
+            "value": 243
+          },
+          {
+            "sampleYsCss": 604.6,
+            "value": 243
+          }
+        ],
+        "reference": {
+          "sampleYsCss": 600.6,
+          "value": 243
+        },
+        "darkening": 0,
+        "cueVisible": false
+      },
+      {
+        "state": "at rest (scrollTop 0)",
+        "edge": "top",
+        "sampleX": 264,
+        "surface": 243,
+        "band": [
+          {
+            "sampleYsCss": 148.4,
+            "value": 229
+          },
+          {
+            "sampleYsCss": 152.4,
+            "value": 229
+          },
+          {
+            "sampleYsCss": 156.4,
+            "value": 229
+          }
+        ],
+        "reference": {
+          "sampleYsCss": 160.4,
+          "value": 229
+        },
+        "darkening": 0,
         "cueVisible": false
       }
     ]
@@ -447,6 +834,7 @@
       "mobile": true
     },
     "screenshot": ".github/pr-evidence/mobile-drawer-nav-overflow/astro-after-light-mobile.png",
+    "screenshotScrolled": ".github/pr-evidence/mobile-drawer-nav-overflow/astro-after-light-mobile-scrolled.png",
     "nav": {
       "scrollHeight": 642,
       "clientHeight": 469,
@@ -458,36 +846,104 @@
         "state": "at rest (scrollTop 0)",
         "edge": "bottom",
         "sampleX": 264,
-        "sampleYsCss": [
-          603,
-          609,
-          614
+        "surface": 243,
+        "band": [
+          {
+            "sampleYsCss": 612.6,
+            "value": 218
+          },
+          {
+            "sampleYsCss": 608.6,
+            "value": 228
+          },
+          {
+            "sampleYsCss": 604.6,
+            "value": 238
+          }
         ],
-        "samples": [
-          241,
-          227,
-          220
-        ],
-        "surface": 242,
-        "delta": 22,
+        "reference": {
+          "sampleYsCss": 600.6,
+          "value": 243
+        },
+        "darkening": 25,
         "cueVisible": true
       },
       {
         "state": "at rest (scrollTop 0)",
         "edge": "top",
         "sampleX": 264,
-        "sampleYsCss": [
-          146.4,
-          152,
-          158.4
+        "surface": 243,
+        "band": [
+          {
+            "sampleYsCss": 148.4,
+            "value": 229
+          },
+          {
+            "sampleYsCss": 152.4,
+            "value": 229
+          },
+          {
+            "sampleYsCss": 156.4,
+            "value": 229
+          }
         ],
-        "samples": [
-          242,
-          228,
-          228
+        "reference": {
+          "sampleYsCss": 160.4,
+          "value": 229
+        },
+        "darkening": 0,
+        "cueVisible": false
+      },
+      {
+        "state": "scrolled to end",
+        "edge": "top",
+        "sampleX": 264,
+        "surface": 243,
+        "band": [
+          {
+            "sampleYsCss": 148.4,
+            "value": 222
+          },
+          {
+            "sampleYsCss": 152.4,
+            "value": 231
+          },
+          {
+            "sampleYsCss": 156.4,
+            "value": 242
+          }
         ],
-        "surface": 242,
-        "delta": 0,
+        "reference": {
+          "sampleYsCss": 160.4,
+          "value": 243
+        },
+        "darkening": 21,
+        "cueVisible": true
+      },
+      {
+        "state": "scrolled to end",
+        "edge": "bottom",
+        "sampleX": 264,
+        "surface": 243,
+        "band": [
+          {
+            "sampleYsCss": 612.6,
+            "value": 243
+          },
+          {
+            "sampleYsCss": 608.6,
+            "value": 243
+          },
+          {
+            "sampleYsCss": 604.6,
+            "value": 243
+          }
+        ],
+        "reference": {
+          "sampleYsCss": 600.6,
+          "value": 243
+        },
+        "darkening": 0,
         "cueVisible": false
       }
     ]
@@ -510,6 +966,7 @@
       "mobile": true
     },
     "screenshot": ".github/pr-evidence/mobile-drawer-nav-overflow/astro-after-dark-mobile.png",
+    "screenshotScrolled": ".github/pr-evidence/mobile-drawer-nav-overflow/astro-after-dark-mobile-scrolled.png",
     "nav": {
       "scrollHeight": 642,
       "clientHeight": 469,
@@ -521,36 +978,262 @@
         "state": "at rest (scrollTop 0)",
         "edge": "bottom",
         "sampleX": 264,
-        "sampleYsCss": [
-          603,
-          609,
-          614
-        ],
-        "samples": [
-          37,
-          31,
-          28
-        ],
         "surface": 38,
-        "delta": 10,
+        "band": [
+          {
+            "sampleYsCss": 612.6,
+            "value": 27
+          },
+          {
+            "sampleYsCss": 608.6,
+            "value": 31
+          },
+          {
+            "sampleYsCss": 604.6,
+            "value": 36
+          }
+        ],
+        "reference": {
+          "sampleYsCss": 600.6,
+          "value": 38
+        },
+        "darkening": 11,
         "cueVisible": true
       },
       {
         "state": "at rest (scrollTop 0)",
         "edge": "top",
         "sampleX": 264,
-        "sampleYsCss": [
-          146.4,
-          152,
-          158.4
-        ],
-        "samples": [
-          38,
-          52,
-          52
-        ],
         "surface": 38,
-        "delta": 0,
+        "band": [
+          {
+            "sampleYsCss": 148.4,
+            "value": 52
+          },
+          {
+            "sampleYsCss": 152.4,
+            "value": 52
+          },
+          {
+            "sampleYsCss": 156.4,
+            "value": 52
+          }
+        ],
+        "reference": {
+          "sampleYsCss": 160.4,
+          "value": 52
+        },
+        "darkening": 0,
+        "cueVisible": false
+      },
+      {
+        "state": "scrolled to end",
+        "edge": "top",
+        "sampleX": 264,
+        "surface": 38,
+        "band": [
+          {
+            "sampleYsCss": 148.4,
+            "value": 29
+          },
+          {
+            "sampleYsCss": 152.4,
+            "value": 33
+          },
+          {
+            "sampleYsCss": 156.4,
+            "value": 38
+          }
+        ],
+        "reference": {
+          "sampleYsCss": 160.4,
+          "value": 38
+        },
+        "darkening": 9,
+        "cueVisible": true
+      },
+      {
+        "state": "scrolled to end",
+        "edge": "bottom",
+        "sampleX": 264,
+        "surface": 38,
+        "band": [
+          {
+            "sampleYsCss": 612.6,
+            "value": 38
+          },
+          {
+            "sampleYsCss": 608.6,
+            "value": 38
+          },
+          {
+            "sampleYsCss": 604.6,
+            "value": 38
+          }
+        ],
+        "reference": {
+          "sampleYsCss": 600.6,
+          "value": 38
+        },
+        "darkening": 0,
+        "cueVisible": false
+      }
+    ]
+  },
+  {
+    "shell": "astro",
+    "phase": "after",
+    "mode": "auto",
+    "media": "light",
+    "themeState": {
+      "theme": "light",
+      "mode": "auto",
+      "colorScheme": "light",
+      "bodyBackground": "rgb(255, 255, 255)"
+    },
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1.25,
+      "mobile": true
+    },
+    "screenshot": ".github/pr-evidence/mobile-drawer-nav-overflow/astro-after-auto-light-mobile.png",
+    "nav": {
+      "scrollHeight": 642,
+      "clientHeight": 469,
+      "overflows": true,
+      "scrollbarGutter": 0
+    },
+    "checks": [
+      {
+        "state": "at rest (scrollTop 0)",
+        "edge": "bottom",
+        "sampleX": 264,
+        "surface": 243,
+        "band": [
+          {
+            "sampleYsCss": 612.6,
+            "value": 218
+          },
+          {
+            "sampleYsCss": 608.6,
+            "value": 228
+          },
+          {
+            "sampleYsCss": 604.6,
+            "value": 238
+          }
+        ],
+        "reference": {
+          "sampleYsCss": 600.6,
+          "value": 243
+        },
+        "darkening": 25,
+        "cueVisible": true
+      },
+      {
+        "state": "at rest (scrollTop 0)",
+        "edge": "top",
+        "sampleX": 264,
+        "surface": 243,
+        "band": [
+          {
+            "sampleYsCss": 148.4,
+            "value": 229
+          },
+          {
+            "sampleYsCss": 152.4,
+            "value": 229
+          },
+          {
+            "sampleYsCss": 156.4,
+            "value": 229
+          }
+        ],
+        "reference": {
+          "sampleYsCss": 160.4,
+          "value": 229
+        },
+        "darkening": 0,
+        "cueVisible": false
+      }
+    ]
+  },
+  {
+    "shell": "next",
+    "phase": "after",
+    "mode": "light",
+    "media": "light",
+    "themeState": {
+      "theme": "light",
+      "mode": "light",
+      "colorScheme": "light",
+      "bodyBackground": "rgb(255, 255, 255)"
+    },
+    "viewport": {
+      "width": 390,
+      "height": 1400,
+      "deviceScaleFactor": 1.25,
+      "mobile": true
+    },
+    "screenshot": ".github/pr-evidence/mobile-drawer-nav-overflow/after-light-tall-mobile.png",
+    "nav": {
+      "scrollHeight": 1023,
+      "clientHeight": 1023,
+      "overflows": false,
+      "scrollbarGutter": 0
+    },
+    "checks": [
+      {
+        "state": "at rest (scrollTop 0)",
+        "edge": "top",
+        "sampleX": 264,
+        "surface": 243,
+        "band": [
+          {
+            "sampleYsCss": 149.4,
+            "value": 228
+          },
+          {
+            "sampleYsCss": 153.4,
+            "value": 228
+          },
+          {
+            "sampleYsCss": 157.4,
+            "value": 228
+          }
+        ],
+        "reference": {
+          "sampleYsCss": 161.4,
+          "value": 228
+        },
+        "darkening": 0,
+        "cueVisible": false
+      },
+      {
+        "state": "at rest (scrollTop 0)",
+        "edge": "bottom",
+        "sampleX": 264,
+        "surface": 243,
+        "band": [
+          {
+            "sampleYsCss": 1167.6,
+            "value": 243
+          },
+          {
+            "sampleYsCss": 1163.6,
+            "value": 243
+          },
+          {
+            "sampleYsCss": 1159.6,
+            "value": 243
+          }
+        ],
+        "reference": {
+          "sampleYsCss": 1155.6,
+          "value": 243
+        },
+        "darkening": 0,
         "cueVisible": false
       }
     ]
